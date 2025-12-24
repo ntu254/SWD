@@ -52,4 +52,5 @@ features/[featureName]/
 ├── dtos/
 ├── types.ts
 └── index.ts
+hello
 ```
