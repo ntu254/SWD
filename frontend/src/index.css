@@ -1,6 +1,60 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+:root {
+  /* 1. Bảng màu chủ đạo (Brand Colors) - Blue tone */
+  --primary-color: #2563eb;       /* Xanh dương đậm */
+  --primary-hover: #1d4ed8;       /* Xanh khi hover */
+  --secondary-color: #64748b;     /* Xám xanh phụ trợ */
+  
+  /* 2. Màu nền và chữ (Background & Text) */
+  --bg-body: #f1f5f9;             /* Màu nền trang (xám rất nhạt) */
+  --bg-surface: #ffffff;          /* Màu nền các khung/thẻ (trắng) */
+  --text-main: #1e293b;           /* Chữ chính (đen xám) - Dễ đọc hơn đen tuyền */
+  --text-secondary: #64748b;      /* Chữ phụ (xám nhạt) */
+  --text-placeholder: #94a3b8;    /* Màu placeholder input */
+  
+  /* 3. Màu trạng thái (Status) */
+  --color-error: #ef4444;         /* Đỏ báo lỗi */
+  --color-success: #22c55e;       /* Xanh báo thành công */
+  
+  /* 4. Hiệu ứng (Effects) */
+  --radius-md: 8px;               /* Bo góc trung bình */
+  --radius-lg: 12px;              /* Bo góc lớn */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1); /* Đổ bóng nhẹ */
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); /* Đổ bóng nổi */
+  --transition: all 0.2s ease-in-out;
 }
+
+/* Reset mặc định của Vite/Browser */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-body);
+  color: var(--text-main);
+  line-height: 1.6;
+  min-height: 100vh;
+  /* Xóa bỏ flex center mặc định của Vite gây lỗi layout */
+  display: block; 
+}
+
+a {
+  text-decoration: none;
+  color: var(--primary-color);
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+a:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+/* Utility classes */
+.text-center { text-align: center; }
+.mt-4 { margin-top: 1rem; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.gap-4 { gap: 1rem; }
