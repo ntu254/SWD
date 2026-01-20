@@ -101,17 +101,18 @@ SWD/
 - **Maven 3.8+**
 - **Node.js 18+**
 - **npm 9+**
+- **PostgreSQL 14+** (optional - chỉ cần nếu dùng profile `local` hoặc `prod`)
 
 ### Backend
 
 ```bash
 cd backend
 
-# Run application
+# Chạy với H2 (mặc định - không cần setup database)
 mvn spring-boot:run
 
-# Run with dev profile
-mvn spring-boot:run -Dspring-boot.run.profiles=dev -DskipTests
+# Chạy với PostgreSQL local
+mvn spring-boot:run -Dspring.profiles.active=local
 ```
 
 Server sẽ chạy trên `http://localhost:8080`
@@ -167,11 +168,11 @@ features/[featureName]/
 ### Backend (Maven)
 
 ```bash
-mvn spring-boot:run                                 # Chạy ứng dụng
-mvn spring-boot:run -Dspring-boot.run.profiles=dev  # Chạy với profile dev
-mvn clean install                                   # Build project
-mvn clean install -DskipTests                       # Build bỏ qua tests
-mvn test                                            # Chạy tests
+mvn spring-boot:run                                   # Chạy với H2 (mặc định)
+mvn spring-boot:run -Dspring.profiles.active=local    # Chạy với PostgreSQL
+mvn clean install                                     # Build project
+mvn clean install -DskipTests                         # Build bỏ qua tests
+mvn test                                              # Chạy tests
 ```
 
 ### Frontend (npm)
@@ -186,21 +187,72 @@ npm run format    # Format code with Prettier
 
 ## ⚙️ Cấu Hình Môi Trường
 
-### Backend (application.properties)
+### Backend Profiles
+
+Backend hỗ trợ nhiều profile khác nhau:
+
+| Profile          | Database     | Mô tả                                |
+| ---------------- | ------------ | ------------------------------------ |
+| `dev` (mặc định) | H2 In-Memory | Không cần setup, dữ liệu mất khi tắt |
+| `local`          | PostgreSQL   | Development với PostgreSQL local     |
+| `prod`           | PostgreSQL   | Production                           |
+
+**Chạy với profile cụ thể:**
+
+```bash
+# Mặc định (H2)
+mvn spring-boot:run
+
+# Với PostgreSQL local
+mvn spring-boot:run -Dspring.profiles.active=local
+```
+
+### Backend Configuration Files
+
+```
+backend/src/main/resources/
+├── application.properties           # Cấu hình chung
+├── application-dev.properties       # H2 (development)
+├── application-local.properties     # PostgreSQL local (copy từ .example)
+└── application-prod.properties      # PostgreSQL production
+```
+
+### Setup PostgreSQL Local
+
+1. Tạo database:
+
+```sql
+CREATE DATABASE swd_db;
+```
+
+2. Copy file cấu hình:
+
+```bash
+cp application-local.properties.example application-local.properties
+```
+
+3. Sửa password trong `application-local.properties`
+
+4. Chạy:
+
+```bash
+mvn spring-boot:run -Dspring.profiles.active=local
+```
+
+### Backend Environment Variables (Production)
 
 ```properties
 # Server
 server.port=8080
 
 # Database
-spring.datasource.url=jdbc:postgresql://localhost:5432/swd_db
-spring.datasource.username=postgres
-spring.datasource.password=password
-spring.jpa.hibernate.ddl-auto=update
+DATABASE_URL=jdbc:postgresql://localhost:5432/swd_db
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=your_password
 
 # JWT
-jwt.secret=your_jwt_secret_key_here
-jwt.expiration=86400000
+JWT_SECRET=your_jwt_secret_key_here
+JWT_EXPIRATION=86400000
 ```
 
 ### Frontend (.env)
