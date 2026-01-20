@@ -1,15 +1,21 @@
 export interface Service {
-    icon: React.ComponentType<{ size?: number; className?: string }>;
+    id: string;
     title: string;
     description: string;
+    image?: string;
+    points?: string;
+    duration?: string;
+    popular?: boolean;
+    icon?: React.ComponentType<{ size?: number; className?: string }>;
 }
 
 export interface Testimonial {
+    id: string;
     name: string;
     role: string;
     location: string;
     rating: number;
-    comment: string;
+    content: string;
     avatar: string;
 }
 
