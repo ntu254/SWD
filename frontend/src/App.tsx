@@ -1,15 +1,20 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import './App.css'
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from '@shared/contexts';
+import HomePage from './features/landing/pages/HomePage';
+import AuthPage from './features/auth/pages/AuthPage';
+import './App.css';
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<div>Home Page</div>} />
-        {/* Add routes here */}
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/auth" element={<AuthPage />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;
