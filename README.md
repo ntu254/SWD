@@ -2,64 +2,106 @@
 
 Project này sử dụng **Feature-Based Architecture** cho cả Backend và Frontend.
 
-## Cấu Trúc Thư Mục
+## 📁 Cấu Trúc Thư Mục
 
 ```
 SWD/
-├── backend/                 # Node.js + Express + TypeScript
-│   ├── src/
-│   │   ├── features/       # Feature modules (auth, user, product, etc.)
-│   │   ├── shared/         # Shared types, utilities, helpers
-│   │   ├── config/         # Configuration files
-│   │   └── index.ts        # Entry point
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── README.md
+├── backend/                          # Spring Boot + Java 17
+│   ├── src/main/java/com/example/backendservice/
+│   │   ├── BackendServiceApplication.java
+│   │   ├── config/                   # Cấu hình chung (DB, CORS, etc.)
+│   │   ├── common/
+│   │   │   ├── constants/            # Hằng số chung
+│   │   │   ├── dto/                  # DTO dùng chung (ApiResponse, etc.)
+│   │   │   ├── exception/            # Exception handler, custom exceptions
+│   │   │   └── utils/                # Utility classes
+│   │   ├── security/
+│   │   │   ├── config/               # Security configuration
+│   │   │   ├── jwt/                  # JWT token provider, filter
+│   │   │   └── service/              # UserDetailsService, etc.
+│   │   └── features/
+│   │       ├── auth/                 # Feature: Authentication
+│   │       │   ├── controller/
+│   │       │   ├── service/
+│   │       │   ├── repository/
+│   │       │   ├── dto/
+│   │       │   └── entity/
+│   │       └── user/                 # Feature: User management
+│   │           ├── controller/
+│   │           ├── service/
+│   │           ├── repository/
+│   │           ├── dto/
+│   │           └── entity/
+│   ├── src/main/resources/
+│   │   └── application.properties
+│   └── pom.xml
 │
-└── frontend/                # React + Vite + TypeScript
+└── frontend/                         # React + Vite + TypeScript
     ├── src/
-    │   ├── features/       # Feature modules (auth, user, product, etc.)
-    │   ├── shared/         # Shared components, hooks, services, utils
-    │   ├── types/          # Global type definitions
-    │   ├── App.tsx         # Main component
-    │   └── main.tsx        # Entry point
-    ├── public/             # Static assets
+    │   ├── features/                 # Feature modules
+    │   │   └── auth/
+    │   │       ├── components/
+    │   │       ├── hooks/
+    │   │       ├── pages/
+    │   │       ├── services/
+    │   │       ├── types.ts
+    │   │       └── index.ts
+    │   ├── shared/                   # Shared components, hooks, services
+    │   ├── types/                    # Global type definitions
+    │   ├── App.tsx
+    │   └── main.tsx
+    ├── public/
     ├── package.json
     ├── vite.config.ts
-    ├── tsconfig.json
-    └── README.md
+    └── tsconfig.json
 ```
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 ### Backend
 
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Language**: TypeScript
-- **Database**: PostgreSQL (configurable)
-- **Package Manager**: npm
+| Technology      | Version | Description                    |
+| --------------- | ------- | ------------------------------ |
+| Java            | 17      | Programming Language           |
+| Spring Boot     | 3.5.0   | Framework                      |
+| Spring Security | -       | Authentication & Authorization |
+| Spring Data JPA | -       | Database ORM                   |
+| Maven           | -       | Build Tool                     |
 
 ### Frontend
 
-- **Library**: React 18
-- **Build Tool**: Vite
-- **Language**: TypeScript
-- **Routing**: React Router v6
-- **HTTP Client**: Axios
-- **Package Manager**: npm
+| Technology   | Version | Description          |
+| ------------ | ------- | -------------------- |
+| React        | 18.2.0  | UI Library           |
+| Vite         | 5.0.8   | Build Tool           |
+| TypeScript   | 5.3.3   | Programming Language |
+| React Router | 6.20.0  | Routing              |
+| Axios        | 1.6.2   | HTTP Client          |
 
-## Cách Bắt Đầu
+## 🚀 Cách Bắt Đầu
+
+### Prerequisites
+
+- **Java 17+** (recommend: Eclipse Adoptium)
+- **Maven 3.8+**
+- **Node.js 18+**
+- **npm 9+**
 
 ### Backend
 
 ```bash
 cd backend
-npm install
-npm run dev
+
+# Set environment variables (PowerShell)
+$env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot"
+$env:MAVEN_HOME = "$env:USERPROFILE\tools\maven"
+$env:Path = "$env:JAVA_HOME\bin;$env:MAVEN_HOME\bin;$env:Path"
+
+# Run application
+mvn spring-boot:run -Dspring-boot.run.profiles=dev -DskipTests
 ```
 
-Server sẽ chạy trên `http://localhost:3000`
+Server sẽ chạy trên `http://localhost:8080`
 
 ### Frontend
 
@@ -69,34 +111,38 @@ npm install
 npm run dev
 ```
 
-App sẽ chạy trên `http://localhost:3001`
+App sẽ chạy trên `http://localhost:5173`
 
-## Feature-Based Architecture
+## 📐 Feature-Based Architecture
 
-### Cấu trúc Feature cho Backend
+### Cấu trúc Feature cho Backend (Spring Boot)
 
 ```
 features/[featureName]/
-├── controllers/
-├── services/
-├── routes/
-├── models/
-├── dtos/
-├── types.ts
-└── index.ts
+├── controller/          # REST Controllers
+├── service/             # Business Logic
+├── repository/          # Data Access Layer
+├── entity/              # JPA Entities
+└── dto/                 # Data Transfer Objects
 ```
 
 Ví dụ: Feature `auth`
 
 ```
 features/auth/
-├── controllers/authController.ts
-├── services/authService.ts
-├── routes/authRoutes.ts
-├── models/AuthUser.ts
-├── dtos/loginDTO.ts
-├── types.ts
-└── index.ts
+├── controller/
+│   └── AuthController.java
+├── service/
+│   ├── AuthService.java
+│   └── AuthServiceImpl.java
+├── repository/
+│   └── UserRepository.java
+├── entity/
+│   └── User.java
+└── dto/
+    ├── LoginRequest.java
+    ├── RegisterRequest.java
+    └── AuthResponse.java
 ```
 
 ### Cấu trúc Feature cho Frontend
@@ -134,19 +180,19 @@ features/auth/
 └── index.tsx
 ```
 
-## Scripts Hữu Ích
+## 📜 Scripts Hữu Ích
 
-### Backend
+### Backend (Maven)
 
 ```bash
-npm run dev       # Development mode
-npm run build     # Build TypeScript
-npm start         # Production mode
-npm run lint      # ESLint check
-npm run format    # Format code with Prettier
+mvn spring-boot:run                              # Chạy ứng dụng
+mvn spring-boot:run -Dspring-boot.run.profiles=dev  # Chạy với profile dev
+mvn clean install                                # Build project
+mvn clean install -DskipTests                    # Build bỏ qua tests
+mvn test                                         # Chạy tests
 ```
 
-### Frontend
+### Frontend (npm)
 
 ```bash
 npm run dev       # Development mode
@@ -156,82 +202,100 @@ npm run lint      # ESLint check
 npm run format    # Format code with Prettier
 ```
 
-## Cấu Hình Môi Trường
+## ⚙️ Cấu Hình Môi Trường
 
-### Backend
+### Backend (application.properties / application-dev.properties)
 
-Copy `.env.example` thành `.env` và điền thông tin:
+```properties
+# Server
+server.port=8080
+
+# Database
+spring.datasource.url=jdbc:postgresql://localhost:5432/swd_db
+spring.datasource.username=postgres
+spring.datasource.password=password
+spring.jpa.hibernate.ddl-auto=update
+
+# JWT
+jwt.secret=your_jwt_secret_key_here
+jwt.expiration=86400000
+```
+
+### Frontend (.env)
 
 ```
-NODE_ENV=development
-PORT=3000
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=swd_db
-DB_USER=postgres
-DB_PASSWORD=password
-JWT_SECRET=your_jwt_secret_key_here
-```
-
-### Frontend
-
-Copy `.env.example` thành `.env` và điền thông tin:
-
-```
-VITE_API_URL=http://localhost:3000/api
+VITE_API_URL=http://localhost:8080/api
 VITE_APP_NAME=SWD Application
 ```
 
-## Hướng Dẫn Thêm Feature Mới
+## ➕ Hướng Dẫn Thêm Feature Mới
 
-1. Tạo folder mới trong `features/[featureName]`
-2. Tạo cấu trúc con theo template ở trên
+### Backend
+
+1. Tạo folder mới trong `features/[featureName]/`
+2. Tạo các sub-folder: `controller`, `service`, `repository`, `entity`, `dto`
+3. Implement Entity → Repository → Service → Controller
+4. Thêm endpoint vào Security config nếu cần
+
+### Frontend
+
+1. Tạo folder mới trong `features/[featureName]/`
+2. Tạo các sub-folder: `components`, `pages`, `hooks`, `services`
 3. Implement logic của feature
-4. Export từ `index.ts` hoặc `index.tsx`
+4. Export từ `index.ts`
 5. Import vào routing chính
 
-## Quy Tắc Đặt Tên
+## 📝 Quy Tắc Đặt Tên
 
-- **Files**: camelCase (authService.ts, loginForm.tsx)
-- **Folders**: camelCase (features/auth)
-- **Components**: PascalCase (LoginForm.tsx)
-- **Functions**: camelCase (getUserById)
-- **Constants**: UPPER_SNAKE_CASE (API_BASE_URL)
+### Backend (Java)
 
-## Linting & Formatting
+- **Classes**: PascalCase (`AuthController`, `UserService`)
+- **Methods**: camelCase (`getUserById`, `createUser`)
+- **Variables**: camelCase (`userName`, `isActive`)
+- **Constants**: UPPER_SNAKE_CASE (`JWT_SECRET`, `MAX_RETRY`)
+- **Packages**: lowercase (`com.example.backendservice.features.auth`)
 
-```bash
-# Backend
-cd backend
-npm run lint
-npm run format
+### Frontend (TypeScript/React)
 
-# Frontend
-cd frontend
-npm run lint
-npm run format
-```
+- **Files**: camelCase (`authService.ts`) hoặc PascalCase cho components (`LoginForm.tsx`)
+- **Components**: PascalCase (`LoginForm`, `UserProfile`)
+- **Hooks**: camelCase với prefix `use` (`useAuth`, `useUser`)
+- **Functions**: camelCase (`getUserById`)
+- **Constants**: UPPER_SNAKE_CASE (`API_BASE_URL`)
 
-## Database Setup (Backend)
+## 🗄️ Database Setup
 
-Tạo PostgreSQL database:
+### PostgreSQL
 
 ```sql
 CREATE DATABASE swd_db;
+CREATE USER swd_user WITH PASSWORD 'password';
+GRANT ALL PRIVILEGES ON DATABASE swd_db TO swd_user;
 ```
 
-Sau đó cấu hình `.env` file với thông tin kết nối.
-
-## Troubleshooting
+## 🔧 Troubleshooting
 
 ### Port đã bị sử dụng
 
-- Backend: Thay đổi PORT trong `.env`
-- Frontend: Thay đổi port trong `vite.config.ts`
+- **Backend**: Thay đổi `server.port` trong `application.properties`
+- **Frontend**: Thay đổi port trong `vite.config.ts`
 
-### Module không tìm thấy
+### Maven build failed
 
-Đảm bảo `tsconfig.json` và `vite.config.ts` có cấu hình path aliases đúng.
+```bash
+mvn clean install -U  # Force update dependencies
+```
+
+### CORS issues
+
+Đảm bảo đã cấu hình CORS trong `security/config/CorsConfig.java`
+
+---
+
+## 👥 Team
+
+- **Backend**: Spring Boot + Java
+- **Frontend**: React + TypeScript + Vite
 
 ---
 
