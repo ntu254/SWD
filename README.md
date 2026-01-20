@@ -1,6 +1,194 @@
-# SWD - Feature-Driven Modular Project
+# SWD - Crowdsourced Waste Collection & Recycling Platform
+
+> **Nền tảng kết nối người dân, doanh nghiệp tái chế và dịch vụ thu gom rác theo khu vực**
 
 Project này sử dụng **Feature-Driven Modular Architecture** cho cả Backend và Frontend.
+
+---
+
+## 📖 Tổng Quan Dự Án
+
+### 🎯 Chủ Đề
+
+**Crowdsourced Waste Collection & Recycling Platform** - Nền tảng kết nối người dân, doanh nghiệp tái chế và dịch vụ thu gom rác theo khu vực.
+
+### 🌍 Bối Cảnh
+
+Quản lý rác thải đô thị tại Việt Nam đang đối mặt với nhiều thách thức như:
+
+- **Lịch thu gom không ổn định** - Thiếu tính nhất quán trong việc thu gom rác hàng ngày
+- **Tỷ lệ phân loại rác tại nguồn thấp** - Người dân chưa có thói quen phân loại rác đúng cách
+- **Sự phối hợp rời rạc** - Thiếu liên kết giữa người dân, đơn vị thu gom và doanh nghiệp tái chế
+- **Quy định mới từ năm 2025** - Bắt buộc phân loại rác tại nguồn đòi hỏi giải pháp công nghệ
+
+> **Nhu cầu cấp thiết:** Một nền tảng số hỗ trợ kết nối, điều phối và giám sát toàn bộ quy trình thu gom – tái chế theo khu vực một cách hiệu quả và minh bạch.
+
+### ❗ Vấn Đề Cần Giải Quyết
+
+Hiện chưa có một hệ thống số hóa tập trung cho phép:
+
+- ✅ Người dân **báo cáo rác** và **theo dõi thu gom** theo thời gian thực
+- ✅ **Khuyến khích phân loại đúng** thông qua cơ chế điểm thưởng
+- ✅ Doanh nghiệp tái chế và cơ quan quản lý **tiếp cận dữ liệu vận hành** theo thời gian thực
+- ✅ **Điều phối và phân tích dữ liệu** để tối ưu hóa hiệu quả thu gom
+
+**Hậu quả:** Hiệu quả thu gom thấp, chi phí tăng cao và làm giảm cơ hội phát triển kinh tế tuần hoàn.
+
+---
+
+## 👥 Các Vai Trò Chính
+
+| Vai trò | Mô tả |
+|---------|-------|
+| **Citizen (Người dân)** | Báo cáo rác, phân loại tại nguồn, nhận điểm thưởng |
+| **Recycling Enterprise (Doanh nghiệp tái chế)** | Tiếp nhận, điều phối và quản lý thu gom rác |
+| **Collector (Nhân viên thu gom)** | Thực hiện thu gom theo yêu cầu được phân công |
+| **Administrator (Quản trị viên)** | Quản lý hệ thống, giám sát hoạt động tổng thể |
+
+---
+
+## ⚙️ Yêu Cầu Chức Năng
+
+### 👤 Citizen (Người dân)
+
+#### Báo cáo và Theo dõi
+- **Báo cáo rác/tái chế** cần thu gom với:
+  - 📸 Hình ảnh rác thải
+  - 📍 Vị trí GPS tự động
+  - 📝 Mô tả chi tiết
+- **Theo dõi trạng thái** thu gom của từng báo cáo:
+  - `Pending` → `Accepted` → `Assigned` → `Collected`
+- **Thực hiện phân loại rác tại nguồn** khi tạo báo cáo
+
+#### Điểm thưởng và Khuyến khích
+- **Nhận điểm thưởng** khi:
+  - Báo cáo hợp lệ được xác nhận
+  - Phân loại rác đúng cách
+  - Đánh giá tích cực từ Collector
+- **Xem lịch sử điểm thưởng** và chi tiết giao dịch
+- **Bảng xếp hạng theo khu vực** để tạo động lực cộng đồng
+- **Đổi điểm thưởng** lấy phần thưởng
+
+#### Phản hồi
+- **Gửi phản hồi hoặc khiếu nại** khi việc thu gom không đúng cam kết
+
+---
+
+### 🏢 Recycling Enterprise (Doanh nghiệp tái chế)
+
+#### Quản lý Năng lực
+- **Đăng ký và quản lý năng lực** xử lý rác:
+  - 🗑️ Loại rác tiếp nhận
+  - ⚡ Công suất xử lý
+  - 📍 Khu vực phục vụ
+
+#### Quản lý Yêu cầu
+- **Nhận và quyết định** tiếp nhận/từ chối yêu cầu thu gom trong phạm vi hoạt động
+- **Xem danh sách yêu cầu** được gợi ý ưu tiên dựa trên tiêu chí cấu hình *(optional)*
+- **Gán và điều phối** yêu cầu cho Collector thuộc doanh nghiệp
+
+#### Theo dõi và Báo cáo
+- **Theo dõi tiến độ xử lý** và trạng thái thu gom theo thời gian thực
+- **Xem báo cáo** khối lượng rác đã thu gom và tái chế:
+  - 📊 Theo loại rác
+  - 📍 Theo khu vực
+  - 📅 Theo thời gian
+
+#### Cấu hình KPI và Điểm thưởng
+- **Tạo và cấu hình quy tắc** tính điểm thưởng cho Citizen:
+  - Theo loại rác
+  - Theo chất lượng báo cáo
+  - Theo thời gian xử lý
+- **Cấu hình KPI cho Collector:**
+  - Số lượng báo cáo tối đa/tối thiểu trong 1 ngày
+  - Khối lượng tối thiểu phải thu gom (kg)
+  - Cơ chế bonus khi hoàn thành đúng KPI
+- **Quản lý khiếu nại** liên quan đến Collector
+
+---
+
+### 🚛 Collector (Nhân viên thu gom)
+
+#### Nhận và Thực hiện Công việc
+- **Nhận yêu cầu thu gom** được phân công từ Recycling Enterprise
+- **Cập nhật trạng thái** theo thời gian thực:
+  - `Assigned` → `On the way` → `Collected`
+- **Xác nhận hoàn tất thu gom** với:
+  - 📸 Hình ảnh xác nhận
+  - ℹ️ Thông tin trạng thái (khối lượng, tình trạng phân loại)
+
+#### Đánh giá và Theo dõi
+- **Đánh giá chất lượng phân loại** của Citizen theo các tiêu chí:
+  - Độ chính xác phân loại
+  - Chất lượng rác tái chế
+- **Xem lịch sử công việc** và số lượng yêu cầu đã hoàn thành
+- **Theo dõi KPI cá nhân** và bonus điểm thưởng để tăng rank
+
+---
+
+### 🛡️ Administrator (Quản trị viên)
+
+#### Quản lý Người dùng
+- **Quản lý tài khoản** người dùng và phân quyền (CRUD)
+  - *Phụ trách: Tín, Tú*
+
+#### Giám sát Hệ thống
+- **Dashboard tổng quan** hiển thị:
+  - 📈 Tổng số báo cáo theo trạng thái (Pending, Accepted, Assigned, Collected)
+  - 📊 Thống kê báo cáo theo khu vực và thời gian
+  - 🏢 Hiệu suất xử lý của các Recycling Enterprise
+  - 🚛 Hiệu suất làm việc của Collector
+  - 🎁 Thống kê điểm thưởng và khiếu nại
+
+#### Quản lý Nội dung
+- **Quản lý khiếu nại** liên quan đến hệ thống (CRUD)
+  - Ví dụ: cộng điểm sai, bug hệ thống
+  - *Phụ trách: Tú, Khôi*
+- **Quản lý thông báo** (CRUD)
+  - *Phụ trách: Tú, Khôi*
+- **Quản lý năng lực xử lý** của doanh nghiệp (CRUD)
+  - *Phụ trách: Đạt, Quốc, Bình*
+- **Quản lý phần thưởng** đổi điểm (CRUD)
+  - *Phụ trách: Đạt, Bình, Tín*
+
+#### Cấu hình
+- **Settings** - Cấu hình API, thông số hệ thống, etc.
+
+---
+
+## 🤖 Tính Năng Tùy Chọn
+
+### AI Hỗ trợ Phân loại Rác (Decision Support)
+
+- **Input:** Ảnh rác do Citizen upload
+- **Output:** Gợi ý loại rác:
+  - ♻️ Organic (Hữu cơ)
+  - 📦 Recyclable (Tái chế được)
+  - ⚠️ Hazardous (Nguy hại)
+  - 🗑️ Other (Khác)
+- **Xác nhận:** Người dùng xác nhận lại trước khi gửi
+
+---
+
+## 🎯 Tính Năng Bổ Sung
+
+### Cơ chế KPI và Bonus
+
+1. **Cấu hình KPI cho Collector:**
+   - Doanh nghiệp có thể thiết lập:
+     - Số lượng báo cáo tối đa/tối thiểu trong 1 ngày
+     - Khối lượng tối thiểu phải thu gom (kg)
+   - Collector hoàn thành đúng KPI trong khoảng thời gian → **Bonus điểm thưởng** → Tăng rank
+
+2. **Cấu hình nhận Request tự động:**
+   - Thiết lập điều kiện tự động nhận báo cáo
+   - Giới hạn số lượng báo cáo mỗi Collector có thể nhận trong 1 ngày
+
+3. **Đánh giá chất lượng phân loại:**
+   - Nếu Citizen hoàn thành đổi rác và phân loại đúng → **Cộng điểm tự động**
+   - Nếu chưa phân loại đúng → Collector đánh giá dựa trên tiêu chí → Cộng điểm theo đánh giá
+
+---
 
 ## 📁 Cấu Trúc Thư Mục
 
