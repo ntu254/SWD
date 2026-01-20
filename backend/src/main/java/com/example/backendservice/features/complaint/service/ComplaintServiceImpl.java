@@ -1,5 +1,7 @@
 package com.example.backendservice.features.complaint.service;
 
+import com.example.backendservice.common.sse.SseEventData;
+import com.example.backendservice.common.sse.SseService;
 import com.example.backendservice.features.complaint.dto.ComplaintResponse;
 import com.example.backendservice.features.complaint.dto.CreateComplaintRequest;
 import com.example.backendservice.features.complaint.dto.UpdateComplaintStatusRequest;
@@ -10,6 +12,7 @@ import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.CitizenRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,11 +26,13 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class ComplaintServiceImpl implements ComplaintService {
 
     private final ComplaintRepository complaintRepository;
     private final CitizenRepository citizenRepository;
     private final UserRepository userRepository;
+    private final SseService sseService;
 
     @Override
     public ComplaintResponse createComplaint(Long citizenId, CreateComplaintRequest request) {
@@ -44,7 +49,12 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .build();
 
         Complaint savedComplaint = complaintRepository.save(complaint);
-        return mapToResponse(savedComplaint);
+        ComplaintResponse response = mapToResponse(savedComplaint);
+
+        // Notify admins about new complaint via SSE
+        notifyAdminsNewComplaint(response);
+
+        return response;
     }
 
     @Override
@@ -75,6 +85,8 @@ public class ComplaintServiceImpl implements ComplaintService {
         Complaint complaint = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> new RuntimeException("Complaint not found with id: " + complaintId));
 
+        String oldStatus = complaint.getStatus();
+
         if (request.getStatus() != null) {
             complaint.setStatus(request.getStatus());
 
@@ -94,7 +106,14 @@ public class ComplaintServiceImpl implements ComplaintService {
         }
 
         Complaint updatedComplaint = complaintRepository.save(complaint);
-        return mapToResponse(updatedComplaint);
+        ComplaintResponse response = mapToResponse(updatedComplaint);
+
+        // Notify citizen about status change via SSE
+        if (!oldStatus.equals(response.getStatus())) {
+            notifyCitizenComplaintUpdate(response);
+        }
+
+        return response;
     }
 
     @Override
@@ -119,6 +138,49 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         stats.put("total", complaintRepository.count());
         return stats;
+    }
+
+    /**
+     * Notify admins about new complaint via SSE
+     */
+    private void notifyAdminsNewComplaint(ComplaintResponse complaint) {
+        try {
+            SseEventData eventData = SseEventData.builder()
+                    .eventType("NEW_COMPLAINT")
+                    .payload(Map.of(
+                            "id", complaint.getId(),
+                            "title", complaint.getTitle(),
+                            "category", complaint.getCategory(),
+                            "priority", complaint.getPriority(),
+                            "citizenName", complaint.getCitizenName() != null ? complaint.getCitizenName() : "Unknown"))
+                    .timestamp(LocalDateTime.now())
+                    .targetAudience("Admin")
+                    .build();
+            sseService.sendEvent(eventData);
+            log.info("SSE notification sent to admins: New complaint #{}", complaint.getId());
+        } catch (Exception e) {
+            log.error("Failed to send SSE notification for new complaint: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Notify citizen about complaint status update via SSE
+     */
+    private void notifyCitizenComplaintUpdate(ComplaintResponse complaint) {
+        try {
+            SseEventData eventData = SseEventData.complaintUpdate(
+                    Map.of(
+                            "id", complaint.getId(),
+                            "title", complaint.getTitle(),
+                            "status", complaint.getStatus(),
+                            "adminResponse", complaint.getAdminResponse() != null ? complaint.getAdminResponse() : ""),
+                    complaint.getCitizenId().toString());
+            sseService.sendEvent(eventData);
+            log.info("SSE notification sent to citizen {}: Complaint #{} status updated to {}",
+                    complaint.getCitizenId(), complaint.getId(), complaint.getStatus());
+        } catch (Exception e) {
+            log.error("Failed to send SSE notification for complaint update: {}", e.getMessage());
+        }
     }
 
     private ComplaintResponse mapToResponse(Complaint complaint) {

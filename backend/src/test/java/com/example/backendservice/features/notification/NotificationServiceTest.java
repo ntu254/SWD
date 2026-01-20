@@ -1,5 +1,6 @@
 package com.example.backendservice.features.notification;
 
+import com.example.backendservice.common.sse.SseService;
 import com.example.backendservice.features.notification.dto.CreateNotificationRequest;
 import com.example.backendservice.features.notification.dto.NotificationResponse;
 import com.example.backendservice.features.notification.dto.UpdateNotificationRequest;
@@ -27,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,6 +39,9 @@ class NotificationServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private SseService sseService;
 
     @InjectMocks
     private NotificationServiceImpl notificationService;
@@ -91,6 +96,7 @@ class NotificationServiceTest {
         assertThat(response).isNotNull();
         assertThat(response.getTitle()).isEqualTo("Test Notification");
         verify(notificationRepository, times(1)).save(any(Notification.class));
+        verify(sseService, times(1)).sendEvent(any());
     }
 
     @Test
@@ -132,7 +138,7 @@ class NotificationServiceTest {
         UpdateNotificationRequest request = UpdateNotificationRequest.builder()
                 .title("Updated Title")
                 .content("Updated Content")
-                .isActive(false)
+                .isActive(true)
                 .build();
 
         when(notificationRepository.findById(1L)).thenReturn(Optional.of(testNotification));

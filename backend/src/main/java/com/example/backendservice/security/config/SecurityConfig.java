@@ -56,6 +56,11 @@ public class SecurityConfig {
                         .hasAnyRole("CITIZEN", "COLLECTOR", "ENTERPRISE", "ADMIN")
                         .requestMatchers("/api/notifications/count").permitAll()
 
+                        // SSE endpoints
+                        .requestMatchers("/api/sse/subscribe/**").authenticated()
+                        .requestMatchers("/api/sse/stats").hasRole("ADMIN")
+                        .requestMatchers("/api/sse/test-broadcast").hasRole("ADMIN")
+
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

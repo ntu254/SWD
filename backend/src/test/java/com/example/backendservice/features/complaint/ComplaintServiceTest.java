@@ -1,5 +1,6 @@
 package com.example.backendservice.features.complaint;
 
+import com.example.backendservice.common.sse.SseService;
 import com.example.backendservice.features.complaint.dto.ComplaintResponse;
 import com.example.backendservice.features.complaint.dto.CreateComplaintRequest;
 import com.example.backendservice.features.complaint.dto.UpdateComplaintStatusRequest;
@@ -43,6 +44,9 @@ class ComplaintServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private SseService sseService;
 
     @InjectMocks
     private ComplaintServiceImpl complaintService;
@@ -104,6 +108,7 @@ class ComplaintServiceTest {
         assertThat(response).isNotNull();
         assertThat(response.getTitle()).isEqualTo("Test Complaint");
         verify(complaintRepository, times(1)).save(any(Complaint.class));
+        verify(sseService, times(1)).sendEvent(any());
     }
 
     @Test

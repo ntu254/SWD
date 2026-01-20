@@ -1,5 +1,7 @@
 package com.example.backendservice.features.notification.service;
 
+import com.example.backendservice.common.sse.SseEventData;
+import com.example.backendservice.common.sse.SseService;
 import com.example.backendservice.features.notification.dto.CreateNotificationRequest;
 import com.example.backendservice.features.notification.dto.NotificationResponse;
 import com.example.backendservice.features.notification.dto.UpdateNotificationRequest;
@@ -8,6 +10,7 @@ import com.example.backendservice.features.notification.repository.NotificationR
 import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,10 +21,12 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final SseService sseService;
 
     @Override
     public NotificationResponse createNotification(Long adminId, CreateNotificationRequest request) {
@@ -41,7 +46,12 @@ public class NotificationServiceImpl implements NotificationService {
                 .build();
 
         Notification savedNotification = notificationRepository.save(notification);
-        return mapToResponse(savedNotification);
+        NotificationResponse response = mapToResponse(savedNotification);
+
+        // Send real-time notification via SSE
+        sendNotificationViaSSE(response);
+
+        return response;
     }
 
     @Override
@@ -75,7 +85,14 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         Notification updatedNotification = notificationRepository.save(notification);
-        return mapToResponse(updatedNotification);
+        NotificationResponse response = mapToResponse(updatedNotification);
+
+        // Send real-time update notification via SSE if still active
+        if (Boolean.TRUE.equals(updatedNotification.getIsActive())) {
+            sendNotificationUpdateViaSSE(response);
+        }
+
+        return response;
     }
 
     @Override
@@ -123,6 +140,38 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional(readOnly = true)
     public long countActiveNotifications() {
         return notificationRepository.countByIsActiveTrue();
+    }
+
+    /**
+     * Send new notification to users via SSE
+     */
+    private void sendNotificationViaSSE(NotificationResponse notification) {
+        try {
+            SseEventData eventData = SseEventData.notification(notification, notification.getTargetAudience());
+            sseService.sendEvent(eventData);
+            log.info("SSE notification sent: {} to audience: {}", notification.getTitle(),
+                    notification.getTargetAudience());
+        } catch (Exception e) {
+            log.error("Failed to send SSE notification: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Send notification update to users via SSE
+     */
+    private void sendNotificationUpdateViaSSE(NotificationResponse notification) {
+        try {
+            SseEventData eventData = SseEventData.builder()
+                    .eventType("NOTIFICATION_UPDATE")
+                    .payload(notification)
+                    .timestamp(LocalDateTime.now())
+                    .targetAudience(notification.getTargetAudience())
+                    .build();
+            sseService.sendEvent(eventData);
+            log.info("SSE notification update sent: {}", notification.getTitle());
+        } catch (Exception e) {
+            log.error("Failed to send SSE notification update: {}", e.getMessage());
+        }
     }
 
     private NotificationResponse mapToResponse(Notification notification) {
