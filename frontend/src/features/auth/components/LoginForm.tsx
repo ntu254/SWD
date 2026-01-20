@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@shared/contexts';
 import Button from '@components/Button';
 import type { ApiError } from '@shared/types';
@@ -15,6 +15,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleRegister, onSucces
         email: '',
         password: '',
     });
+    const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -36,55 +37,69 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleRegister, onSucces
             onSuccess();
         } catch (err) {
             const apiError = err as ApiError;
-            setError(apiError.message || 'Login failed. Please try again.');
+            setError(apiError.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Display */}
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 animate-shake">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
                     {error}
                 </div>
             )}
 
             {/* Email Input */}
-            <div className="space-y-1">
-                <label className="text-sm font-bold text-gray-700 ml-1">Email</label>
-                <div className="relative">
-                    <Mail className="absolute left-4 top-3.5 text-gray-400" size={20} />
+            <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700 ml-1 block">Email</label>
+                <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Mail className="text-gray-400 group-focus-within:text-brand-500 transition-colors" size={20} />
+                    </div>
                     <input
                         type="email"
                         name="email"
                         required
                         value={formData.email}
                         onChange={handleInputChange}
-                        placeholder="email@example.com"
-                        className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all font-medium"
+                        placeholder="example@email.com"
+                        className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 focus:outline-none transition-all duration-300 font-medium placeholder:text-gray-400"
                     />
                 </div>
             </div>
 
             {/* Password Input */}
-            <div className="space-y-1">
+            <div className="space-y-2">
                 <div className="flex justify-between items-center ml-1">
-                    <label className="text-sm font-bold text-gray-700">Mật khẩu</label>
-                    <a href="#" className="text-xs font-bold text-brand-600 hover:underline">Quên mật khẩu?</a>
+                    <label className="text-sm font-semibold text-gray-700">Mật khẩu</label>
+                    <a href="#" className="text-sm font-semibold text-brand-600 hover:text-brand-700 hover:underline transition-colors">
+                        Quên mật khẩu?
+                    </a>
                 </div>
-                <div className="relative">
-                    <Lock className="absolute left-4 top-3.5 text-gray-400" size={20} />
+                <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Lock className="text-gray-400 group-focus-within:text-brand-500 transition-colors" size={20} />
+                    </div>
                     <input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         name="password"
                         required
                         value={formData.password}
                         onChange={handleInputChange}
                         placeholder="••••••••"
-                        className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all font-medium"
+                        className="w-full pl-12 pr-12 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 focus:outline-none transition-all duration-300 font-medium placeholder:text-gray-400"
                     />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
                 </div>
             </div>
 
@@ -93,31 +108,32 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleRegister, onSucces
                 fullWidth
                 size="lg"
                 disabled={isLoading}
-                className="mt-4 group relative overflow-hidden"
+                className="mt-6 !rounded-2xl !py-4 shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 group relative overflow-hidden"
             >
                 {isLoading ? (
                     <span className="flex items-center gap-2">
                         <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Đang xử lý...
+                        Đang đăng nhập...
                     </span>
                 ) : (
-                    <span className="flex items-center justify-center gap-2">
+                    <span className="flex items-center justify-center gap-2 font-bold text-lg">
                         Đăng Nhập
                         <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                     </span>
                 )}
             </Button>
 
-            {/* Toggle to Register */}
-            <div className="text-center mt-6">
-                <p className="text-gray-600">
+            {/* Toggle */}
+            <div className="text-center pt-2">
+                <p className="text-gray-500 font-medium">
                     Bạn chưa có tài khoản?
                     <button
                         type="button"
                         onClick={onToggleRegister}
-                        className="ml-2 font-bold text-brand-600 hover:text-brand-700 hover:underline transition-all"
+                        className="ml-2 font-bold text-brand-600 hover:text-brand-700 relative inline-block group"
                     >
                         Đăng ký ngay
+                        <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-brand-600 transition-all duration-300 group-hover:w-full"></span>
                     </button>
                 </p>
             </div>
