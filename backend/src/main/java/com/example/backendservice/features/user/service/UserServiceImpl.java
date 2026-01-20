@@ -1,16 +1,18 @@
 package com.example.backendservice.features.user.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.features.user.dto.UpdateUserRequest;
 import com.example.backendservice.features.user.dto.UserResponse;
 import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
