@@ -81,7 +81,7 @@ backend/src/main/
 Các file cấu hình nằm trong `src/main/resources/`:
 
 *   `application.properties`: Cấu hình gốc (H2 default).
-*   `application-dev-local.properties`: Cấu hình cho dev local (H2 + Debug log + Dev Secret).
+*   `application-dev.properties`: Cấu hình cho dev local (H2 + Debug log + Dev Secret).
 *   `application-local.properties`: Cấu hình chạy với PostgreSQL local.
 *   `application-prod.properties`: Cấu hình Production (đọc biến môi trường).
 
@@ -99,8 +99,8 @@ Các file cấu hình nằm trong `src/main/resources/`:
 
 | Method | Endpoint | Mô tả | Auth Required |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/auth/register` | Đăng ký tài khoản mới | ❌ |
-| `POST` | `/api/v1/auth/login` | Đăng nhập & lấy Token | ❌ |
+| `POST` | `/api/v1/auth/register` | Đăng ký tài khoản mới | 
+| `POST` | `/api/v1/auth/login` | Đăng nhập & lấy Token | 
 | `GET` | `/api/v1/users/me` | Lấy thông tin user hiện tại | ✅ (Bearer Token) |
 | `PUT` | `/api/v1/users/me` | Cập nhật hồ sơ | ✅ (Bearer Token) |
 
