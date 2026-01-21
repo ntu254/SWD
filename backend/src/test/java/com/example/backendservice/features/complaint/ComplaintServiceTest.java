@@ -149,7 +149,7 @@ class ComplaintServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Complaint> page = new PageImpl<>(List.of(testComplaint));
 
-        when(complaintRepository.findByCitizenId(1L, pageable)).thenReturn(page);
+        when(complaintRepository.findByCitizen_Id(1L, pageable)).thenReturn(page);
 
         // When
         Page<ComplaintResponse> result = complaintService.getComplaintsByCitizen(1L, pageable);

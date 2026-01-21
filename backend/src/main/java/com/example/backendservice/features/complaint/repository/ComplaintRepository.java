@@ -14,7 +14,7 @@ import java.util.List;
 public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
 
         // Find all complaints by citizen
-        Page<Complaint> findByCitizenId(Long citizenId, Pageable pageable);
+        Page<Complaint> findByCitizen_Id(Long citizenId, Pageable pageable);
 
         // Find complaints by status
         Page<Complaint> findByStatus(String status, Pageable pageable);

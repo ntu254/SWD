@@ -31,7 +31,6 @@ public class CustomUserDetailsService implements UserDetailsService {
                 true,
                 true,
                 true,
-                Collections.singletonList(new SimpleGrantedAuthority(user.getRole()))
-        );
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole())));
     }
 }

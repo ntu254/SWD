@@ -9,7 +9,7 @@ import java.util.Optional;
 @Repository
 public interface CitizenRepository extends JpaRepository<Citizen, Long> {
 
-    Optional<Citizen> findByUserId(Long userId);
+    Optional<Citizen> findByUser_Id(Long userId);
 
-    boolean existsByUserId(Long userId);
+    boolean existsByUser_Id(Long userId);
 }

@@ -60,7 +60,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Override
     @Transactional(readOnly = true)
     public Page<ComplaintResponse> getComplaintsByCitizen(Long citizenId, Pageable pageable) {
-        return complaintRepository.findByCitizenId(citizenId, pageable)
+        return complaintRepository.findByCitizen_Id(citizenId, pageable)
                 .map(this::mapToResponse);
     }
 
