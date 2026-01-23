@@ -67,7 +67,16 @@ SWD/
     ├── tsconfig.json                 # TypeScript config (app)
     ├── tsconfig.node.json            # TypeScript config (node/vite)
     └── vite.config.ts                # Vite configuration
-```
+
+└── mobile/                           # React Native + Expo (FDM + FSD-lite)
+    ├── src/
+    │   ├── app/                      # Expo Router pages
+    │   ├── features/                 # Business logic modules
+    │   ├── entities/                 # Business entities
+    │   ├── navigation/               # Navigation configuration
+    │   └── shared/                   # Shared resources
+    ├── app.json
+    └── tsconfig.json
 
 ## 🛠️ Tech Stack
 
@@ -92,6 +101,18 @@ SWD/
 | Axios        | 1.6.2   | HTTP Client          |
 | ESLint       | 8.56.0  | Linting              |
 | Prettier     | 3.1.1   | Code Formatting      |
+
+### Mobile
+
+| Technology   | Version | Description          |
+| ------------ | ------- | -------------------- |
+| React Native | 0.73+   | Mobile Framework     |
+| Expo         | 50+     | Platform             |
+| NativeWind   | 4.0+    | Styling (TailwindCSS)|
+| Zustand      | 4.x     | State Management     |
+| TanStack Query| 5.x    | Data Fetching        |
+| Expo Router  | 3.x     | File-based routing   |
+| TypeScript   | 5.x     | Programming Language |
 
 ## 🚀 Cách Bắt Đầu
 
@@ -130,6 +151,18 @@ npm run dev
 
 App sẽ chạy trên `http://localhost:3000`
 
+### Mobile
+
+```bash
+cd mobile
+
+# Install dependencies
+npm install
+
+# Start development server
+npx expo start
+```
+
 ## 📐 Feature-Driven Modular Architecture
 
 ### Nguyên tắc chính
@@ -162,6 +195,17 @@ features/[featureName]/
 └── index.ts             # Barrel export
 ```
 
+### Cấu trúc Mobile (FDM + FSD-lite)
+
+```
+src/
+├── app/                 # Layers: Pages & Presentation
+├── features/            # Layers: Business Features
+├── entities/            # Layers: Business Entities
+├── navigation/          # Layers: App Navigation
+└── shared/              # Layers: Shared Segments
+```
+
 ## 📜 Scripts
 
 ### Backend (Maven)
@@ -182,6 +226,14 @@ npm run build     # Build for production
 npm run preview   # Preview production build
 npm run lint      # ESLint check
 npm run format    # Format code with Prettier
+```
+
+### Mobile (npm/Expo)
+
+```bash
+npx expo start    # Start Expo Go
+npx expo android  # Run on Android Emulator
+npx expo ios      # Run on iOS Simulator
 ```
 
 ## ⚙️ Cấu Hình Môi Trường
@@ -254,6 +306,13 @@ import { formatDate } from "@utils/helpers";
 3. Tạo file `index.ts` để barrel export
 4. Import vào routing chính
 
+### Mobile
+
+1. Tạo feature mới trong `src/features/[featureName]/`
+2. Tạo entity mới trong `src/entities/[entityName]/` (nếu cần)
+3. Thêm page mới trong `src/app/`
+4. Cập nhật `navigation` nếu cần
+
 **Template cho feature mới:**
 
 ```bash
@@ -324,6 +383,7 @@ npm install
 
 - **Backend**: Spring Boot + Java
 - **Frontend**: React + TypeScript + Vite
+- **Mobile**: React Native + Expo
 
 ---
 
