@@ -24,15 +24,15 @@ const Hero: React.FC<HeroProps> = ({ onBookNow }) => {
               Chung Tay Vì Một Việt Nam Xanh
             </div>
             <h1 className="font-display text-5xl lg:text-7xl font-bold text-gray-900 leading-tight mb-6">
-              Phân Loại Rác Thông Minh Bằng <span className="text-brand-500">AI Camera</span>
+              Nền Tảng Quản Lý <span className="text-brand-500">Rác Thải</span> Toàn Diện
             </h1>
             <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-              Nền tảng kết nối toàn diện: Cư dân chụp ảnh báo cáo rác, AI hỗ trợ phân loại, Collector thu gom tối ưu và Doanh nghiệp quản lý hiệu quả.
+              Kết nối Cư dân, Collector và Doanh nghiệp tái chế: Báo cáo rác thải nhanh chóng, theo dõi tiến độ thu gom, tích điểm thưởng và đổi quà hấp dẫn. AI hỗ trợ phân loại (tùy chọn).
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button onClick={onBookNow} size="lg" className="group shadow-brand-500/30">
+              <Button onClick={() => window.location.href = '/auth'} size="lg" className="group shadow-brand-500/30">
                 <Camera className="mr-2 w-5 h-5" />
-                Scan AI & Báo Cáo
+                Đăng Ký Ngay
               </Button>
               <Button variant="outline" size="lg">
                 <Smartphone className="mr-2 w-5 h-5" />

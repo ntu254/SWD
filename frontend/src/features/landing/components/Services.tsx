@@ -67,7 +67,7 @@ const Services: React.FC<ServicesProps> = ({ onBookNow }) => {
                   fullWidth
                   size="sm"
                 >
-                  Đăng Ký Ngay
+                  Yêu Cầu Thu Gom
                 </Button>
               </div>
             </div>
