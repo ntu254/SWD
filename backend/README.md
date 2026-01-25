@@ -292,34 +292,63 @@ java -jar target/backend-service-0.0.1-SNAPSHOT.jar --spring.profiles.active=dep
 | POST | `/api/auth/login` | Login and get JWT token |
 
 ### Complaint Management
+
 | Method | Endpoint | Description | Role |
 |--------|----------|-------------|------|
 | POST | `/api/complaints/citizen/{citizenId}` | Create complaint | CITIZEN |
-| GET | `/api/complaints/citizen/{citizenId}` | Get citizen's complaints | CITIZEN |
+| GET | `/api/complaints/citizen/{citizenId}?page=0&size=10&sortBy=createdAt&sortDir=desc` | Get citizen's complaints (paginated) | CITIZEN |
 | GET | `/api/complaints/{complaintId}` | Get complaint by ID | ALL |
-| GET | `/api/complaints/admin` | Get all complaints (with filters) | ADMIN |
+| GET | `/api/complaints/admin?status=Pending&category=BUG&priority=High&page=0&size=10&sortBy=createdAt&sortDir=desc` | Get all complaints with filters (paginated) | ADMIN |
 | PUT | `/api/complaints/admin/{id}/status` | Update complaint status | ADMIN |
 | DELETE | `/api/complaints/admin/{id}` | Delete complaint | ADMIN |
 | GET | `/api/complaints/admin/statistics` | Get statistics | ADMIN |
 
+**Complaint Query Parameters:**
+| Parameter | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `page` | int | Page number (0-indexed) | `0` |
+| `size` | int | Items per page | `10` |
+| `sortBy` | string | Sort field | `createdAt`, `title`, `status` |
+| `sortDir` | string | Sort direction | `asc`, `desc` |
+| `status` | string | Filter by status | `Pending`, `In_Progress`, `Resolved`, `Rejected` |
+| `category` | string | Filter by category | `BUG`, `FEATURE`, `POINTS_ERROR`, `OTHER` |
+| `priority` | string | Filter by priority | `Low`, `Normal`, `High`, `Urgent` |
+
+---
+
 ### Notification Management
+
 | Method | Endpoint | Description | Role |
 |--------|----------|-------------|------|
 | POST | `/api/notifications/admin/{adminId}` | Create notification | ADMIN |
-| GET | `/api/notifications/admin` | Get all notifications | ADMIN |
+| GET | `/api/notifications/admin?type=General&targetAudience=All&isActive=true&page=0&size=10&sortBy=createdAt&sortDir=desc` | Get all notifications with filters (paginated) | ADMIN |
 | GET | `/api/notifications/admin/{id}` | Get notification by ID | ADMIN |
 | PUT | `/api/notifications/admin/{id}` | Update notification | ADMIN |
-| PATCH | `/api/notifications/admin/{id}/toggle` | Toggle status | ADMIN |
+| PATCH | `/api/notifications/admin/{id}/toggle` | Toggle active status | ADMIN |
 | DELETE | `/api/notifications/admin/{id}` | Delete notification | ADMIN |
-| GET | `/api/notifications/user/{role}` | Get notifications for role | USER |
+| GET | `/api/notifications/user/{role}?page=0&size=10&sortBy=createdAt&sortDir=desc` | Get active notifications for role (paginated) | USER |
 | GET | `/api/notifications/count` | Count active notifications | PUBLIC |
 
+**Notification Query Parameters:**
+| Parameter | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `page` | int | Page number (0-indexed) | `0` |
+| `size` | int | Items per page | `10` |
+| `sortBy` | string | Sort field | `createdAt`, `title`, `priority` |
+| `sortDir` | string | Sort direction | `asc`, `desc` |
+| `type` | string | Filter by type | `General`, `Maintenance`, `Update`, `Promotion`, `Alert` |
+| `targetAudience` | string | Filter by audience | `All`, `Citizen`, `Collector`, `Enterprise` |
+| `isActive` | boolean | Filter by active status | `true`, `false` |
+
+---
+
 ### Server-Sent Events (SSE)
+
 | Method | Endpoint | Description | Role |
 |--------|----------|-------------|------|
 | GET | `/api/sse/subscribe/{userId}?role=Citizen` | Subscribe to SSE | AUTHENTICATED |
 | GET | `/api/sse/stats` | Get SSE statistics | ADMIN |
-| POST | `/api/sse/test-broadcast` | Test broadcast | ADMIN |
+| POST | `/api/sse/test-broadcast?message=Hello&targetAudience=All` | Test broadcast | ADMIN |
 
 ---
 
