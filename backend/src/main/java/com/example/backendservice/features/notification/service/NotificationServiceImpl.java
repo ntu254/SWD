@@ -1,5 +1,6 @@
 package com.example.backendservice.features.notification.service;
 
+import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.common.sse.SseEventData;
 import com.example.backendservice.common.sse.SseService;
 import com.example.backendservice.features.notification.dto.CreateNotificationRequest;
@@ -31,7 +32,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public NotificationResponse createNotification(Long adminId, CreateNotificationRequest request) {
         User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
+                .orElseThrow(() -> new ResourceNotFoundException("Admin", "id", adminId));
 
         Notification notification = Notification.builder()
                 .title(request.getTitle())
@@ -57,7 +58,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public NotificationResponse updateNotification(Long notificationId, UpdateNotificationRequest request) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found with id: " + notificationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", notificationId));
 
         if (request.getTitle() != null) {
             notification.setTitle(request.getTitle());
@@ -98,7 +99,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void deleteNotification(Long notificationId) {
         if (!notificationRepository.existsById(notificationId)) {
-            throw new RuntimeException("Notification not found with id: " + notificationId);
+            throw new ResourceNotFoundException("Notification", "id", notificationId);
         }
         notificationRepository.deleteById(notificationId);
     }
@@ -115,14 +116,14 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional(readOnly = true)
     public NotificationResponse getNotificationById(Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found with id: " + notificationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", notificationId));
         return mapToResponse(notification);
     }
 
     @Override
     public NotificationResponse toggleNotificationStatus(Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found with id: " + notificationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", notificationId));
 
         notification.setIsActive(!notification.getIsActive());
         Notification updatedNotification = notificationRepository.save(notification);

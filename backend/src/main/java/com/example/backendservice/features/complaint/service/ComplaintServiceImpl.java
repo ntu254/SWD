@@ -1,5 +1,6 @@
 package com.example.backendservice.features.complaint.service;
 
+import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.common.sse.SseEventData;
 import com.example.backendservice.common.sse.SseService;
 import com.example.backendservice.features.complaint.dto.ComplaintResponse;
@@ -37,7 +38,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Override
     public ComplaintResponse createComplaint(Long citizenId, CreateComplaintRequest request) {
         Citizen citizen = citizenRepository.findById(citizenId)
-                .orElseThrow(() -> new RuntimeException("Citizen not found with id: " + citizenId));
+                .orElseThrow(() -> new ResourceNotFoundException("Citizen", "id", citizenId));
 
         Complaint complaint = Complaint.builder()
                 .citizen(citizen)
@@ -68,7 +69,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Transactional(readOnly = true)
     public ComplaintResponse getComplaintById(Long complaintId) {
         Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> new RuntimeException("Complaint not found with id: " + complaintId));
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint", "id", complaintId));
         return mapToResponse(complaint);
     }
 
@@ -83,7 +84,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Override
     public ComplaintResponse updateComplaintStatus(Long complaintId, UpdateComplaintStatusRequest request) {
         Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> new RuntimeException("Complaint not found with id: " + complaintId));
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint", "id", complaintId));
 
         String oldStatus = complaint.getStatus();
 
@@ -101,7 +102,7 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         if (request.getResolvedById() != null) {
             User admin = userRepository.findById(request.getResolvedById())
-                    .orElseThrow(() -> new RuntimeException("Admin not found with id: " + request.getResolvedById()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Admin", "id", request.getResolvedById()));
             complaint.setResolvedBy(admin);
         }
 
@@ -119,7 +120,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Override
     public void deleteComplaint(Long complaintId) {
         if (!complaintRepository.existsById(complaintId)) {
-            throw new RuntimeException("Complaint not found with id: " + complaintId);
+            throw new ResourceNotFoundException("Complaint", "id", complaintId);
         }
         complaintRepository.deleteById(complaintId);
     }
