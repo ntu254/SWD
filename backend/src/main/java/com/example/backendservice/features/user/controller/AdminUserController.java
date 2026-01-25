@@ -1,0 +1,105 @@
+package com.example.backendservice.features.user.controller;
+
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.backendservice.common.dto.ApiResponse;
+import com.example.backendservice.features.user.dto.admin.AdminUserResponse;
+import com.example.backendservice.features.user.dto.admin.CreateUserRequest;
+import com.example.backendservice.features.user.dto.admin.UpdateUserRequest;
+import com.example.backendservice.features.user.dto.admin.UpdateUserRoleRequest;
+import com.example.backendservice.features.user.dto.admin.UpdateUserStatusRequest;
+import com.example.backendservice.features.user.service.AdminUserService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/admin/users")
+@RequiredArgsConstructor
+public class AdminUserController {
+
+    private final AdminUserService adminUserService;
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AdminUserResponse>> createUser(@Valid @RequestBody CreateUserRequest request) {
+        AdminUserResponse response = adminUserService.createUser(request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success("User created successfully", response));
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Page<AdminUserResponse>>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) Boolean enabled,
+            @RequestParam(required = false) String status) {
+        Page<AdminUserResponse> users = adminUserService.getAllUsers(page, size, q, role, enabled, status);
+        return ResponseEntity.ok(ApiResponse.success(users));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AdminUserResponse>> getUserById(@PathVariable Long id) {
+        AdminUserResponse response = adminUserService.getUserById(id);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AdminUserResponse>> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserRequest request) {
+        AdminUserResponse response = adminUserService.updateUser(id, request);
+        return ResponseEntity.ok(ApiResponse.success("User updated successfully", response));
+    }
+
+    @PatchMapping("/{id}/role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AdminUserResponse>> updateUserRole(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserRoleRequest request) {
+        AdminUserResponse response = adminUserService.updateUserRole(id, request);
+        return ResponseEntity.ok(ApiResponse.success("User role updated successfully", response));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AdminUserResponse>> updateUserStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserStatusRequest request) {
+        AdminUserResponse response = adminUserService.updateUserStatus(id, request);
+        return ResponseEntity.ok(ApiResponse.success("User status updated successfully", response));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
+        adminUserService.deleteUser(id);
+        return ResponseEntity.ok(ApiResponse.success("User deleted successfully", null));
+    }
+
+    @PostMapping("/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AdminUserResponse>> restoreUser(@PathVariable Long id) {
+        AdminUserResponse response = adminUserService.restoreUser(id);
+        return ResponseEntity.ok(ApiResponse.success("User restored successfully", response));
+    }
+}

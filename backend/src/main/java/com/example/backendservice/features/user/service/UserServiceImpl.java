@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.features.user.dto.UpdateUserRequest;
 import com.example.backendservice.features.user.dto.UserResponse;
+import com.example.backendservice.features.user.entity.AccountStatus;
 import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.UserRepository;
 
@@ -62,7 +63,13 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
-        userRepository.delete(user);
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        user.setAccountStatus(AccountStatus.PENDING_DELETE);
+        user.setDeletedAt(now);
+        user.setDeleteScheduledAt(now.plusDays(14));
+        user.setEnabled(false);
+        userRepository.save(user);
     }
 
     private UserResponse mapToResponse(User user) {

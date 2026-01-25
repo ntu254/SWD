@@ -7,6 +7,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -55,5 +57,31 @@ public class User {
 
     public String getFullName() {
         return firstName + " " + lastName;
+    }
+
+    private LocalDateTime deletedAt;
+
+    @Column(nullable = false, unique = true)
+    private String userCode;
+
+    private String phone;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private AccountStatus accountStatus;
+
+    private LocalDateTime deleteScheduledAt;
+
+    @Column(length = 500)
+    private String banReason;
+
+    @jakarta.persistence.PrePersist
+    public void prePersist() {
+        if (this.userCode == null || this.userCode.isEmpty()) {
+            this.userCode = java.util.UUID.randomUUID().toString();
+        }
+        if (this.accountStatus == null) {
+            this.accountStatus = AccountStatus.ACTIVE;
+        }
     }
 }
