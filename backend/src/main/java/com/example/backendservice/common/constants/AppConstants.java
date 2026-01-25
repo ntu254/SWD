@@ -23,4 +23,6 @@ public final class AppConstants {
     // Roles
     public static final String ROLE_USER = "ROLE_USER";
     public static final String ROLE_ADMIN = "ROLE_ADMIN";
+    public static final String ROLE_ENTERPRISE = "ROLE_ENTERPRISE";
+    public static final String ROLE_COLLECTOR = "ROLE_COLLECTOR";
 }
