@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -54,11 +55,18 @@ class ComplaintServiceTest {
     private User testUser;
     private Citizen testCitizen;
     private Complaint testComplaint;
+    private UUID userId;
+    private UUID citizenId;
+    private UUID complaintId;
 
     @BeforeEach
     void setUp() {
+        userId = UUID.randomUUID();
+        citizenId = UUID.randomUUID();
+        complaintId = UUID.randomUUID();
+
         testUser = User.builder()
-                .id(1L)
+                .id(userId)
                 .firstName("John")
                 .lastName("Doe")
                 .email("john@example.com")
@@ -67,7 +75,7 @@ class ComplaintServiceTest {
                 .build();
 
         testCitizen = Citizen.builder()
-                .id(1L)
+                .id(citizenId)
                 .user(testUser)
                 .address("123 Main St")
                 .currentPoints(100)
@@ -75,7 +83,7 @@ class ComplaintServiceTest {
                 .build();
 
         testComplaint = Complaint.builder()
-                .id(1L)
+                .id(complaintId)
                 .citizen(testCitizen)
                 .title("Test Complaint")
                 .description("This is a test complaint")
@@ -98,11 +106,11 @@ class ComplaintServiceTest {
                 .priority("High")
                 .build();
 
-        when(citizenRepository.findById(1L)).thenReturn(Optional.of(testCitizen));
+        when(citizenRepository.findById(citizenId)).thenReturn(Optional.of(testCitizen));
         when(complaintRepository.save(any(Complaint.class))).thenReturn(testComplaint);
 
         // When
-        ComplaintResponse response = complaintService.createComplaint(1L, request);
+        ComplaintResponse response = complaintService.createComplaint(citizenId, request);
 
         // Then
         assertThat(response).isNotNull();
@@ -120,10 +128,11 @@ class ComplaintServiceTest {
                 .description("Test description")
                 .build();
 
-        when(citizenRepository.findById(999L)).thenReturn(Optional.empty());
+        UUID randomId = UUID.randomUUID();
+        when(citizenRepository.findById(randomId)).thenReturn(Optional.empty());
 
         // When/Then
-        assertThatThrownBy(() -> complaintService.createComplaint(999L, request))
+        assertThatThrownBy(() -> complaintService.createComplaint(randomId, request))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Citizen not found");
     }
@@ -132,14 +141,14 @@ class ComplaintServiceTest {
     @DisplayName("Should get complaint by ID")
     void getComplaintById_Success() {
         // Given
-        when(complaintRepository.findById(1L)).thenReturn(Optional.of(testComplaint));
+        when(complaintRepository.findById(complaintId)).thenReturn(Optional.of(testComplaint));
 
         // When
-        ComplaintResponse response = complaintService.getComplaintById(1L);
+        ComplaintResponse response = complaintService.getComplaintById(complaintId);
 
         // Then
         assertThat(response).isNotNull();
-        assertThat(response.getId()).isEqualTo(1L);
+        assertThat(response.getId()).isEqualTo(complaintId);
     }
 
     @Test
@@ -149,10 +158,10 @@ class ComplaintServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Complaint> page = new PageImpl<>(List.of(testComplaint));
 
-        when(complaintRepository.findByCitizen_Id(1L, pageable)).thenReturn(page);
+        when(complaintRepository.findByCitizen_Id(citizenId, pageable)).thenReturn(page);
 
         // When
-        Page<ComplaintResponse> result = complaintService.getComplaintsByCitizen(1L, pageable);
+        Page<ComplaintResponse> result = complaintService.getComplaintsByCitizen(citizenId, pageable);
 
         // Then
         assertThat(result.getContent()).hasSize(1);
@@ -168,11 +177,11 @@ class ComplaintServiceTest {
                 .adminResponse("Issue has been fixed")
                 .build();
 
-        when(complaintRepository.findById(1L)).thenReturn(Optional.of(testComplaint));
+        when(complaintRepository.findById(complaintId)).thenReturn(Optional.of(testComplaint));
         when(complaintRepository.save(any(Complaint.class))).thenReturn(testComplaint);
 
         // When
-        ComplaintResponse response = complaintService.updateComplaintStatus(1L, request);
+        ComplaintResponse response = complaintService.updateComplaintStatus(complaintId, request);
 
         // Then
         assertThat(response).isNotNull();
@@ -183,14 +192,14 @@ class ComplaintServiceTest {
     @DisplayName("Should delete complaint")
     void deleteComplaint_Success() {
         // Given
-        when(complaintRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(complaintRepository).deleteById(1L);
+        when(complaintRepository.existsById(complaintId)).thenReturn(true);
+        doNothing().when(complaintRepository).deleteById(complaintId);
 
         // When
-        complaintService.deleteComplaint(1L);
+        complaintService.deleteComplaint(complaintId);
 
         // Then
-        verify(complaintRepository, times(1)).deleteById(1L);
+        verify(complaintRepository, times(1)).deleteById(complaintId);
     }
 
     @Test

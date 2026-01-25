@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +31,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final SseService sseService;
 
     @Override
-    public NotificationResponse createNotification(Long adminId, CreateNotificationRequest request) {
+    public NotificationResponse createNotification(UUID adminId, CreateNotificationRequest request) {
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new ResourceNotFoundException("Admin", "id", adminId));
 
@@ -56,7 +57,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public NotificationResponse updateNotification(Long notificationId, UpdateNotificationRequest request) {
+    public NotificationResponse updateNotification(UUID notificationId, UpdateNotificationRequest request) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", notificationId));
 
@@ -97,7 +98,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void deleteNotification(Long notificationId) {
+    public void deleteNotification(UUID notificationId) {
         if (!notificationRepository.existsById(notificationId)) {
             throw new ResourceNotFoundException("Notification", "id", notificationId);
         }
@@ -114,14 +115,14 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
-    public NotificationResponse getNotificationById(Long notificationId) {
+    public NotificationResponse getNotificationById(UUID notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", notificationId));
         return mapToResponse(notification);
     }
 
     @Override
-    public NotificationResponse toggleNotificationStatus(Long notificationId) {
+    public NotificationResponse toggleNotificationStatus(UUID notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", notificationId));
 

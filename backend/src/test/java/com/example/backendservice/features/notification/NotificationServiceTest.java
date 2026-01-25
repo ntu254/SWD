@@ -24,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,11 +49,16 @@ class NotificationServiceTest {
 
     private User adminUser;
     private Notification testNotification;
+    private UUID adminId;
+    private UUID notificationId;
 
     @BeforeEach
     void setUp() {
+        adminId = UUID.randomUUID();
+        notificationId = UUID.randomUUID();
+
         adminUser = User.builder()
-                .id(1L)
+                .id(adminId)
                 .firstName("Admin")
                 .lastName("User")
                 .email("admin@example.com")
@@ -61,7 +67,7 @@ class NotificationServiceTest {
                 .build();
 
         testNotification = Notification.builder()
-                .id(1L)
+                .id(notificationId)
                 .title("Test Notification")
                 .content("This is a test notification content")
                 .type("General")
@@ -86,11 +92,11 @@ class NotificationServiceTest {
                 .priority("High")
                 .build();
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(adminUser));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(adminUser));
         when(notificationRepository.save(any(Notification.class))).thenReturn(testNotification);
 
         // When
-        NotificationResponse response = notificationService.createNotification(1L, request);
+        NotificationResponse response = notificationService.createNotification(adminId, request);
 
         // Then
         assertThat(response).isNotNull();
@@ -108,10 +114,11 @@ class NotificationServiceTest {
                 .content("Content")
                 .build();
 
-        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+        UUID randomId = UUID.randomUUID();
+        when(userRepository.findById(randomId)).thenReturn(Optional.empty());
 
         // When/Then
-        assertThatThrownBy(() -> notificationService.createNotification(999L, request))
+        assertThatThrownBy(() -> notificationService.createNotification(randomId, request))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Admin not found");
     }
@@ -120,14 +127,14 @@ class NotificationServiceTest {
     @DisplayName("Should get notification by ID")
     void getNotificationById_Success() {
         // Given
-        when(notificationRepository.findById(1L)).thenReturn(Optional.of(testNotification));
+        when(notificationRepository.findById(notificationId)).thenReturn(Optional.of(testNotification));
 
         // When
-        NotificationResponse response = notificationService.getNotificationById(1L);
+        NotificationResponse response = notificationService.getNotificationById(notificationId);
 
         // Then
         assertThat(response).isNotNull();
-        assertThat(response.getId()).isEqualTo(1L);
+        assertThat(response.getId()).isEqualTo(notificationId);
         assertThat(response.getTitle()).isEqualTo("Test Notification");
     }
 
@@ -141,11 +148,11 @@ class NotificationServiceTest {
                 .isActive(true)
                 .build();
 
-        when(notificationRepository.findById(1L)).thenReturn(Optional.of(testNotification));
+        when(notificationRepository.findById(notificationId)).thenReturn(Optional.of(testNotification));
         when(notificationRepository.save(any(Notification.class))).thenReturn(testNotification);
 
         // When
-        NotificationResponse response = notificationService.updateNotification(1L, request);
+        NotificationResponse response = notificationService.updateNotification(notificationId, request);
 
         // Then
         assertThat(response).isNotNull();
@@ -156,11 +163,11 @@ class NotificationServiceTest {
     @DisplayName("Should toggle notification status")
     void toggleNotificationStatus_Success() {
         // Given
-        when(notificationRepository.findById(1L)).thenReturn(Optional.of(testNotification));
+        when(notificationRepository.findById(notificationId)).thenReturn(Optional.of(testNotification));
         when(notificationRepository.save(any(Notification.class))).thenReturn(testNotification);
 
         // When
-        NotificationResponse response = notificationService.toggleNotificationStatus(1L);
+        NotificationResponse response = notificationService.toggleNotificationStatus(notificationId);
 
         // Then
         assertThat(response).isNotNull();
@@ -171,14 +178,14 @@ class NotificationServiceTest {
     @DisplayName("Should delete notification")
     void deleteNotification_Success() {
         // Given
-        when(notificationRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(notificationRepository).deleteById(1L);
+        when(notificationRepository.existsById(notificationId)).thenReturn(true);
+        doNothing().when(notificationRepository).deleteById(notificationId);
 
         // When
-        notificationService.deleteNotification(1L);
+        notificationService.deleteNotification(notificationId);
 
         // Then
-        verify(notificationRepository, times(1)).deleteById(1L);
+        verify(notificationRepository, times(1)).deleteById(notificationId);
     }
 
     @Test

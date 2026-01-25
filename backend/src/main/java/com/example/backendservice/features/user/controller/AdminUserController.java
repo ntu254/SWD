@@ -26,6 +26,8 @@ import com.example.backendservice.features.user.service.AdminUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
@@ -57,7 +59,7 @@ public class AdminUserController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<AdminUserResponse>> getUserById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<AdminUserResponse>> getUserById(@PathVariable UUID id) {
         AdminUserResponse response = adminUserService.getUserById(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -65,7 +67,7 @@ public class AdminUserController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AdminUserResponse>> updateUser(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody UpdateUserRequest request) {
         AdminUserResponse response = adminUserService.updateUser(id, request);
         return ResponseEntity.ok(ApiResponse.success("User updated successfully", response));
@@ -74,7 +76,7 @@ public class AdminUserController {
     @PatchMapping("/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AdminUserResponse>> updateUserRole(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody UpdateUserRoleRequest request) {
         AdminUserResponse response = adminUserService.updateUserRole(id, request);
         return ResponseEntity.ok(ApiResponse.success("User role updated successfully", response));
@@ -83,7 +85,7 @@ public class AdminUserController {
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AdminUserResponse>> updateUserStatus(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody UpdateUserStatusRequest request) {
         AdminUserResponse response = adminUserService.updateUserStatus(id, request);
         return ResponseEntity.ok(ApiResponse.success("User status updated successfully", response));
@@ -91,14 +93,14 @@ public class AdminUserController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
         adminUserService.deleteUser(id);
         return ResponseEntity.ok(ApiResponse.success("User deleted successfully", null));
     }
 
     @PostMapping("/{id}/restore")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<AdminUserResponse>> restoreUser(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<AdminUserResponse>> restoreUser(@PathVariable UUID id) {
         AdminUserResponse response = adminUserService.restoreUser(id);
         return ResponseEntity.ok(ApiResponse.success("User restored successfully", response));
     }

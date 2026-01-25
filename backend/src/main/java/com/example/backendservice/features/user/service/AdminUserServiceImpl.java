@@ -111,14 +111,14 @@ public class AdminUserServiceImpl implements AdminUserService {
     }
 
     @Override
-    public AdminUserResponse getUserById(Long id) {
+    public AdminUserResponse getUserById(UUID id) {
         User user = getUserAndCheckNotHardDeleted(id);
         return mapToResponse(user);
     }
 
     @Override
     @Transactional
-    public AdminUserResponse updateUser(Long id, UpdateUserRequest request) {
+    public AdminUserResponse updateUser(UUID id, UpdateUserRequest request) {
         User user = getUserAndCheckNotHardDeleted(id);
 
         // Prevent modification of PENDING_DELETE users
@@ -150,7 +150,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Override
     @Transactional
-    public AdminUserResponse updateUserRole(Long id, UpdateUserRoleRequest request) {
+    public AdminUserResponse updateUserRole(UUID id, UpdateUserRoleRequest request) {
         User user = getUserAndCheckNotHardDeleted(id);
 
         // Prevent modification of PENDING_DELETE users
@@ -171,7 +171,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Override
     @Transactional
-    public AdminUserResponse updateUserStatus(Long id, UpdateUserStatusRequest request) {
+    public AdminUserResponse updateUserStatus(UUID id, UpdateUserStatusRequest request) {
         User user = getUserAndCheckNotHardDeleted(id);
 
         // Rule: admin cannot change status of another admin
@@ -218,7 +218,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Override
     @Transactional
-    public void deleteUser(Long id) {
+    public void deleteUser(UUID id) {
         User user = getUserAndCheckNotHardDeleted(id);
 
         // Prevent deleting users already in PENDING_DELETE
@@ -236,7 +236,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Override
     @Transactional
-    public AdminUserResponse restoreUser(Long id) {
+    public AdminUserResponse restoreUser(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
 
@@ -260,7 +260,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         return mapToResponse(restoredUser);
     }
 
-    private User getUserAndCheckNotHardDeleted(Long id) {
+    private User getUserAndCheckNotHardDeleted(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
 

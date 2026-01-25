@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/complaints")
@@ -40,7 +41,7 @@ public class ComplaintController {
     })
     @PostMapping("/citizen/{citizenId}")
     public ResponseEntity<ApiResponse<ComplaintResponse>> createComplaint(
-            @Parameter(description = "ID of the citizen") @PathVariable Long citizenId,
+            @Parameter(description = "ID of the citizen") @PathVariable UUID citizenId,
             @Valid @RequestBody CreateComplaintRequest request) {
 
         ComplaintResponse response = complaintService.createComplaint(citizenId, request);
@@ -51,7 +52,7 @@ public class ComplaintController {
     @Operation(summary = "Get citizen's complaints", description = "Retrieves all complaints submitted by a specific citizen")
     @GetMapping("/citizen/{citizenId}")
     public ResponseEntity<ApiResponse<PageResponse<ComplaintResponse>>> getComplaintsByCitizen(
-            @Parameter(description = "ID of the citizen") @PathVariable Long citizenId,
+            @Parameter(description = "ID of the citizen") @PathVariable UUID citizenId,
             @Parameter(description = "Page number") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
             @Parameter(description = "Sort field") @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -87,7 +88,7 @@ public class ComplaintController {
     @Operation(summary = "Get complaint by ID", description = "Retrieves detailed information about a specific complaint")
     @GetMapping("/{complaintId}")
     public ResponseEntity<ApiResponse<ComplaintResponse>> getComplaintById(
-            @Parameter(description = "ID of the complaint") @PathVariable Long complaintId) {
+            @Parameter(description = "ID of the complaint") @PathVariable UUID complaintId) {
         ComplaintResponse response = complaintService.getComplaintById(complaintId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -95,7 +96,7 @@ public class ComplaintController {
     @Operation(summary = "Update complaint status (Admin)", description = "Admin updates the status and response for a complaint")
     @PutMapping("/admin/{complaintId}/status")
     public ResponseEntity<ApiResponse<ComplaintResponse>> updateComplaintStatus(
-            @Parameter(description = "ID of the complaint") @PathVariable Long complaintId,
+            @Parameter(description = "ID of the complaint") @PathVariable UUID complaintId,
             @RequestBody UpdateComplaintStatusRequest request) {
 
         ComplaintResponse response = complaintService.updateComplaintStatus(complaintId, request);
@@ -105,7 +106,7 @@ public class ComplaintController {
     @Operation(summary = "Delete complaint (Admin)", description = "Admin deletes a complaint from the system")
     @DeleteMapping("/admin/{complaintId}")
     public ResponseEntity<ApiResponse<Void>> deleteComplaint(
-            @Parameter(description = "ID of the complaint") @PathVariable Long complaintId) {
+            @Parameter(description = "ID of the complaint") @PathVariable UUID complaintId) {
         complaintService.deleteComplaint(complaintId);
         return ResponseEntity.ok(ApiResponse.success("Complaint deleted successfully", null));
     }

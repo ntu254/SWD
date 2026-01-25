@@ -9,9 +9,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Repository
-public interface NotificationRepository extends JpaRepository<Notification, Long> {
+public interface NotificationRepository extends JpaRepository<Notification, UUID> {
 
         // Find active notifications
         Page<Notification> findByIsActiveTrue(Pageable pageable);
@@ -48,5 +49,5 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
         long countByIsActiveTrue();
 
         // Find notifications created by admin
-        Page<Notification> findByCreatedById(Long adminId, Pageable pageable);
+        Page<Notification> findByCreatedById(UUID adminId, Pageable pageable);
 }

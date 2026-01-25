@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +37,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     private final SseService sseService;
 
     @Override
-    public ComplaintResponse createComplaint(Long citizenId, CreateComplaintRequest request) {
+    public ComplaintResponse createComplaint(UUID citizenId, CreateComplaintRequest request) {
         Citizen citizen = citizenRepository.findById(citizenId)
                 .orElseThrow(() -> new ResourceNotFoundException("Citizen", "id", citizenId));
 
@@ -60,14 +61,14 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ComplaintResponse> getComplaintsByCitizen(Long citizenId, Pageable pageable) {
+    public Page<ComplaintResponse> getComplaintsByCitizen(UUID citizenId, Pageable pageable) {
         return complaintRepository.findByCitizen_Id(citizenId, pageable)
                 .map(this::mapToResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ComplaintResponse getComplaintById(Long complaintId) {
+    public ComplaintResponse getComplaintById(UUID complaintId) {
         Complaint complaint = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> new ResourceNotFoundException("Complaint", "id", complaintId));
         return mapToResponse(complaint);
@@ -82,7 +83,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
-    public ComplaintResponse updateComplaintStatus(Long complaintId, UpdateComplaintStatusRequest request) {
+    public ComplaintResponse updateComplaintStatus(UUID complaintId, UpdateComplaintStatusRequest request) {
         Complaint complaint = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> new ResourceNotFoundException("Complaint", "id", complaintId));
 
@@ -118,7 +119,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
-    public void deleteComplaint(Long complaintId) {
+    public void deleteComplaint(UUID complaintId) {
         if (!complaintRepository.existsById(complaintId)) {
             throw new ResourceNotFoundException("Complaint", "id", complaintId);
         }

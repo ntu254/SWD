@@ -3,6 +3,7 @@ package com.example.backendservice.features.notification.dto;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 public class NotificationResponse {
 
-    private Long id;
+    private UUID id;
     private String title;
     private String content;
     private String type;
@@ -20,7 +21,7 @@ public class NotificationResponse {
     private Boolean isActive;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-    private Long createdById;
+    private UUID createdById;
     private String createdByName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
