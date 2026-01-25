@@ -18,29 +18,36 @@ import com.example.backendservice.features.user.dto.UserResponse;
 import com.example.backendservice.features.user.service.UserService;
 
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
+@Tag(name = "User Management", description = "APIs for managing user profiles")
 public class UserController {
 
     private final UserService userService;
 
     @GetMapping
+    @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get all users", description = "Retrieve a list of all users (Admin only)")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
         List<UserResponse> users = userService.getAllUsers();
         return ResponseEntity.ok(ApiResponse.success(users));
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get user by ID", description = "Retrieve detailed information of a specific user")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable Long id) {
         UserResponse user = userService.getUserById(id);
         return ResponseEntity.ok(ApiResponse.success(user));
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update user", description = "Update profile information for a specific user")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable Long id,
             @Valid @RequestBody UpdateUserRequest request) {
@@ -49,7 +56,9 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Delete user", description = "Permanently remove a user account (Admin only)")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.ok(ApiResponse.success("User deleted successfully", null));
