@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Gift, History, Settings } from 'lucide-react';
+import { LayoutDashboard, Gift, History, Settings, Users } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   return (
@@ -10,12 +10,15 @@ export const Sidebar: React.FC = () => {
           <span className="font-bold text-xl text-gray-900">Admin</span>
         </div>
       </div>
-      
+
       <nav className="flex-1 p-4 space-y-1">
         <a href="/admin/dashboard" className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
           <LayoutDashboard size={20} /> Dashboard
         </a>
-        <a href="/admin/rewards" className="flex items-center gap-3 px-3 py-2.5 bg-brand-50 text-brand-700 font-medium rounded-lg transition-colors">
+        <a href="/admin/users" className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+          <Users size={20} /> User Management
+        </a>
+        <a href="/admin/rewards" className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
           <Gift size={20} /> Rewards
         </a>
         <a href="/admin/redemptions" className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
