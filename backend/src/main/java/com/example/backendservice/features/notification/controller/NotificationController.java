@@ -19,6 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
@@ -32,7 +34,7 @@ public class NotificationController {
     @Operation(summary = "Create notification (Admin)", description = "Admin creates a new notification to inform users about maintenance, updates, etc.")
     @PostMapping("/admin/{adminId}")
     public ResponseEntity<ApiResponse<NotificationResponse>> createNotification(
-            @Parameter(description = "ID of the admin creating notification") @PathVariable Long adminId,
+            @Parameter(description = "ID of the admin creating notification") @PathVariable UUID adminId,
             @Valid @RequestBody CreateNotificationRequest request) {
 
         NotificationResponse response = notificationService.createNotification(adminId, request);
@@ -62,7 +64,7 @@ public class NotificationController {
     @Operation(summary = "Get notification by ID (Admin)", description = "Retrieves detailed information about a specific notification")
     @GetMapping("/admin/{notificationId}")
     public ResponseEntity<ApiResponse<NotificationResponse>> getNotificationById(
-            @Parameter(description = "ID of the notification") @PathVariable Long notificationId) {
+            @Parameter(description = "ID of the notification") @PathVariable UUID notificationId) {
         NotificationResponse response = notificationService.getNotificationById(notificationId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -70,7 +72,7 @@ public class NotificationController {
     @Operation(summary = "Update notification (Admin)", description = "Admin updates an existing notification")
     @PutMapping("/admin/{notificationId}")
     public ResponseEntity<ApiResponse<NotificationResponse>> updateNotification(
-            @Parameter(description = "ID of the notification") @PathVariable Long notificationId,
+            @Parameter(description = "ID of the notification") @PathVariable UUID notificationId,
             @RequestBody UpdateNotificationRequest request) {
 
         NotificationResponse response = notificationService.updateNotification(notificationId, request);
@@ -80,7 +82,7 @@ public class NotificationController {
     @Operation(summary = "Toggle notification status (Admin)", description = "Admin toggles the active status of a notification")
     @PatchMapping("/admin/{notificationId}/toggle")
     public ResponseEntity<ApiResponse<NotificationResponse>> toggleNotificationStatus(
-            @Parameter(description = "ID of the notification") @PathVariable Long notificationId) {
+            @Parameter(description = "ID of the notification") @PathVariable UUID notificationId) {
         NotificationResponse response = notificationService.toggleNotificationStatus(notificationId);
         return ResponseEntity.ok(ApiResponse.success("Notification status toggled successfully", response));
     }
@@ -88,7 +90,7 @@ public class NotificationController {
     @Operation(summary = "Delete notification (Admin)", description = "Admin deletes a notification from the system")
     @DeleteMapping("/admin/{notificationId}")
     public ResponseEntity<ApiResponse<Void>> deleteNotification(
-            @Parameter(description = "ID of the notification") @PathVariable Long notificationId) {
+            @Parameter(description = "ID of the notification") @PathVariable UUID notificationId) {
         notificationService.deleteNotification(notificationId);
         return ResponseEntity.ok(ApiResponse.success("Notification deleted successfully", null));
     }

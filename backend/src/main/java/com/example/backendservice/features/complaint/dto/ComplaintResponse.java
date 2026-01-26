@@ -3,6 +3,7 @@ package com.example.backendservice.features.complaint.dto;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -11,8 +12,8 @@ import java.time.LocalDateTime;
 @Builder
 public class ComplaintResponse {
 
-    private Long id;
-    private Long citizenId;
+    private UUID id;
+    private UUID citizenId;
     private String citizenName;
     private String citizenEmail;
     private String title;
@@ -21,7 +22,7 @@ public class ComplaintResponse {
     private String status;
     private String priority;
     private String adminResponse;
-    private Long resolvedById;
+    private UUID resolvedById;
     private String resolvedByName;
     private LocalDateTime resolvedAt;
     private LocalDateTime createdAt;

@@ -8,21 +8,23 @@ import com.example.backendservice.features.user.dto.admin.UpdateUserRequest;
 import com.example.backendservice.features.user.dto.admin.UpdateUserRoleRequest;
 import com.example.backendservice.features.user.dto.admin.UpdateUserStatusRequest;
 
+import java.util.UUID;
+
 public interface AdminUserService {
 
     AdminUserResponse createUser(CreateUserRequest request);
 
     Page<AdminUserResponse> getAllUsers(int page, int size, String search, String role, Boolean enabled, String status);
 
-    AdminUserResponse getUserById(Long id);
+    AdminUserResponse getUserById(UUID id);
 
-    AdminUserResponse updateUser(Long id, UpdateUserRequest request);
+    AdminUserResponse updateUser(UUID id, UpdateUserRequest request);
 
-    AdminUserResponse updateUserRole(Long id, UpdateUserRoleRequest request);
+    AdminUserResponse updateUserRole(UUID id, UpdateUserRoleRequest request);
 
-    AdminUserResponse updateUserStatus(Long id, UpdateUserStatusRequest request);
+    AdminUserResponse updateUserStatus(UUID id, UpdateUserStatusRequest request);
 
-    void deleteUser(Long id);
+    void deleteUser(UUID id);
 
-    AdminUserResponse restoreUser(Long id);
+    AdminUserResponse restoreUser(UUID id);
 }

@@ -7,22 +7,23 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.Map;
+import java.util.UUID;
 
 public interface ComplaintService {
 
     // Citizen operations
-    ComplaintResponse createComplaint(Long citizenId, CreateComplaintRequest request);
+    ComplaintResponse createComplaint(UUID citizenId, CreateComplaintRequest request);
 
-    Page<ComplaintResponse> getComplaintsByCitizen(Long citizenId, Pageable pageable);
+    Page<ComplaintResponse> getComplaintsByCitizen(UUID citizenId, Pageable pageable);
 
-    ComplaintResponse getComplaintById(Long complaintId);
+    ComplaintResponse getComplaintById(UUID complaintId);
 
     // Admin operations
     Page<ComplaintResponse> getAllComplaints(String status, String category, String priority, Pageable pageable);
 
-    ComplaintResponse updateComplaintStatus(Long complaintId, UpdateComplaintStatusRequest request);
+    ComplaintResponse updateComplaintStatus(UUID complaintId, UpdateComplaintStatusRequest request);
 
-    void deleteComplaint(Long complaintId);
+    void deleteComplaint(UUID complaintId);
 
     Map<String, Long> getComplaintStatistics();
 }

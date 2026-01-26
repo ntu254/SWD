@@ -5,11 +5,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface CitizenRepository extends JpaRepository<Citizen, Long> {
+public interface CitizenRepository extends JpaRepository<Citizen, UUID> {
 
-    Optional<Citizen> findByUser_Id(Long userId);
+    Optional<Citizen> findByUser_Id(UUID userId);
 
-    boolean existsByUser_Id(Long userId);
+    boolean existsByUser_Id(UUID userId);
 }

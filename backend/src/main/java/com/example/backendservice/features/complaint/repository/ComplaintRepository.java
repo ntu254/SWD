@@ -9,12 +9,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
+public interface ComplaintRepository extends JpaRepository<Complaint, UUID> {
 
         // Find all complaints by citizen
-        Page<Complaint> findByCitizen_Id(Long citizenId, Pageable pageable);
+        Page<Complaint> findByCitizen_Id(UUID citizenId, Pageable pageable);
 
         // Find complaints by status
         Page<Complaint> findByStatus(String status, Pageable pageable);

@@ -2,6 +2,8 @@ package com.example.backendservice.features.complaint.dto;
 
 import lombok.*;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -13,5 +15,5 @@ public class UpdateComplaintStatusRequest {
 
     private String adminResponse;
 
-    private Long resolvedById;
+    private UUID resolvedById;
 }

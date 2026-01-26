@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "citizens")
@@ -16,8 +17,9 @@ import java.time.LocalDateTime;
 public class Citizen {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
@@ -42,7 +44,7 @@ public class Citizen {
     private LocalDateTime updatedAt;
 
     // Helper method to get userId
-    public Long getUserId() {
+    public UUID getUserId() {
         return user != null ? user.getId() : null;
     }
 }
