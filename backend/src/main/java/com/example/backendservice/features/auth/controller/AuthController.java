@@ -17,6 +17,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Authentication", description = "APIs for user registration and login")
+
 public class AuthController {
 
     private final AuthService authService;
@@ -35,6 +38,7 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Email already registered or invalid request")
     })
     @PostMapping("/register")
+    @Operation(summary = "Register new user", description = "Create a new user account with email and password")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
         log.info("[AUTH_CONTROLLER] Register request for: {}", request.getEmail());
         AuthResponse response = authService.register(request);
@@ -49,6 +53,7 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid credentials")
     })
     @PostMapping("/login")
+    @Operation(summary = "Login user", description = "Authenticate user and return JWT access token")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         log.info("[AUTH_CONTROLLER] Login request for: {}", request.getEmail());
         AuthResponse response = authService.login(request);

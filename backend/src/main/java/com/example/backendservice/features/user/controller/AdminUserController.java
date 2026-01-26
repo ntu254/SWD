@@ -24,6 +24,8 @@ import com.example.backendservice.features.user.dto.admin.UpdateUserStatusReques
 import com.example.backendservice.features.user.service.AdminUserService;
 
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 import java.util.UUID;
@@ -31,12 +33,15 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
+@Tag(name = "Admin User Management", description = "APIs for administrative user management")
 public class AdminUserController {
 
     private final AdminUserService adminUserService;
 
     @PostMapping
+    @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Create user", description = "Create a new user with specific role and details")
     public ResponseEntity<ApiResponse<AdminUserResponse>> createUser(@Valid @RequestBody CreateUserRequest request) {
         AdminUserResponse response = adminUserService.createUser(request);
         return ResponseEntity
@@ -45,7 +50,9 @@ public class AdminUserController {
     }
 
     @GetMapping
+    @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get all users (paginated)", description = "Retrieve users with pagination and filtering options")
     public ResponseEntity<ApiResponse<Page<AdminUserResponse>>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -58,14 +65,18 @@ public class AdminUserController {
     }
 
     @GetMapping("/{id}")
+    @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AdminUserResponse>> getUserById(@PathVariable UUID id) {
+
         AdminUserResponse response = adminUserService.getUserById(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PutMapping("/{id}")
+    @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Update user", description = "Update user details (Admin override)")
     public ResponseEntity<ApiResponse<AdminUserResponse>> updateUser(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateUserRequest request) {
@@ -74,7 +85,9 @@ public class AdminUserController {
     }
 
     @PatchMapping("/{id}/role")
+    @PatchMapping("/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Update user role", description = "Change user role (e.g. MEMBER to ADMIN)")
     public ResponseEntity<ApiResponse<AdminUserResponse>> updateUserRole(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateUserRoleRequest request) {
@@ -83,7 +96,9 @@ public class AdminUserController {
     }
 
     @PatchMapping("/{id}/status")
+    @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Update user status", description = "Change user status (e.g. ACTIVE to BANNED)")
     public ResponseEntity<ApiResponse<AdminUserResponse>> updateUserStatus(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateUserStatusRequest request) {
@@ -92,15 +107,19 @@ public class AdminUserController {
     }
 
     @DeleteMapping("/{id}")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
+
         adminUserService.deleteUser(id);
         return ResponseEntity.ok(ApiResponse.success("User deleted successfully", null));
     }
 
     @PostMapping("/{id}/restore")
+    @PostMapping("/{id}/restore")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AdminUserResponse>> restoreUser(@PathVariable UUID id) {
+
         AdminUserResponse response = adminUserService.restoreUser(id);
         return ResponseEntity.ok(ApiResponse.success("User restored successfully", response));
     }
