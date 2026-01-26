@@ -11,8 +11,12 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@google/genai": "^1.37.0",
     "@hookform/resolvers": "^3.3.4",
+    "@mui/icons-material": "^7.3.7",
+    "@mui/material": "^7.3.7",
     "axios": "^1.6.2",
     "lucide-react": "^0.562.0",
     "react": "^18.2.0",

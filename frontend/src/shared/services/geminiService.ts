@@ -2,9 +2,10 @@ import { GoogleGenAI } from "@google/genai";
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
 
-const ai = new GoogleGenAI({ apiKey });
+const getAI = () => new GoogleGenAI({ apiKey });
 
 export const getGeminiResponse = async (userMessage: string): Promise<string> => {
+
     try {
         if (!apiKey) return "Hệ thống đang bảo trì kết nối.";
 
@@ -15,7 +16,7 @@ export const getGeminiResponse = async (userMessage: string): Promise<string> =>
       Trả lời ngắn gọn, thân thiện.
     `;
 
-        const response = await ai.models.generateContent({
+        const response = await getAI().models.generateContent({
             model,
             contents: [{ role: 'user', parts: [{ text: userMessage }] }],
             config: { systemInstruction, temperature: 0.7 }
@@ -44,7 +45,7 @@ export const analyzeWasteImage = async (base64Image: string): Promise<{ type: st
         const model = 'gemini-2.5-flash-image';
         const prompt = "Analyze this image of waste. Identify the main type of waste (Organic, Recyclable, Hazardous, or Bulky). Return a JSON with keys: type (string in Vietnamese), confidence (percentage), points (estimated integer), and a short advice message (Vietnamese).";
 
-        const response = await ai.models.generateContent({
+        const response = await getAI().models.generateContent({
             model,
             contents: {
                 parts: [

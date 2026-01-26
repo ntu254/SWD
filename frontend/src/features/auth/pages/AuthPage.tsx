@@ -8,7 +8,7 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
 
   const handleSuccess = () => {
-    navigate('/');
+    navigate('/admin/processing-capacity');
   };
 
   return (

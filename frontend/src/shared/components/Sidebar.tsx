@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Gift, History, Settings, Users } from 'lucide-react';
+import { LayoutDashboard, Gift, History, Settings, Users, BarChart3 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   return (
@@ -23,6 +23,9 @@ export const Sidebar: React.FC = () => {
         </a>
         <a href="/admin/redemptions" className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
           <History size={20} /> Redemptions
+        </a>
+        <a href="/admin/processing-capacity" className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+          <BarChart3 size={20} /> Năng lực xử lý
         </a>
         <a href="/admin/settings" className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
           <Settings size={20} /> Settings

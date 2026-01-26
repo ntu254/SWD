@@ -4,6 +4,7 @@ import HomePage from './features/landing/pages/HomePage';
 import AuthPage from './features/auth/pages/AuthPage';
 import { RewardManagementPage } from '@features/reward-redemption';
 import { UserManagementPage } from '@features/user-management';
+import { ProcessingCapacityPage } from '@features/processing-capacity';
 import './App.css';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/admin/rewards" element={<RewardManagementPage />} />
           <Route path="/admin/users" element={<UserManagementPage />} />
+          <Route path="/admin/processing-capacity" element={<ProcessingCapacityPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
