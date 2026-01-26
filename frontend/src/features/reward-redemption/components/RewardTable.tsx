@@ -109,43 +109,58 @@ export const RewardTable: React.FC<RewardTableProps> = ({
               <td className="p-4">
                 {getStatusBadge(reward.status)}
               </td>
-              <td className="p-4 text-sm text-gray-500">
-                {reward.validUntil ? (
-                  <div className="flex flex-col">
-                    <span className="text-xs">Until</span>
-                    <span>{new Date(reward.validUntil).toLocaleDateString()}</span>
+              <td className="p-4 text-sm">
+                {reward.validFrom || reward.validUntil ? (
+                  <div className="flex flex-col gap-0.5">
+                    {reward.validFrom && (
+                      <div className="text-xs text-gray-500">
+                        From: {new Date(reward.validFrom).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </div>
+                    )}
+                    {reward.validUntil && (
+                      <div className="text-xs text-gray-700 font-medium">
+                        Until: {new Date(reward.validUntil).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <span className="text-gray-400 italic">No expiry</span>
+                  <span className="text-gray-400 italic text-xs">No expiry</span>
                 )}
               </td>
               <td className="p-4 text-right relative">
-                <div className="flex items-center justify-end gap-2 opacity-100">
+                <div className="flex items-center justify-end gap-1">
                   <button
-                    onClick={() => onEdit(reward)}
-                    className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded-md transition-colors"
-                    title="Edit"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(reward);
+                    }}
+                    className="p-2 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all duration-200"
+                    title="Edit Reward"
                   >
                     <Edit size={16} />
                   </button>
                   <button
-                    onClick={() => {
-                        const newStock = prompt('Update Stock:', reward.stock.toString());
-                        if (newStock && !isNaN(Number(newStock))) {
-                            onUpdateStock(reward.id, Number(newStock));
-                        }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const newStock = prompt('Enter new stock quantity:', reward.stock.toString());
+                      if (newStock !== null && newStock.trim() !== '' && !isNaN(Number(newStock))) {
+                        onUpdateStock(reward.id, Number(newStock));
+                      }
                     }}
-                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
                     title="Update Stock"
                   >
                     <Box size={16} />
                   </button>
                   <button
-                    onClick={() => {
-                        if (confirm(`Delete "${reward.name}"?`)) onDelete(reward.id);
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Are you sure you want to delete "${reward.name}"?\n\nThis action cannot be undone.`)) {
+                        onDelete(reward.id);
+                      }
                     }}
-                    className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                    title="Delete"
+                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                    title="Delete Reward"
                   >
                     <Trash2 size={16} />
                   </button>
