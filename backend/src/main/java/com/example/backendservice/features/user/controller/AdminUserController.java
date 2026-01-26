@@ -39,7 +39,6 @@ public class AdminUserController {
     private final AdminUserService adminUserService;
 
     @PostMapping
-    @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create user", description = "Create a new user with specific role and details")
     public ResponseEntity<ApiResponse<AdminUserResponse>> createUser(@Valid @RequestBody CreateUserRequest request) {
@@ -49,7 +48,6 @@ public class AdminUserController {
                 .body(ApiResponse.success("User created successfully", response));
     }
 
-    @GetMapping
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get all users (paginated)", description = "Retrieve users with pagination and filtering options")
@@ -65,7 +63,6 @@ public class AdminUserController {
     }
 
     @GetMapping("/{id}")
-    @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AdminUserResponse>> getUserById(@PathVariable UUID id) {
 
@@ -73,7 +70,6 @@ public class AdminUserController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @PutMapping("/{id}")
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update user", description = "Update user details (Admin override)")
@@ -85,7 +81,6 @@ public class AdminUserController {
     }
 
     @PatchMapping("/{id}/role")
-    @PatchMapping("/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update user role", description = "Change user role (e.g. MEMBER to ADMIN)")
     public ResponseEntity<ApiResponse<AdminUserResponse>> updateUserRole(
@@ -95,7 +90,6 @@ public class AdminUserController {
         return ResponseEntity.ok(ApiResponse.success("User role updated successfully", response));
     }
 
-    @PatchMapping("/{id}/status")
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update user status", description = "Change user status (e.g. ACTIVE to BANNED)")
@@ -107,7 +101,6 @@ public class AdminUserController {
     }
 
     @DeleteMapping("/{id}")
-    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
 
@@ -115,7 +108,6 @@ public class AdminUserController {
         return ResponseEntity.ok(ApiResponse.success("User deleted successfully", null));
     }
 
-    @PostMapping("/{id}/restore")
     @PostMapping("/{id}/restore")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AdminUserResponse>> restoreUser(@PathVariable UUID id) {

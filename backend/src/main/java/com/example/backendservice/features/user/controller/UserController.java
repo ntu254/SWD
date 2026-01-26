@@ -32,7 +32,6 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get all users", description = "Retrieve a list of all users (Admin only)")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
@@ -56,7 +55,6 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User updated successfully", user));
     }
 
-    @DeleteMapping("/{id}")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
