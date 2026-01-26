@@ -30,7 +30,7 @@ public class CollectorProfile {
     private User user;
 
     @Column(name = "enterprise_id")
-    private Long enterpriseId; // FK to Enterprise (khi có Enterprise entity)
+    private UUID enterpriseId; // FK to Enterprise (khi có Enterprise entity)
 
     @Column(name = "availability_status", length = 20)
     @Builder.Default
