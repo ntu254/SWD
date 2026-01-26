@@ -22,14 +22,16 @@ import com.example.backendservice.features.user.repository.UserRepository;
 import com.example.backendservice.security.jwt.JwtTokenProvider;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class AuthServiceImpl implements AuthService {
+
+        private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
         private final UserRepository userRepository;
         private final CitizenRepository citizenRepository;
@@ -116,24 +118,26 @@ public class AuthServiceImpl implements AuthService {
         /**
          * Tạo profile tương ứng dựa trên role
          */
-        private void createProfileBasedOnRole(User user, RoleType roleType) {
+        private void createProfileBasedOnRole(User registeredUser, RoleType roleType) {
                 switch (roleType) {
                         case CITIZEN -> {
                                 Citizen citizen = Citizen.builder()
-                                                .user(user)
+                                                .user(registeredUser)
                                                 .currentPoints(0)
                                                 .membershipTier("Bronze")
                                                 .build();
                                 citizenRepository.save(citizen);
-                                log.info("[PROFILE_CREATED] Created CitizenProfile for user: {}", user.getId());
+                                // log.info("[PROFILE_CREATED] Created CitizenProfile for user: {}",
+                                // registeredUser.getId());
                         }
                         case COLLECTOR -> {
                                 CollectorProfile profile = CollectorProfile.builder()
-                                                .user(user)
+                                                .user(registeredUser)
                                                 .availabilityStatus("available")
                                                 .build();
                                 collectorProfileRepository.save(profile);
-                                log.info("[PROFILE_CREATED] Created CollectorProfile for user: {}", user.getId());
+                                // log.info("[PROFILE_CREATED] Created CollectorProfile for user: {}",
+                                // registeredUser.getId());
                         }
                         case ADMIN, ENTERPRISE -> {
                                 // Admin và Enterprise không cần profile riêng

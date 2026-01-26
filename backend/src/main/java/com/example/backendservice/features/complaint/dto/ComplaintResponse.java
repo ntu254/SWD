@@ -27,4 +27,64 @@ public class ComplaintResponse {
     private LocalDateTime resolvedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getCitizenId() {
+        return citizenId;
+    }
+
+    public String getCitizenName() {
+        return citizenName;
+    }
+
+    public String getCitizenEmail() {
+        return citizenEmail;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public String getPriority() {
+        return priority;
+    }
+
+    public String getAdminResponse() {
+        return adminResponse;
+    }
+
+    public UUID getResolvedById() {
+        return resolvedById;
+    }
+
+    public String getResolvedByName() {
+        return resolvedByName;
+    }
+
+    public LocalDateTime getResolvedAt() {
+        return resolvedAt;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
 }

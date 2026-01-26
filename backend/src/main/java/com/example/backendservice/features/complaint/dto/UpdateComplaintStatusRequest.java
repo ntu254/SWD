@@ -11,9 +11,17 @@ import java.util.UUID;
 @Builder
 public class UpdateComplaintStatusRequest {
 
-    private String status; // Pending, In_Progress, Resolved, Rejected
-
-    private String adminResponse;
-
     private UUID resolvedById;
+
+    public String getStatus() {
+        return status;
+    }
+
+    public String getAdminResponse() {
+        return adminResponse;
+    }
+
+    public UUID getResolvedById() {
+        return resolvedById;
+    }
 }

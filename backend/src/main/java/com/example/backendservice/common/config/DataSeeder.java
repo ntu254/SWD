@@ -9,7 +9,8 @@ import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.CitizenRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,9 +21,10 @@ import java.time.LocalDateTime;
 
 @Configuration
 @RequiredArgsConstructor
-@Slf4j
 @Profile("dev") // Only run in dev profile
 public class DataSeeder {
+
+        private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
 
         private final UserRepository userRepository;
         private final CitizenRepository citizenRepository;
