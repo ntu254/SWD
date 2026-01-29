@@ -12,7 +12,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.PostMapping;
+
+import com.example.backendservice.common.constants.AppConstants;
 import com.example.backendservice.common.dto.ApiResponse;
+import com.example.backendservice.features.auth.dto.RegisterRequest;
 import com.example.backendservice.features.user.dto.UpdateUserRequest;
 import com.example.backendservice.features.user.dto.UserResponse;
 import com.example.backendservice.features.user.service.UserService;
@@ -53,5 +59,32 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.ok(ApiResponse.success("User deleted successfully", null));
+    }
+
+    @PostMapping("/enterprise")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<UserResponse>> createEnterprise(@Valid @RequestBody RegisterRequest request) {
+        UserResponse response = userService.createEnterprise(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Enterprise created successfully", response));
+    }
+
+    @PostMapping("/collector")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENTERPRISE')")
+    public ResponseEntity<ApiResponse<UserResponse>> createCollector(
+            @Valid @RequestBody RegisterRequest request,
+            Authentication authentication) {
+
+        String currentEmail = authentication.getName();
+        boolean isEnterprise = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals(AppConstants.ROLE_ENTERPRISE));
+
+        Long enterpriseId = null;
+        if (isEnterprise) {
+            UserResponse currentUser = userService.getUserByEmail(currentEmail);
+            enterpriseId = currentUser.getId();
+        }
+
+        UserResponse response = userService.createCollector(request, enterpriseId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Collector created successfully", response));
     }
 }
