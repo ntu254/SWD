@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useAuth } from '@shared/contexts';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,8 +12,8 @@ const createUserSchema = z.object({
     email: z.string().email('Invalid email format'),
     phone: z.string().regex(/^\+?[0-9]{10,15}$/, 'Invalid phone format'),
     password: z.string().min(6, 'Password must be at least 6 characters').max(100),
-    role: z.enum(['CITIZEN', 'ENTERPRISE'], {
-        errorMap: () => ({ message: 'Role must be CITIZEN or ENTERPRISE' }),
+    role: z.enum(['CITIZEN', 'ENTERPRISE', 'COLLECTOR'], {
+        errorMap: () => ({ message: 'Invalid role selected' }),
     }),
 });
 
@@ -38,6 +39,7 @@ export const UserFormDialog: React.FC<UserFormDialogProps> = ({
     onClose,
     onSubmit,
 }) => {
+    const { user: currentUser } = useAuth();
     const isEditMode = !!user;
 
     const {
@@ -63,10 +65,20 @@ export const UserFormDialog: React.FC<UserFormDialogProps> = ({
                 lastName: user.lastName,
                 phone: user.phone,
             });
+        } else if (isOpen && !user) {
+            // Default values for new user based on current user role
+            reset({
+                role: (currentUser?.role === 'ENTERPRISE' ? 'COLLECTOR' : '') as any,
+                firstName: '',
+                lastName: '',
+                email: '',
+                password: '',
+                phone: '',
+            });
         } else if (!isOpen) {
             reset();
         }
-    }, [isOpen, user, reset]);
+    }, [isOpen, user, reset, currentUser]);
 
     const handleFormSubmit = async (data: CreateFormData | UpdateFormData) => {
         try {
@@ -215,10 +227,16 @@ export const UserFormDialog: React.FC<UserFormDialogProps> = ({
                                     ? 'border-red-300 focus:ring-red-500'
                                     : 'border-gray-300 focus:ring-brand-500'
                                     } focus:ring-2 focus:border-transparent outline-none transition-all cursor-pointer`}
+                                disabled={currentUser?.role === 'ENTERPRISE'}
                             >
                                 <option value="">Select role...</option>
-                                <option value="CITIZEN">👤 Citizen</option>
-                                <option value="ENTERPRISE">🏭 Enterprise</option>
+                                {currentUser?.role !== 'ENTERPRISE' && (
+                                    <>
+                                        <option value="CITIZEN">👤 Citizen</option>
+                                        <option value="ENTERPRISE">🏭 Enterprise</option>
+                                    </>
+                                )}
+                                <option value="COLLECTOR">🚚 Collector</option>
                             </select>
                             {(errors as any).role && (
                                 <p className="mt-1 text-sm text-red-600">{(errors as any).role.message}</p>

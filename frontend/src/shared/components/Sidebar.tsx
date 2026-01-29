@@ -1,13 +1,17 @@
 import React from 'react';
+import { useAuth } from '@shared/contexts';
 import { LayoutDashboard, Gift, History, Settings, Users } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
+  const { user } = useAuth();
   return (
     <aside className="w-64 bg-white border-r border-gray-200 hidden lg:flex flex-col z-10">
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">SWD</div>
-          <span className="font-bold text-xl text-gray-900">Admin</span>
+          <span className="font-bold text-xl text-gray-900">
+            {user?.role === 'ENTERPRISE' ? 'Enterprise' : 'Admin'}
+          </span>
         </div>
       </div>
 

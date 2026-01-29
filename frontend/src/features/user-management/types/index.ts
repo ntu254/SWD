@@ -27,7 +27,7 @@ export interface CreateUserRequest {
     lastName: string;
     email: string;
     password: string;
-    role: 'ENTERPRISE' | 'CITIZEN';
+    role: 'ENTERPRISE' | 'CITIZEN' | 'COLLECTOR';
     phone: string;
 }
 

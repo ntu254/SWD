@@ -39,7 +39,7 @@ public class AdminUserController {
     private final AdminUserService adminUserService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENTERPRISE')")
     @Operation(summary = "Create user", description = "Create a new user with specific role and details")
     public ResponseEntity<ApiResponse<AdminUserResponse>> createUser(@Valid @RequestBody CreateUserRequest request) {
         AdminUserResponse response = adminUserService.createUser(request);
@@ -49,7 +49,7 @@ public class AdminUserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENTERPRISE')")
     @Operation(summary = "Get all users (paginated)", description = "Retrieve users with pagination and filtering options")
     public ResponseEntity<ApiResponse<Page<AdminUserResponse>>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
