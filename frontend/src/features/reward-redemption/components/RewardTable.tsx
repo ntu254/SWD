@@ -31,15 +31,25 @@ export const RewardTable: React.FC<RewardTableProps> = ({
       EXPIRED: 'bg-amber-100 text-amber-700 border-amber-200',
     };
     return (
-      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status as keyof typeof styles] || styles.INACTIVE}`}>
+      <span
+        className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status as keyof typeof styles] || styles.INACTIVE}`}
+      >
         {status.replace(/_/g, ' ')}
       </span>
     );
   };
 
   const getStockBadge = (stock: number) => {
-    if (stock === 0) return <span className="text-red-600 font-medium bg-red-50 px-2 py-0.5 rounded">Out of stock</span>;
-    if (stock < 10) return <span className="text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded">Low: {stock}</span>;
+    if (stock === 0)
+      return (
+        <span className="text-red-600 font-medium bg-red-50 px-2 py-0.5 rounded">Out of stock</span>
+      );
+    if (stock < 10)
+      return (
+        <span className="text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded">
+          Low: {stock}
+        </span>
+      );
     return <span className="text-gray-700">{stock} in stock</span>;
   };
 
@@ -70,7 +80,7 @@ export const RewardTable: React.FC<RewardTableProps> = ({
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {rewards.map((reward) => (
+          {rewards.map(reward => (
             <tr key={reward.id} className="hover:bg-gray-50 transition-colors group">
               <td className="p-4">
                 <input
@@ -91,7 +101,9 @@ export const RewardTable: React.FC<RewardTableProps> = ({
                   </div>
                   <div>
                     <div className="font-medium text-gray-900">{reward.name}</div>
-                    <div className="text-xs text-gray-500 truncate max-w-[200px]">{reward.description}</div>
+                    <div className="text-xs text-gray-500 truncate max-w-[200px]">
+                      {reward.description}
+                    </div>
                   </div>
                 </div>
               </td>
@@ -101,25 +113,33 @@ export const RewardTable: React.FC<RewardTableProps> = ({
                 </span>
               </td>
               <td className="p-4">
-                <div className="font-semibold text-gray-900">{reward.pointsCost.toLocaleString()}</div>
+                <div className="font-semibold text-gray-900">
+                  {reward.pointsCost.toLocaleString()}
+                </div>
               </td>
-              <td className="p-4">
-                {getStockBadge(reward.stock)}
-              </td>
-              <td className="p-4">
-                {getStatusBadge(reward.status)}
-              </td>
+              <td className="p-4">{getStockBadge(reward.stock)}</td>
+              <td className="p-4">{getStatusBadge(reward.status)}</td>
               <td className="p-4 text-sm">
                 {reward.validFrom || reward.validUntil ? (
                   <div className="flex flex-col gap-0.5">
                     {reward.validFrom && (
                       <div className="text-xs text-gray-500">
-                        From: {new Date(reward.validFrom).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        From:{' '}
+                        {new Date(reward.validFrom).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
                       </div>
                     )}
                     {reward.validUntil && (
                       <div className="text-xs text-gray-700 font-medium">
-                        Until: {new Date(reward.validUntil).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        Until:{' '}
+                        {new Date(reward.validUntil).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
                       </div>
                     )}
                   </div>
@@ -130,7 +150,7 @@ export const RewardTable: React.FC<RewardTableProps> = ({
               <td className="p-4 text-right relative">
                 <div className="flex items-center justify-end gap-1">
                   <button
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
                       onEdit(reward);
                     }}
@@ -140,7 +160,7 @@ export const RewardTable: React.FC<RewardTableProps> = ({
                     <Edit size={16} />
                   </button>
                   <button
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
                       const newStock = prompt('Enter new stock quantity:', reward.stock.toString());
                       if (newStock !== null && newStock.trim() !== '' && !isNaN(Number(newStock))) {
@@ -153,9 +173,13 @@ export const RewardTable: React.FC<RewardTableProps> = ({
                     <Box size={16} />
                   </button>
                   <button
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
-                      if (window.confirm(`Are you sure you want to delete "${reward.name}"?\n\nThis action cannot be undone.`)) {
+                      if (
+                        window.confirm(
+                          `Are you sure you want to delete "${reward.name}"?\n\nThis action cannot be undone.`
+                        )
+                      ) {
                         onDelete(reward.id);
                       }
                     }}
