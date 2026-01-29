@@ -1,6 +1,6 @@
 package com.example.backendservice.features.complaint.entity;
 
-import com.example.backendservice.features.user.entity.Citizen;
+import com.example.backendservice.features.user.entity.CitizenProfile;
 import com.example.backendservice.features.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,7 +25,7 @@ public class Complaint {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "citizen_id", nullable = false)
-    private Citizen citizen;
+    private CitizenProfile citizen;
 
     @Column(name = "title", nullable = false)
     private String title;

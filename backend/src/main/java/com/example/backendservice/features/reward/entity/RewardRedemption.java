@@ -1,6 +1,6 @@
 package com.example.backendservice.features.reward.entity;
 
-import com.example.backendservice.features.user.entity.Citizen;
+import com.example.backendservice.features.user.entity.CitizenProfile;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -24,7 +24,7 @@ public class RewardRedemption {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "citizen_id", nullable = false)
-    private Citizen citizen;
+    private CitizenProfile citizen;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reward_item_id", nullable = false)

@@ -7,9 +7,9 @@ import com.example.backendservice.features.complaint.dto.UpdateComplaintStatusRe
 import com.example.backendservice.features.complaint.entity.Complaint;
 import com.example.backendservice.features.complaint.repository.ComplaintRepository;
 import com.example.backendservice.features.complaint.service.ComplaintServiceImpl;
-import com.example.backendservice.features.user.entity.Citizen;
+import com.example.backendservice.features.user.entity.CitizenProfile;
 import com.example.backendservice.features.user.entity.User;
-import com.example.backendservice.features.user.repository.CitizenRepository;
+import com.example.backendservice.features.user.repository.CitizenProfileRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,7 +41,7 @@ class ComplaintServiceTest {
     private ComplaintRepository complaintRepository;
 
     @Mock
-    private CitizenRepository citizenRepository;
+    private CitizenProfileRepository citizenProfileRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -53,7 +53,7 @@ class ComplaintServiceTest {
     private ComplaintServiceImpl complaintService;
 
     private User testUser;
-    private Citizen testCitizen;
+    private CitizenProfile testCitizen;
     private Complaint testComplaint;
     private UUID userId;
     private UUID citizenId;
@@ -74,7 +74,7 @@ class ComplaintServiceTest {
                 .role("CITIZEN")
                 .build();
 
-        testCitizen = Citizen.builder()
+        testCitizen = CitizenProfile.builder()
                 .id(citizenId)
                 .user(testUser)
                 .address("123 Main St")
@@ -106,7 +106,7 @@ class ComplaintServiceTest {
                 .priority("High")
                 .build();
 
-        when(citizenRepository.findById(citizenId)).thenReturn(Optional.of(testCitizen));
+        when(citizenProfileRepository.findById(citizenId)).thenReturn(Optional.of(testCitizen));
         when(complaintRepository.save(any(Complaint.class))).thenReturn(testComplaint);
 
         // When
@@ -129,12 +129,12 @@ class ComplaintServiceTest {
                 .build();
 
         UUID randomId = UUID.randomUUID();
-        when(citizenRepository.findById(randomId)).thenReturn(Optional.empty());
+        when(citizenProfileRepository.findById(randomId)).thenReturn(Optional.empty());
 
         // When/Then
         assertThatThrownBy(() -> complaintService.createComplaint(randomId, request))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Citizen not found");
+                .hasMessageContaining("CitizenProfile not found");
     }
 
     @Test

@@ -12,11 +12,11 @@ import com.example.backendservice.features.auth.dto.AuthResponse;
 import com.example.backendservice.features.auth.dto.LoginRequest;
 import com.example.backendservice.features.auth.dto.RegisterRequest;
 import com.example.backendservice.features.user.dto.UserResponse;
-import com.example.backendservice.features.user.entity.Citizen;
+import com.example.backendservice.features.user.entity.CitizenProfile;
 import com.example.backendservice.features.user.entity.CollectorProfile;
 import com.example.backendservice.features.user.entity.RoleType;
 import com.example.backendservice.features.user.entity.User;
-import com.example.backendservice.features.user.repository.CitizenRepository;
+import com.example.backendservice.features.user.repository.CitizenProfileRepository;
 import com.example.backendservice.features.user.repository.CollectorProfileRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
 import com.example.backendservice.security.jwt.JwtTokenProvider;
@@ -32,7 +32,7 @@ import java.time.LocalDateTime;
 public class AuthServiceImpl implements AuthService {
 
         private final UserRepository userRepository;
-        private final CitizenRepository citizenRepository;
+        private final CitizenProfileRepository citizenProfileRepository;
         private final CollectorProfileRepository collectorProfileRepository;
         private final PasswordEncoder passwordEncoder;
         private final JwtTokenProvider jwtTokenProvider;
@@ -119,12 +119,12 @@ public class AuthServiceImpl implements AuthService {
         private void createProfileBasedOnRole(User user, RoleType roleType) {
                 switch (roleType) {
                         case CITIZEN -> {
-                                Citizen citizen = Citizen.builder()
+                                CitizenProfile citizen = CitizenProfile.builder()
                                                 .user(user)
                                                 .currentPoints(0)
                                                 .membershipTier("Bronze")
                                                 .build();
-                                citizenRepository.save(citizen);
+                                citizenProfileRepository.save(citizen);
                                 log.info("[PROFILE_CREATED] Created CitizenProfile for user: {}", user.getId());
                         }
                         case COLLECTOR -> {
