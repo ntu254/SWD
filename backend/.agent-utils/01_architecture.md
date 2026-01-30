@@ -10,7 +10,7 @@
 
 | Layer | Technology | Version |
 |-------|------------|---------|
-| **Language** | `Java` | `17` |
+| **Language** | `Java` | `21` |
 | **Framework** | `Spring Boot` | `3.5.0` |
 | **Database** | `PostgreSQL` | `15+` |
 | **Build Tool** | `Maven` | `3.8+` |
