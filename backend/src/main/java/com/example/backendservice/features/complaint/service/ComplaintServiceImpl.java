@@ -142,6 +142,96 @@ public class ComplaintServiceImpl implements ComplaintService {
         return stats;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ComplaintResponse> getComplaintsByEnterprise(UUID enterpriseId, Pageable pageable) {
+        return complaintRepository.findByEnterpriseId(enterpriseId, pageable)
+                .map(this::mapToResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ComplaintResponse> getComplaintsByCollector(UUID collectorId, Pageable pageable) {
+        return complaintRepository.findByCollector_Id(collectorId, pageable)
+                .map(this::mapToResponse);
+    }
+
+    @Override
+    public ComplaintResponse startInvestigation(UUID complaintId, UUID adminId) {
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint", "id", complaintId));
+
+        if (!"PENDING".equals(complaint.getStatus())) {
+            throw new IllegalStateException("Only PENDING complaints can be investigated");
+        }
+
+        complaint.setStatus("INVESTIGATING");
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin", "id", adminId));
+        complaint.setResolvedBy(admin);
+
+        Complaint savedComplaint = complaintRepository.save(complaint);
+        return mapToResponse(savedComplaint);
+    }
+
+    @Override
+    public ComplaintResponse resolveComplaint(UUID complaintId, UUID adminId, String response) {
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint", "id", complaintId));
+
+        if (!"INVESTIGATING".equals(complaint.getStatus()) && !"PENDING".equals(complaint.getStatus())) {
+            throw new IllegalStateException("Only PENDING or INVESTIGATING complaints can be resolved");
+        }
+
+        complaint.setStatus("RESOLVED");
+        complaint.setAdminResponse(response);
+        complaint.setResolvedAt(LocalDateTime.now());
+
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin", "id", adminId));
+        complaint.setResolvedBy(admin);
+
+        Complaint savedComplaint = complaintRepository.save(complaint);
+        ComplaintResponse complaintResponse = mapToResponse(savedComplaint);
+
+        // Notify citizen about resolution
+        notifyCitizenComplaintUpdate(complaintResponse);
+
+        return complaintResponse;
+    }
+
+    @Override
+    public ComplaintResponse rejectComplaint(UUID complaintId, UUID adminId, String reason) {
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint", "id", complaintId));
+
+        if (!"INVESTIGATING".equals(complaint.getStatus()) && !"PENDING".equals(complaint.getStatus())) {
+            throw new IllegalStateException("Only PENDING or INVESTIGATING complaints can be rejected");
+        }
+
+        complaint.setStatus("REJECTED");
+        complaint.setAdminResponse(reason);
+        complaint.setResolvedAt(LocalDateTime.now());
+
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin", "id", adminId));
+        complaint.setResolvedBy(admin);
+
+        Complaint savedComplaint = complaintRepository.save(complaint);
+        ComplaintResponse complaintResponse = mapToResponse(savedComplaint);
+
+        // Notify citizen about rejection
+        notifyCitizenComplaintUpdate(complaintResponse);
+
+        return complaintResponse;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countComplaintsByCollector(UUID collectorId) {
+        return complaintRepository.countByCollector_Id(collectorId);
+    }
+
     /**
      * Notify admins about new complaint via SSE
      */

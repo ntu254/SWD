@@ -17,6 +17,12 @@ public interface ComplaintRepository extends JpaRepository<Complaint, UUID> {
         // Find all complaints by citizen
         Page<Complaint> findByCitizen_Id(UUID citizenId, Pageable pageable);
 
+        // Find complaints by collector
+        Page<Complaint> findByCollector_Id(UUID collectorId, Pageable pageable);
+
+        // Find complaints by task assignment
+        List<Complaint> findByTaskAssignment_Id(UUID taskAssignmentId);
+
         // Find complaints by status
         Page<Complaint> findByStatus(String status, Pageable pageable);
 
@@ -25,6 +31,9 @@ public interface ComplaintRepository extends JpaRepository<Complaint, UUID> {
 
         // Count complaints by status
         long countByStatus(String status);
+
+        // Count complaints by collector
+        long countByCollector_Id(UUID collectorId);
 
         // Find all complaints with filters for admin
         @Query("SELECT c FROM Complaint c WHERE " +
@@ -40,4 +49,8 @@ public interface ComplaintRepository extends JpaRepository<Complaint, UUID> {
         // Get complaints statistics
         @Query("SELECT c.status, COUNT(c) FROM Complaint c GROUP BY c.status")
         List<Object[]> getComplaintStatsByStatus();
+
+        // Get complaints by collector in enterprise
+        @Query("SELECT c FROM Complaint c WHERE c.collector.enterprise.id = :enterpriseId")
+        Page<Complaint> findByEnterpriseId(@Param("enterpriseId") UUID enterpriseId, Pageable pageable);
 }

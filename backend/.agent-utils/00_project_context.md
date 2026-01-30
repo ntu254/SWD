@@ -17,10 +17,9 @@
 
 ### Description
 ```
-Hệ thống quản lý thu gom rác thải thông minh (Smart Waste Disposal), 
-cho phép Citizen báo cáo rác, Enterprise điều phối thu gom, 
-Collector thực hiện thu gom, và Administrator quản lý toàn bộ hệ thống.
-Bao gồm quản lý phần thưởng đổi điểm cho người dùng.
+Hệ thống quản lý thu gom rác thải thông minh (Smart Waste Disposal).
+Mô hình User tập trung (User Base) mở rộng ra các role (Citizen, Collector, Admin).
+Quản lý quy trình từ Báo cáo rác (Waste Report) -> Lập nhiệm vụ (Task) -> Thu gom (Collection Visit) -> Đánh giá & Thưởng (Rewards/KPI).
 ```
 
 ---
@@ -29,77 +28,83 @@ Bao gồm quản lý phần thưởng đổi điểm cho người dùng.
 
 ### Domain Overview
 ```
-Waste Management / Environmental Services - Thu gom và tái chế rác thải
+Waste Management / Environmental Services - Thu gom, tái chế và quản lý hiệu suất nhân viên.
 ```
 
 ### Key Terminology
 
 | Term | Definition |
 |------|------------|
-| `Citizen` | Người dân báo cáo rác cần thu gom |
-| `Enterprise` | Doanh nghiệp tái chế xử lý rác |
-| `Collector` | Nhân viên thu gom thuộc Enterprise |
-| `Waste Report` | Báo cáo rác do Citizen tạo |
-| `Collection Request` | Yêu cầu thu gom được tạo từ Report |
-| `Complaint` | Khiếu nại từ user về hệ thống hoặc collector |
-| `Notification` | Thông báo hệ thống |
-| `Reward Item` | Phần thưởng có thể đổi bằng điểm |
-| `Reward Redemption` | Lịch sử đổi thưởng của Citizen |
-| `SSE` | Server-Sent Events - realtime notifications |
+| `Service Area` | Khu vực hoạt động, được quản lý bởi Admin/Manager, có biên giới địa lý (geo_boundary). |
+| `Citizen` | Người dân thuộc một khu vực, tạo báo cáo rác. |
+| `Collector` | Nhân viên thu gom, được gán vào Service Area và nhận Task. |
+| `Waste Report` | Báo cáo rác từ Citizen (Location, Weight, Image). |
+| `Task` | Nhiệm vụ thu gom sinh ra từ Report, gán cho Collector. |
+| `Collection Visit` | Lần thực hiện thu gom thực tế của Collector cho một Task. |
+| `KPI` | Chỉ số hiệu suất collector (Weight collected, On-time rate). |
+| `Waste Score/Reward` | Hệ thống điểm thưởng dựa trên loại rác và khối lượng. |
 
 ---
 
-## 3. User Roles & Personas
+## 3. User Roles & Personas (Schema: User Base + Extensions)
 
-| Role | Description | Key Permissions |
-|------|-------------|-----------------|
-| `ADMIN` | Quản trị viên hệ thống | CRUD users, enterprises, rewards, complaints, notifications, dashboard |
-| `CITIZEN` | Người dân sử dụng app | Tạo report, theo dõi trạng thái, đổi điểm thưởng, gửi complaint |
-| `COLLECTOR` | Nhân viên thu gom | Nhận/cập nhật collection requests |
-| `ENTERPRISE` | Doanh nghiệp tái chế | Quản lý collectors, tiếp nhận requests |
+| Role | Extension Table | Description |
+|------|-----------------|-------------|
+| **USER** | `users` | Bảng lõi: Login info, status, points. Tất cả role khác tham chiếu vào đây. |
+| `ADMIN` | `admin_profile` | Quản trị hệ thống, xử lý khiếu nại (Complaint Resolution), quản lý Service Area. |
+| `CITIZEN` | `citizen_profile` | Người dân. Gắn với `Service Area`. Tạo Report, nhận điểm thưởng. |
+| `COLLECTOR` | `collector_profile` | Nhân viên thu gom. Gắn với `Service Area`. Nhận Task, cập nhật Collection Visit. |
 
 ---
 
 ## 4. Core Features
 
-### Feature 1: `Authentication`
-- **Description**: Đăng ký, đăng nhập với JWT token
-- **Status**: `Done`
-- **Priority**: `High`
-- **Endpoints**: `/api/auth/register`, `/api/auth/login`
+### Feature 1: `User & Identity Management`
+- **Schema**: `users`, `citizen_profile`, `collector_profile`, `admin_profile`
+- **Logic**: Centralized auth, role-based profiles.
 
-### Feature 2: `Complaint Management`
-- **Description**: CRUD complaints với filter, pagination, statistics
-- **Status**: `Done`
-- **Priority**: `High`
-- **Roles**: CITIZEN (create), ADMIN (manage)
+### Feature 2: `Service Area & Capability Management`
+- **Schema**: `service_area`, `enterprise_capability`, `enterprise_waste_type`
+- **Logic**: 
+  1. Admin/Enterprise quản lý Service Area (biên giới, hoạt động).
+  2. Cấu hình `EnterpriseCapability`: Loại rác tiếp nhận, công suất handling (kg/day).
+  3. Quản lý đội ngũ Collector thuộc khu vực.
 
-### Feature 3: `Notification Management`
-- **Description**: CRUD notifications với target audience, SSE broadcast
-- **Status**: `Done`
-- **Priority**: `High`
-- **Roles**: ADMIN (create/manage), USER (view)
+### Feature 3: `Waste Reporting & Collection Decision`
+- **Schema**: `waste_report` -> `task`
+- **Logic**: 
+  1. Citizen tạo Report.
+  2. Enterprise xem danh sách Report trong khu vực (có gợi ý ưu tiên).
+  3. Quyết định: **Accept** (tạo Task) hoặc **Reject** (từ chối, lý do).
 
-### Feature 4: `Server-Sent Events (SSE)`
-- **Description**: Real-time thông báo via SSE
-- **Status**: `Done`
-- **Priority**: `Medium`
+### Feature 4: `Task Assignment & Coordination`
+- **Schema**: `task`, `task_assignment`
+- **Logic**: 
+  1. Gán Task cho Collector (manual hoặc auto-suggest).
+  2. Theo dõi trạng thái Task realtime (Pending -> Assigned -> In Progress -> Completed).
+  3. Điều phối lại nếu Collector quá tải hoặc gặp sự cố.
 
-### Feature 5: `Reward Redemption Management` ⭐ CURRENT
-- **Description**: Admin quản lý phần thưởng đổi điểm (CRUD RewardItem, approve/reject RewardRedemption)
-- **Status**: `In Progress`
-- **Priority**: `High`
-- **Tables**: `reward_item`, `reward_redemption`
+### Feature 5: `Collection Execution & Evidence`
+- **Schema**: `collection_visit`, `evidence_photo`
+- **Logic**: Collector thực hiện thu gom, upload ảnh, cập nhật khối lượng thực tế.
 
-### Feature 6: `Waste Report Management`
-- **Description**: Citizen báo cáo rác với ảnh, GPS, phân loại
-- **Status**: `Planned`
-- **Priority**: `High`
+### Feature 6: `Rewards & Rules Configuration`
+- **Schema**: `waste_score_system`, `citizen_reward_rule`, `reward_transaction`
+- **Logic**: 
+  1. Enterprise cấu hình `CitizenRewardRule` (điểm/kg, thưởng thêm theo loại rác/thời gian).
+  2. Hệ thống tự động tính điểm thưởng cho Citizen khi Task hoàn thành.
 
-### Feature 7: `Collection Request Management`
-- **Description**: Enterprise tiếp nhận và phân công collector
-- **Status**: `Planned`
-- **Priority**: `High`
+### Feature 7: `Performance & Complaints`
+- **Schema**: `complaint`, `complaint_resolution`, `collector_kpi_daily`
+- **Logic**: 
+  1. Xử lý khiếu nại về Collector.
+  2. Xem báo cáo KPI Collector (hiệu suất, đúng giờ).
+
+### Feature 8: `Enterprise Analytics`
+- **Schema**: Aggregated data from `collection_visit`, `waste_report`
+- **Logic**: 
+  1. Thống kê khối lượng thu gom theo Loại rác / Khu vực / Thời gian.
+  2. Biểu đồ tỉ lệ tái chế.
 
 ---
 
@@ -107,12 +112,11 @@ Waste Management / Environmental Services - Thu gom và tái chế rác thải
 
 ### Sample Users (Dev Profile)
 
-| Email | Password | Role |
-|-------|----------|------|
-| admin@example.com | admin123 | ADMIN |
-| john@example.com | citizen123 | CITIZEN |
-| jane@example.com | citizen123 | CITIZEN |
-| bob@example.com | citizen123 | CITIZEN |
+| Email | Role | Note |
+|-------|------|------|
+| admin@example.com | ADMIN | Quản lý Service Area HN |
+| collector01@example.com | COLLECTOR | Phụ trách khu vực Cầu Giấy |
+| citizen01@example.com | CITIZEN | Cư dân khu vực Cầu Giấy |
 
 ### Database Configuration
 
@@ -123,29 +127,17 @@ Waste Management / Environmental Services - Thu gom và tái chế rác thải
 
 ---
 
-## 6. External Dependencies
+## 6. Project Constraints
 
-| Service | Purpose | Integration Type |
-|---------|---------|------------------|
-| `PostgreSQL 15+` | Database chính | JDBC |
-| `SSE (Server-Sent Events)` | Real-time notifications | Built-in |
-| `JWT (jjwt 0.11.5)` | Authentication | Library |
-| `SpringDoc OpenAPI 2.3.0` | API Documentation | Library |
+- **Geo-Location**: Xử lý tọa độ (lat/long) cho Report và Service Area.
+- **Real-time**: Cập nhật trạng thái Task cho Collector.
+- **Data Integrity**: Điểm thưởng phải khớp với Collection Visit.
 
 ---
 
-## 7. Project Constraints
-
-- **Performance**: Response time < 500ms
-- **Security**: JWT authentication, Role-based access control, BCrypt password
-- **CORS**: Configured for `localhost:3000`, `localhost:5173`
-
----
-
-## 8. Contact & Resources
+## 7. Contact & Resources
 
 | Resource | Link/Contact |
 |----------|--------------|
 | **Repository** | `https://github.com/ntu254/SWD.git` |
 | **Swagger UI** | `http://localhost:8080/swagger-ui.html` |
-| **API Docs** | `http://localhost:8080/v3/api-docs` |

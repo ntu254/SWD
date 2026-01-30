@@ -65,6 +65,77 @@ public class ComplaintController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(complaints)));
     }
 
+    // ===================== ENTERPRISE ENDPOINTS =====================
+
+    @Operation(summary = "Get complaints by enterprise", description = "Retrieves all complaints for collectors in an enterprise")
+    @GetMapping("/enterprise/{enterpriseId}")
+    public ResponseEntity<ApiResponse<PageResponse<ComplaintResponse>>> getComplaintsByEnterprise(
+            @Parameter(description = "ID of the enterprise") @PathVariable UUID enterpriseId,
+            @Parameter(description = "Page number") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sort field") @RequestParam(defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Sort direction") @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<ComplaintResponse> complaints = complaintService.getComplaintsByEnterprise(enterpriseId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(complaints)));
+    }
+
+    @Operation(summary = "Get complaints by collector", description = "Retrieves all complaints about a specific collector")
+    @GetMapping("/collector/{collectorId}")
+    public ResponseEntity<ApiResponse<PageResponse<ComplaintResponse>>> getComplaintsByCollector(
+            @Parameter(description = "ID of the collector") @PathVariable UUID collectorId,
+            @Parameter(description = "Page number") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sort field") @RequestParam(defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Sort direction") @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<ComplaintResponse> complaints = complaintService.getComplaintsByCollector(collectorId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(complaints)));
+    }
+
+    @Operation(summary = "Count complaints by collector", description = "Returns the total number of complaints for a collector")
+    @GetMapping("/collector/{collectorId}/count")
+    public ResponseEntity<ApiResponse<Long>> countComplaintsByCollector(
+            @Parameter(description = "ID of the collector") @PathVariable UUID collectorId) {
+        long count = complaintService.countComplaintsByCollector(collectorId);
+        return ResponseEntity.ok(ApiResponse.success("Số khiếu nại của collector", count));
+    }
+
+    @Operation(summary = "Start investigation", description = "Admin/Enterprise starts investigating a complaint")
+    @PatchMapping("/{complaintId}/investigate")
+    public ResponseEntity<ApiResponse<ComplaintResponse>> startInvestigation(
+            @Parameter(description = "ID of the complaint") @PathVariable UUID complaintId,
+            @Parameter(description = "ID of the admin handling") @RequestParam UUID adminId) {
+        ComplaintResponse response = complaintService.startInvestigation(complaintId, adminId);
+        return ResponseEntity.ok(ApiResponse.success("Bắt đầu điều tra khiếu nại", response));
+    }
+
+    @Operation(summary = "Resolve complaint", description = "Admin/Enterprise resolves a complaint with a response")
+    @PatchMapping("/{complaintId}/resolve")
+    public ResponseEntity<ApiResponse<ComplaintResponse>> resolveComplaint(
+            @Parameter(description = "ID of the complaint") @PathVariable UUID complaintId,
+            @Parameter(description = "ID of the admin handling") @RequestParam UUID adminId,
+            @Parameter(description = "Resolution response") @RequestParam String response) {
+        ComplaintResponse result = complaintService.resolveComplaint(complaintId, adminId, response);
+        return ResponseEntity.ok(ApiResponse.success("Đã giải quyết khiếu nại", result));
+    }
+
+    @Operation(summary = "Reject complaint", description = "Admin/Enterprise rejects a complaint with a reason")
+    @PatchMapping("/{complaintId}/reject")
+    public ResponseEntity<ApiResponse<ComplaintResponse>> rejectComplaint(
+            @Parameter(description = "ID of the complaint") @PathVariable UUID complaintId,
+            @Parameter(description = "ID of the admin handling") @RequestParam UUID adminId,
+            @Parameter(description = "Rejection reason") @RequestParam String reason) {
+        ComplaintResponse result = complaintService.rejectComplaint(complaintId, adminId, reason);
+        return ResponseEntity.ok(ApiResponse.success("Đã từ chối khiếu nại", result));
+    }
+
     // ===================== ADMIN ENDPOINTS =====================
 
     @Operation(summary = "Get all complaints (Admin)", description = "Admin retrieves all complaints with optional filters")
