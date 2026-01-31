@@ -102,4 +102,29 @@ export const authService = {
     isAuthenticated(): boolean {
         return !!this.getToken();
     },
+
+    /**
+     * Send OTP for password reset
+     */
+    async forgotPassword(email: string): Promise<void> {
+        await apiClient.post('/auth/forgot-password', { email });
+    },
+
+    /**
+     * Reset password with OTP
+     */
+    async resetPassword(email: string, otp: string, newPassword: string): Promise<AuthResponse> {
+        const response: any = await apiClient.post('/auth/reset-password', {
+            email,
+            otp,
+            newPassword
+        });
+
+        // The endpoint returns AuthResponse (auto login)
+        const authData: AuthResponse = response.data;
+        this.setToken(authData.accessToken);
+        this.setUser(authData.user);
+
+        return authData;
+    },
 };
