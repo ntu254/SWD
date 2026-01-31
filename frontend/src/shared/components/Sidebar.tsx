@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '@shared/contexts';
-import { LayoutDashboard, Gift, History, Settings, Users } from 'lucide-react';
+import { LayoutDashboard, Gift, History, Settings, Users, Bell } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   const { user } = useAuth();
@@ -21,6 +21,9 @@ export const Sidebar: React.FC = () => {
         </a>
         <a href="/admin/users" className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
           <Users size={20} /> User Management
+        </a>
+        <a href="/admin/notifications" className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+          <Bell size={20} /> Notifications
         </a>
         <a href="/admin/rewards" className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
           <Gift size={20} /> Rewards
