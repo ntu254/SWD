@@ -37,6 +37,7 @@ public class AuthServiceImpl implements AuthService {
         private final PasswordEncoder passwordEncoder;
         private final JwtTokenProvider jwtTokenProvider;
         private final AuthenticationManager authenticationManager;
+        private final com.example.backendservice.common.service.EmailService emailService;
 
         @Override
         @Transactional
@@ -77,13 +78,7 @@ public class AuthServiceImpl implements AuthService {
                 // Create profile based on role
                 createProfileBasedOnRole(savedUser, roleType);
 
-                String token = jwtTokenProvider.generateToken(savedUser.getEmail());
-
-                return AuthResponse.builder()
-                                .accessToken(token)
-                                .tokenType("Bearer")
-                                .user(mapToUserResponse(savedUser))
-                                .build();
+                return generateTokensAndCreateResponse(savedUser);
         }
 
         @Override
@@ -96,74 +91,17 @@ public class AuthServiceImpl implements AuthService {
                                                 request.getEmail(),
                                                 request.getPassword()));
 
-                String token = jwtTokenProvider.generateToken(authentication);
-
                 User user = userRepository.findByEmail(request.getEmail())
                                 .orElseThrow(() -> new BadRequestException("User not found"));
 
                 // Update lastLoginAt
                 user.setLastLoginAt(LocalDateTime.now());
                 userRepository.save(user);
-                log.info("[AUTH_LOGGED_IN] User logged in: id={}, lastLoginAt={}", user.getId(), user.getLastLoginAt());
-
-                return AuthResponse.builder()
-                                .accessToken(token)
-                                .tokenType("Bearer")
-                                .user(mapToUserResponse(user))
-                                .build();
-        }
-
-        private final com.example.backendservice.common.service.EmailService emailService;
-
-        @Override
-        @Transactional
-        public void forgotPassword(String email) {
-                User user = userRepository.findByEmail(email)
-                                .orElseThrow(() -> new BadRequestException("User not found with email: " + email));
-
-                // Generate 6 digit OTP
-                String otp = String.format("%06d", new java.util.Random().nextInt(999999));
                 
-                user.setOtpCode(otp);
-                user.setOtpExpiry(LocalDateTime.now().plusMinutes(15));
-                userRepository.save(user);
-
-                // Send email
-                emailService.sendOtpEmail(email, otp);
-                log.info("[AUTH_FORGOT_PASS] OTP sent to: {}", email);
+                return generateTokensAndCreateResponse(user);
         }
 
-        @Override
-        @Transactional
-        public AuthResponse resetPassword(String email, String otp, String newPassword) {
-                User user = userRepository.findByEmail(email)
-                                .orElseThrow(() -> new BadRequestException("User not found"));
 
-                // Validate OTP
-                if (user.getOtpCode() == null || !user.getOtpCode().equals(otp)) {
-                        throw new BadRequestException("Invalid OTP");
-                }
-
-                if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
-                        throw new BadRequestException("OTP has expired");
-                }
-
-                // Reset password
-                user.setPassword(passwordEncoder.encode(newPassword));
-                user.setOtpCode(null);
-                user.setOtpExpiry(null);
-                userRepository.save(user);
-
-                log.info("[AUTH_RESET_PASS] Password reset successfully for: {}", email);
-
-                // Auto login after reset
-                String token = jwtTokenProvider.generateToken(user.getEmail());
-                return AuthResponse.builder()
-                                .accessToken(token)
-                                .tokenType("Bearer")
-                                .user(mapToUserResponse(user))
-                                .build();
-        }
 
         /**
          * Tạo profile tương ứng dựa trên role
@@ -206,6 +144,82 @@ public class AuthServiceImpl implements AuthService {
                                 .enabled(user.isEnabled())
                                 .createdAt(user.getCreatedAt())
                                 .updatedAt(user.getUpdatedAt())
+                                .build();
+        }
+
+
+        @Override
+        @Transactional
+        public void forgotPassword(String email) {
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new BadRequestException("User not found with email: " + email));
+
+                String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+                user.setOtpCode(otp);
+                user.setOtpExpiry(LocalDateTime.now().plusMinutes(15));
+                userRepository.save(user);
+
+                emailService.sendOtpEmail(email, otp);
+                log.info("[AUTH_FORGOT_PASS] OTP sent to: {}", email);
+        }
+
+        @Override
+        @Transactional
+        public AuthResponse resetPassword(String email, String otp, String newPassword) {
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new BadRequestException("User not found"));
+
+                if (user.getOtpCode() == null || !user.getOtpCode().equals(otp)) {
+                        throw new BadRequestException("Invalid OTP");
+                }
+
+                if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
+                        throw new BadRequestException("OTP has expired");
+                }
+
+                user.setPassword(passwordEncoder.encode(newPassword));
+                user.setOtpCode(null);
+                user.setOtpExpiry(null);
+                
+                // Clear old refresh token on password reset for security
+                user.setRefreshToken(null); 
+                user.setRefreshTokenExpiry(null);
+                
+                User savedUser = userRepository.save(user);
+
+                log.info("[AUTH_RESET_PASS] Password reset successfully for: {}", email);
+                return generateTokensAndCreateResponse(savedUser);
+        }
+
+        @Override
+        @Transactional
+        public AuthResponse refreshToken(String refreshToken) {
+                User user = userRepository.findByRefreshToken(refreshToken)
+                                .orElseThrow(() -> new BadRequestException("Invalid or expired refresh token"));
+
+                if (user.getRefreshTokenExpiry().isBefore(LocalDateTime.now())) {
+                        throw new BadRequestException("Refresh token has expired");
+                }
+
+                // Generate new tokens (Rotation)
+                return generateTokensAndCreateResponse(user);
+        }
+
+        private AuthResponse generateTokensAndCreateResponse(User user) {
+                String accessToken = jwtTokenProvider.generateToken(user.getEmail());
+                String refreshToken = java.util.UUID.randomUUID().toString();
+
+                user.setRefreshToken(refreshToken);
+                user.setRefreshTokenExpiry(LocalDateTime.now().plusDays(30)); // Refresh Token valid for 30 days
+                user.setLastLoginAt(LocalDateTime.now());
+                
+                userRepository.save(user);
+
+                return AuthResponse.builder()
+                                .accessToken(accessToken)
+                                .refreshToken(refreshToken)
+                                .tokenType("Bearer")
+                                .user(mapToUserResponse(user))
                                 .build();
         }
 }

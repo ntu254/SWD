@@ -8,6 +8,7 @@ import type {
 
 // Token storage keys
 const TOKEN_KEY = 'accessToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
 const USER_KEY = 'user';
 
 export const authService = {
@@ -24,6 +25,7 @@ export const authService = {
         // Response is AuthResponse directly after unwrapping
         const authData: AuthResponse = response.data;
         this.setToken(authData.accessToken);
+        this.setRefreshToken(authData.refreshToken);
         this.setUser(authData.user);
 
         return authData;
@@ -40,6 +42,7 @@ export const authService = {
 
         const authData: AuthResponse = response.data;
         this.setToken(authData.accessToken);
+        this.setRefreshToken(authData.refreshToken);
         this.setUser(authData.user);
 
         return authData;
@@ -50,6 +53,7 @@ export const authService = {
      */
     logout(): void {
         this.removeToken();
+        this.removeRefreshToken();
         this.removeUser();
     },
 
@@ -72,6 +76,29 @@ export const authService = {
      */
     removeToken(): void {
         localStorage.removeItem(TOKEN_KEY);
+    },
+
+    /**
+     * Get stored Refresh Token
+     */
+    getRefreshToken(): string | null {
+        return localStorage.getItem(REFRESH_TOKEN_KEY);
+    },
+
+    /**
+     * Set Refresh Token in localStorage
+     */
+    setRefreshToken(token: string): void {
+        if (token) {
+            localStorage.setItem(REFRESH_TOKEN_KEY, token);
+        }
+    },
+
+    /**
+     * Remove Refresh Token from localStorage
+     */
+    removeRefreshToken(): void {
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
     },
 
     /**
@@ -123,8 +150,29 @@ export const authService = {
         // The endpoint returns AuthResponse (auto login)
         const authData: AuthResponse = response.data;
         this.setToken(authData.accessToken);
+        this.setRefreshToken(authData.refreshToken);
         this.setUser(authData.user);
 
         return authData;
     },
+
+    /**
+     * Refresh Access Token using Refresh Token
+     */
+    async refreshToken(): Promise<AuthResponse> {
+        const refreshToken = this.getRefreshToken();
+        if (!refreshToken) {
+            throw new Error('No refresh token available');
+        }
+
+        const response: any = await apiClient.post('/auth/refresh-token', {
+            refreshToken
+        });
+
+        const authData: AuthResponse = response.data;
+        this.setToken(authData.accessToken);
+        this.setRefreshToken(authData.refreshToken);
+
+        return authData;
+    }
 };

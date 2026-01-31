@@ -13,4 +13,9 @@ public interface AuthService {
     void forgotPassword(String email);
 
     AuthResponse resetPassword(String email, String otp, String newPassword);
+<<<<<<< HEAD
+=======
+
+    AuthResponse refreshToken(String refreshToken);
+>>>>>>> 1fe9f3e (feat: Implement Refresh Token and restore OTP functionality)
 }

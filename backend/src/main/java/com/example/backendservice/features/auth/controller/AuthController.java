@@ -76,6 +76,13 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Password reset successful", response));
     }
 
+    @Operation(summary = "Refresh token", description = "Get new access token using refresh token")
+    @PostMapping("/refresh-token")
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@RequestBody RefreshTokenRequest request) {
+        log.info("[AUTH_CONTROLLER] Refresh token request");
+        AuthResponse response = authService.refreshToken(request.getRefreshToken());
+        return ResponseEntity.ok(ApiResponse.success("Token refreshed successfully", response));
+    }
     @lombok.Data
     public static class ResetPasswordRequest {
         @jakarta.validation.constraints.Email
@@ -88,5 +95,10 @@ public class AuthController {
         @jakarta.validation.constraints.NotBlank
         @jakarta.validation.constraints.Size(min = 6)
         private String newPassword;
+    }
+    @lombok.Data
+    public static class RefreshTokenRequest {
+        @jakarta.validation.constraints.NotBlank
+        private String refreshToken;
     }
 }
