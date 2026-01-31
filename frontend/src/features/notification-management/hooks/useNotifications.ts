@@ -18,7 +18,7 @@ export const useNotifications = () => {
     const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
     const [pagination, setPagination] = useState<PaginationState>({
         currentPage: 0,
-        pageSize: 10,
+        pageSize: 3,
         total: 0,
         totalPages: 0,
     });
