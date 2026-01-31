@@ -201,8 +201,19 @@ public class AuthServiceImpl implements AuthService {
                         throw new BadRequestException("Refresh token has expired");
                 }
 
-                // Generate new tokens (Rotation)
                 return generateTokensAndCreateResponse(user);
+        }
+
+        @Override
+        @Transactional
+        public void logout(String email) {
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new BadRequestException("User not found"));
+                
+                user.setRefreshToken(null);
+                user.setRefreshTokenExpiry(null);
+                userRepository.save(user);
+                log.info("[AUTH_LOGOUT] User logged out: {}", email);
         }
 
         private AuthResponse generateTokensAndCreateResponse(User user) {

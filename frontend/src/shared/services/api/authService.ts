@@ -49,12 +49,18 @@ export const authService = {
     },
 
     /**
-     * Logout user - clear local storage and token
+     * Logout user - invalidate token on server then clear local storage
      */
-    logout(): void {
-        this.removeToken();
-        this.removeRefreshToken();
-        this.removeUser();
+    async logout(): Promise<void> {
+        try {
+            await apiClient.post('/auth/logout');
+        } catch (error) {
+            console.error('Logout API failed, proceeding with local cleanup', error);
+        } finally {
+            this.removeToken();
+            this.removeRefreshToken();
+            this.removeUser();
+        }
     },
 
     /**

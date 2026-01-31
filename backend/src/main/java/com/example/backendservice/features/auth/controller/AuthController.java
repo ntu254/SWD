@@ -101,4 +101,13 @@ public class AuthController {
         @jakarta.validation.constraints.NotBlank
         private String refreshToken;
     }
+    @Operation(summary = "Logout", description = "Logout user and invalidate refresh token")
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(java.security.Principal principal) {
+        if (principal != null) {
+            log.info("[AUTH_CONTROLLER] Logout request for: {}", principal.getName());
+            authService.logout(principal.getName());
+        }
+        return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
+    }
 }
