@@ -74,10 +74,10 @@ Once the server is running, access:
 ### Key Modules
 1.  **Auth**: `/api/v1/auth` (Register, Login)
 2.  **Users**: `/api/v1/users` (Profile management)
-3.  **Admin**: `/api/admin/users` (Full user lifecycle control)
-4.  **Complaints**: `/api/complaints` (Citizen reports & Admin resolution)
-5.  **Notifications**: `/api/notifications` (System alerts)
-6.  **SSE**: `/api/sse` (Real-time event subscription)
+3.  **Admin**: `/api/v1/admin/users` (Full user lifecycle control)
+4.  **Complaints**: `/api/v1/complaints` (Citizen reports & Admin resolution)
+5.  **Notifications**: `/api/v1/notifications` (System alerts)
+6.  **SSE**: `/api/v1/sse` (Real-time event subscription)
 
 ---
 

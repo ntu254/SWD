@@ -31,7 +31,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/admin/users")
+@RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
 @Tag(name = "Admin User Management", description = "APIs for administrative user management")
 public class AdminUserController {

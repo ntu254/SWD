@@ -16,7 +16,7 @@ import java.util.Map;
  * Controller for managing SSE connections
  */
 @RestController
-@RequestMapping("/api/sse")
+@RequestMapping("/api/v1/sse")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Server-Sent Events", description = "APIs for real-time notifications via SSE")

@@ -1,13 +1,5 @@
 package com.example.backendservice.common.service;
 
-<<<<<<< HEAD
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-
-=======
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -15,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
->>>>>>> 1fe9f3e (feat: Implement Refresh Token and restore OTP functionality)
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,26 +17,6 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-<<<<<<< HEAD
-    @Value("${spring.mail.username}")
-    private String fromEmail;
-
-    @Async
-    public void sendOtpEmail(String to, String otp) {
-        try {
-            log.info("[EMAIL_SERVICE] Sending OTP to: {}", to);
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(to);
-            message.setSubject("GreenLoop - Xác nhận đặt lại mật khẩu");
-            message.setText("Mã OTP của bạn là: " + otp + "\n\nMã này sẽ hết hạn sau 15 phút. Vui lòng không chia sẻ mã này cho bất kỳ ai.");
-
-            mailSender.send(message);
-            log.info("[EMAIL_SERVICE] Email sent successfully to: {}", to);
-        } catch (Exception e) {
-            log.error("[EMAIL_SERVICE] Failed to send email to: {}", to, e);
-            // Non-blocking error, user might retry
-=======
     @Async
     public void sendOtpEmail(String to, String otp) {
         try {
@@ -74,7 +45,6 @@ public class EmailService {
             log.info("OTP email sent to {}", to);
         } catch (MessagingException e) {
             log.error("Failed to send OTP email to {}", to, e);
->>>>>>> 1fe9f3e (feat: Implement Refresh Token and restore OTP functionality)
         }
     }
 }
