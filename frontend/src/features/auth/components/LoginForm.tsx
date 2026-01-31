@@ -17,10 +17,11 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginFormProps {
     onToggleRegister: () => void;
+    onForgotPassword: () => void;
     onSuccess: () => void;
 }
 
-export const LoginForm: React.FC<LoginFormProps> = ({ onToggleRegister, onSuccess }) => {
+export const LoginForm: React.FC<LoginFormProps> = ({ onToggleRegister, onForgotPassword, onSuccess }) => {
     const { login } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -91,9 +92,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleRegister, onSucces
             <div className="space-y-1.5">
                 <div className="flex justify-between items-center ml-1">
                     <label className="text-xs font-semibold text-gray-700">Mật khẩu</label>
-                    <a href="#" className="text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline transition-colors">
+                    <button
+                        type="button"
+                        onClick={onForgotPassword}
+                        className="text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline transition-colors"
+                    >
                         Quên mật khẩu?
-                    </a>
+                    </button>
                 </div>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
