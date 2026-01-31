@@ -9,12 +9,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "citizens")
+@Table(name = "citizen_profiles")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Citizen {
+public class CitizenProfile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
