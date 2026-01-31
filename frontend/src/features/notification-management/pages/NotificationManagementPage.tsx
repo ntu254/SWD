@@ -28,7 +28,7 @@ export const NotificationManagementPage: React.FC = () => {
         deleteNotification,
     } = useNotifications();
 
-    const [filters, setFilters] = useState<NotificationFilters>({ page: 0, size: 10 });
+    const [filters, setFilters] = useState<NotificationFilters>({ page: 0, size: 3 });
     const [selectedNotification, setSelectedNotification] = useState<NotificationResponse | null>(
         null
     );
@@ -120,7 +120,7 @@ export const NotificationManagementPage: React.FC = () => {
     };
 
     const handleResetFilters = () => {
-        setFilters({ page: 0, size: 10 });
+        setFilters({ page: 0, size: 3 });
     };
 
     const handlePageChange = (newPage: number) => {
@@ -156,64 +156,70 @@ export const NotificationManagementPage: React.FC = () => {
                     </div>
                 </header>
 
-                {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto p-6">
-                    <div className="max-w-[1600px] mx-auto">
+                {/* Content Container */}
+                <div className="flex-1 p-6 min-h-0">
+                    <div className="max-w-[1600px] mx-auto h-full">
                         {/* 2-Column Layout */}
-                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 h-full">
                             {/* Left Column - Form (35%) */}
-                            <div className="xl:col-span-4">
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                                    <h3 className="text-base font-bold text-gray-900 mb-4">
+                            <div className="xl:col-span-4 flex flex-col h-full">
+                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col h-full overflow-hidden">
+                                    <h3 className="text-base font-bold text-gray-900 mb-4 flex-shrink-0">
                                         {selectedNotification ? 'Edit Notification' : 'Create a New Notification'}
                                     </h3>
-                                    <NotificationForm
-                                        notification={selectedNotification}
-                                        onSubmit={handleFormSubmit}
-                                        onReset={handleFormReset}
-                                    />
+                                    <div className="flex-1 overflow-y-auto">
+                                        <NotificationForm
+                                            notification={selectedNotification}
+                                            onSubmit={handleFormSubmit}
+                                            onReset={handleFormReset}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Right Column - Table (65%) */}
-                            <div className="xl:col-span-8 space-y-4">
+                            <div className="xl:col-span-8 flex flex-col gap-4 h-full min-h-0">
                                 {/* KPI Cards */}
-                                <KPICards notifications={notifications} />
+                                <div className="flex-shrink-0">
+                                    <KPICards notifications={notifications} />
+                                </div>
 
                                 {/* Filters */}
-                                <NotificationFiltersBar
-                                    filters={filters}
-                                    onFilterChange={handleFilterChange}
-                                    onReset={handleResetFilters}
-                                />
+                                <div className="flex-shrink-0">
+                                    <NotificationFiltersBar
+                                        filters={filters}
+                                        onFilterChange={handleFilterChange}
+                                        onReset={handleResetFilters}
+                                    />
+                                </div>
 
                                 {/* Table or Loading/Empty State */}
-                                {loading ? (
-                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12">
-                                        <div className="flex flex-col items-center justify-center space-y-4">
+                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden min-h-0">
+                                    {loading ? (
+                                        <div className="flex-1 flex flex-col items-center justify-center p-12">
                                             <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
-                                            <div className="space-y-2 w-full max-w-md">
+                                            <div className="mt-4 space-y-2 w-full max-w-md">
                                                 <div className="h-4 bg-gray-100 rounded animate-pulse"></div>
                                                 <div className="h-4 bg-gray-100 rounded animate-pulse w-3/4 mx-auto"></div>
                                             </div>
                                         </div>
-                                    </div>
-                                ) : error ? (
-                                    <div className="bg-white rounded-xl shadow-sm border border-red-200 p-8 text-center">
-                                        <p className="text-red-600">{error}</p>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <NotificationTable
-                                            notifications={notifications}
-                                            onEdit={handleEditClick}
-                                            onToggleStatus={handleToggleStatus}
-                                            onDelete={handleDeleteClick}
-                                        />
+                                    ) : error ? (
+                                        <div className="flex-1 flex items-center justify-center p-8 text-center">
+                                            <p className="text-red-600">{error}</p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="flex-1 overflow-y-auto">
+                                                <NotificationTable
+                                                    notifications={notifications}
+                                                    onEdit={handleEditClick}
+                                                    onToggleStatus={handleToggleStatus}
+                                                    onDelete={handleDeleteClick}
+                                                />
+                                            </div>
 
-                                        {/* Pagination */}
-                                        {pagination.totalPages > 1 && (
-                                            <div className="flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                                            {/* Pagination - Always at bottom */}
+                                            <div className="flex items-center justify-between p-4 border-t bg-gray-50/50 flex-shrink-0">
                                                 <div className="text-sm text-gray-600">
                                                     Showing{' '}
                                                     {pagination.currentPage * pagination.pageSize + 1} to{' '}
@@ -229,7 +235,7 @@ export const NotificationManagementPage: React.FC = () => {
                                                             handlePageChange(pagination.currentPage - 1)
                                                         }
                                                         disabled={pagination.currentPage === 0}
-                                                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+                                                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
                                                     >
                                                         <ChevronLeft size={16} /> Previous
                                                     </button>
@@ -253,8 +259,8 @@ export const NotificationManagementPage: React.FC = () => {
                                                                     )}
                                                                     <button
                                                                         onClick={() => handlePageChange(page)}
-                                                                        className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${page === pagination.currentPage
-                                                                            ? 'bg-brand-600 text-white'
+                                                                        className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${page === pagination.currentPage
+                                                                            ? 'bg-brand-600 text-white shadow-sm'
                                                                             : 'text-gray-700 hover:bg-gray-100'
                                                                             }`}
                                                                     >
@@ -270,15 +276,15 @@ export const NotificationManagementPage: React.FC = () => {
                                                         disabled={
                                                             pagination.currentPage >= pagination.totalPages - 1
                                                         }
-                                                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+                                                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
                                                     >
                                                         Next <ChevronRight size={16} />
                                                     </button>
                                                 </div>
                                             </div>
-                                        )}
-                                    </>
-                                )}
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

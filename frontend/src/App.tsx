@@ -5,6 +5,7 @@ import AuthPage from './features/auth/pages/AuthPage';
 import { RewardManagementPage } from '@features/reward-redemption';
 import { UserManagementPage } from '@features/user-management';
 import { NotificationManagementPage } from '@features/notification-management/pages/NotificationManagementPage';
+import { ComplaintManagementPage } from '@features/complaint-management/pages/ComplaintManagementPage';
 import './App.css';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
           <Route path="/admin/rewards" element={<RewardManagementPage />} />
           <Route path="/admin/users" element={<UserManagementPage />} />
           <Route path="/admin/notifications" element={<NotificationManagementPage />} />
+          <Route path="/admin/complaints" element={<ComplaintManagementPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
