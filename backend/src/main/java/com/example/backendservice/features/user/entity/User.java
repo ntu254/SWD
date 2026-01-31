@@ -99,6 +99,12 @@ public class User {
     @Column(length = 500)
     private String banReason;
 
+    @Column(name = "otp_code", length = 10)
+    private String otpCode;
+
+    @Column(name = "otp_expiry")
+    private LocalDateTime otpExpiry;
+
     public String getFullName() {
         return firstName + " " + lastName;
     }
