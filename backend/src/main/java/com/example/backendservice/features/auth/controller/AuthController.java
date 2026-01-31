@@ -58,4 +58,35 @@ public class AuthController {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
+
+    @Operation(summary = "Forgot password", description = "Send OTP to user's email")
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestBody java.util.Map<String, String> request) {
+        String email = request.get("email");
+        log.info("[AUTH_CONTROLLER] Forgot password request for: {}", email);
+        authService.forgotPassword(email);
+        return ResponseEntity.ok(ApiResponse.success("OTP sent to your email", null));
+    }
+
+    @Operation(summary = "Reset password", description = "Reset password using OTP")
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<AuthResponse>> resetPassword(@RequestBody ResetPasswordRequest request) {
+        log.info("[AUTH_CONTROLLER] Reset password request for: {}", request.getEmail());
+        AuthResponse response = authService.resetPassword(request.getEmail(), request.getOtp(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.success("Password reset successful", response));
+    }
+
+    @lombok.Data
+    public static class ResetPasswordRequest {
+        @jakarta.validation.constraints.Email
+        @jakarta.validation.constraints.NotBlank
+        private String email;
+        
+        @jakarta.validation.constraints.NotBlank
+        private String otp;
+        
+        @jakarta.validation.constraints.NotBlank
+        @jakarta.validation.constraints.Size(min = 6)
+        private String newPassword;
+    }
 }
