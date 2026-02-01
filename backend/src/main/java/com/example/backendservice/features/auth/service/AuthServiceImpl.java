@@ -2,7 +2,6 @@ package com.example.backendservice.features.auth.service;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,12 +11,11 @@ import com.example.backendservice.features.auth.dto.AuthResponse;
 import com.example.backendservice.features.auth.dto.LoginRequest;
 import com.example.backendservice.features.auth.dto.RegisterRequest;
 import com.example.backendservice.features.user.dto.UserResponse;
+import com.example.backendservice.features.enterprise.entity.Enterprise;
 import com.example.backendservice.features.user.entity.CitizenProfile;
 import com.example.backendservice.features.user.entity.CollectorProfile;
 import com.example.backendservice.features.user.entity.RoleType;
 import com.example.backendservice.features.user.entity.User;
-import com.example.backendservice.features.user.repository.CitizenProfileRepository;
-import com.example.backendservice.features.user.repository.CollectorProfileRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
 import com.example.backendservice.security.jwt.JwtTokenProvider;
 
@@ -32,8 +30,6 @@ import java.time.LocalDateTime;
 public class AuthServiceImpl implements AuthService {
 
         private final UserRepository userRepository;
-        private final CitizenProfileRepository citizenProfileRepository;
-        private final CollectorProfileRepository collectorProfileRepository;
         private final PasswordEncoder passwordEncoder;
         private final JwtTokenProvider jwtTokenProvider;
         private final AuthenticationManager authenticationManager;
@@ -58,25 +54,63 @@ public class AuthServiceImpl implements AuthService {
                         roleStr = "CITIZEN";
                 }
 
-                User user = User.builder()
-                                .firstName(request.getFirstName())
-                                .lastName(request.getLastName())
-                                .email(request.getEmail())
-                                .password(passwordEncoder.encode(request.getPassword()))
-                                .role(roleStr) // Legacy field
-                                .phone(request.getPhone())
-                                .avatarUrl(request.getAvatarUrl())
-                                .enabled(true)
-                                .build();
+                User user;
+                if (roleType == RoleType.CITIZEN) {
+                        user = CitizenProfile.builder()
+                                        .firstName(request.getFirstName())
+                                        .lastName(request.getLastName())
+                                        .email(request.getEmail())
+                                        .password(passwordEncoder.encode(request.getPassword()))
+                                        .role(roleStr)
+                                        .phone(request.getPhone())
+                                        .avatarUrl(request.getAvatarUrl())
+                                        .enabled(true)
+                                        .currentPoints(0)
+                                        .membershipTier("Bronze")
+                                        .build();
+                } else if (roleType == RoleType.COLLECTOR) {
+                        user = CollectorProfile.builder()
+                                        .firstName(request.getFirstName())
+                                        .lastName(request.getLastName())
+                                        .email(request.getEmail())
+                                        .password(passwordEncoder.encode(request.getPassword()))
+                                        .role(roleStr)
+                                        .phone(request.getPhone())
+                                        .avatarUrl(request.getAvatarUrl())
+                                        .enabled(true)
+                                        .availabilityStatus("AVAILABLE")
+                                        .build();
+                } else if (roleType == RoleType.ENTERPRISE) {
+                        user = Enterprise.builder()
+                                        .firstName(request.getFirstName())
+                                        .lastName(request.getLastName())
+                                        .email(request.getEmail())
+                                        .password(passwordEncoder.encode(request.getPassword()))
+                                        .role(roleStr)
+                                        .phone(request.getPhone())
+                                        .avatarUrl(request.getAvatarUrl())
+                                        .enabled(true)
+                                        .name(request.getFirstName() + " " + request.getLastName()) // Default name
+                                        .status("ACTIVE")
+                                        .build();
+                } else {
+                        user = User.builder()
+                                        .firstName(request.getFirstName())
+                                        .lastName(request.getLastName())
+                                        .email(request.getEmail())
+                                        .password(passwordEncoder.encode(request.getPassword()))
+                                        .role(roleStr)
+                                        .phone(request.getPhone())
+                                        .avatarUrl(request.getAvatarUrl())
+                                        .enabled(true)
+                                        .build();
+                }
 
                 // Add role to roles collection
                 user.addRole(roleType);
 
                 User savedUser = userRepository.save(user);
-                log.info("[AUTH_REGISTERED] User registered with id: {}, role: {}", savedUser.getId(), roleType);
-
-                // Create profile based on role
-                createProfileBasedOnRole(savedUser, roleType);
+                log.info("[AUTH_REGISTERED] {} registered with id: {}", roleType, savedUser.getId());
 
                 return generateTokensAndCreateResponse(savedUser);
         }
@@ -86,7 +120,7 @@ public class AuthServiceImpl implements AuthService {
         public AuthResponse login(LoginRequest request) {
                 log.info("[AUTH_LOGIN] Login attempt for: {}", request.getEmail());
 
-                Authentication authentication = authenticationManager.authenticate(
+                authenticationManager.authenticate(
                                 new UsernamePasswordAuthenticationToken(
                                                 request.getEmail(),
                                                 request.getPassword()));
@@ -97,39 +131,8 @@ public class AuthServiceImpl implements AuthService {
                 // Update lastLoginAt
                 user.setLastLoginAt(LocalDateTime.now());
                 userRepository.save(user);
-                
+
                 return generateTokensAndCreateResponse(user);
-        }
-
-
-
-        /**
-         * Tạo profile tương ứng dựa trên role
-         */
-        private void createProfileBasedOnRole(User user, RoleType roleType) {
-                switch (roleType) {
-                        case CITIZEN -> {
-                                CitizenProfile citizen = CitizenProfile.builder()
-                                                .user(user)
-                                                .currentPoints(0)
-                                                .membershipTier("Bronze")
-                                                .build();
-                                citizenProfileRepository.save(citizen);
-                                log.info("[PROFILE_CREATED] Created CitizenProfile for user: {}", user.getId());
-                        }
-                        case COLLECTOR -> {
-                                CollectorProfile profile = CollectorProfile.builder()
-                                                .user(user)
-                                                .availabilityStatus("available")
-                                                .build();
-                                collectorProfileRepository.save(profile);
-                                log.info("[PROFILE_CREATED] Created CollectorProfile for user: {}", user.getId());
-                        }
-                        case ADMIN, ENTERPRISE -> {
-                                // Admin và Enterprise không cần profile riêng
-                                log.info("[PROFILE_SKIPPED] No additional profile for role: {}", roleType);
-                        }
-                }
         }
 
         private UserResponse mapToUserResponse(User user) {
@@ -146,7 +149,6 @@ public class AuthServiceImpl implements AuthService {
                                 .updatedAt(user.getUpdatedAt())
                                 .build();
         }
-
 
         @Override
         @Transactional
@@ -180,11 +182,11 @@ public class AuthServiceImpl implements AuthService {
                 user.setPassword(passwordEncoder.encode(newPassword));
                 user.setOtpCode(null);
                 user.setOtpExpiry(null);
-                
+
                 // Clear old refresh token on password reset for security
-                user.setRefreshToken(null); 
+                user.setRefreshToken(null);
                 user.setRefreshTokenExpiry(null);
-                
+
                 User savedUser = userRepository.save(user);
 
                 log.info("[AUTH_RESET_PASS] Password reset successfully for: {}", email);
@@ -209,7 +211,7 @@ public class AuthServiceImpl implements AuthService {
         public void logout(String email) {
                 User user = userRepository.findByEmail(email)
                                 .orElseThrow(() -> new BadRequestException("User not found"));
-                
+
                 user.setRefreshToken(null);
                 user.setRefreshTokenExpiry(null);
                 userRepository.save(user);
@@ -223,7 +225,7 @@ public class AuthServiceImpl implements AuthService {
                 user.setRefreshToken(refreshToken);
                 user.setRefreshTokenExpiry(LocalDateTime.now().plusDays(30)); // Refresh Token valid for 30 days
                 user.setLastLoginAt(LocalDateTime.now());
-                
+
                 userRepository.save(user);
 
                 return AuthResponse.builder()

@@ -2,28 +2,18 @@ package com.example.backendservice.features.user.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "citizen_profiles")
 @Data
-@Builder
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CitizenProfile {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
+public class CitizenProfile extends User {
 
     @Column(name = "address")
     private String address;
@@ -36,15 +26,8 @@ public class CitizenProfile {
     @Builder.Default
     private String membershipTier = "Bronze"; // Bronze, Silver, Gold
 
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
-
     // Helper method to get userId
     public UUID getUserId() {
-        return user != null ? user.getId() : null;
+        return this.getId();
     }
 }

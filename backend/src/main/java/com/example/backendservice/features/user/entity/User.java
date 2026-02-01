@@ -26,12 +26,19 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.DiscriminatorColumn;
+import lombok.experimental.SuperBuilder;
+
 @Entity
 @Table(name = "users")
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+@Inheritance(strategy = InheritanceType.JOINED)
+@DiscriminatorColumn(name = "user_type")
 public class User {
 
     @Id
@@ -110,6 +117,7 @@ public class User {
 
     @Column(name = "refresh_token_expiry")
     private LocalDateTime refreshTokenExpiry;
+
     public String getFullName() {
         return firstName + " " + lastName;
     }

@@ -73,7 +73,7 @@ public class EnterpriseServiceImpl implements EnterpriseService {
     public Page<EnterpriseResponse> getAllEnterprises(String status, Pageable pageable) {
         Page<Enterprise> enterprises;
         if (status != null && !status.isEmpty()) {
-            enterprises = enterpriseRepository.findAll(pageable); // TODO: Add status filter
+            enterprises = enterpriseRepository.findByStatus(status, pageable);
         } else {
             enterprises = enterpriseRepository.findAll(pageable);
         }

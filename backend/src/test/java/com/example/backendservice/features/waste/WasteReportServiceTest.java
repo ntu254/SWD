@@ -2,9 +2,8 @@ package com.example.backendservice.features.waste;
 
 import com.example.backendservice.features.location.entity.ServiceArea;
 import com.example.backendservice.features.location.repository.ServiceAreaRepository;
-import com.example.backendservice.features.user.entity.Citizen;
-import com.example.backendservice.features.user.entity.User;
-import com.example.backendservice.features.user.repository.CitizenRepository;
+import com.example.backendservice.features.user.entity.CitizenProfile;
+import com.example.backendservice.features.user.repository.CitizenProfileRepository;
 import com.example.backendservice.features.waste.dto.CreateWasteReportRequest;
 import com.example.backendservice.features.waste.dto.WasteReportResponse;
 import com.example.backendservice.features.waste.entity.WasteReport;
@@ -42,7 +41,7 @@ class WasteReportServiceTest {
     @Mock
     private WasteReportRepository wasteReportRepository;
     @Mock
-    private CitizenRepository citizenRepository;
+    private CitizenProfileRepository citizenProfileRepository;
     @Mock
     private ServiceAreaRepository serviceAreaRepository;
     @Mock
@@ -52,7 +51,7 @@ class WasteReportServiceTest {
     private WasteReportServiceImpl wasteReportService;
 
     private WasteReport sampleReport;
-    private Citizen sampleCitizen;
+    private CitizenProfile sampleCitizen;
     private ServiceArea sampleArea;
     private WasteType sampleWasteType;
     private UUID reportId;
@@ -67,15 +66,10 @@ class WasteReportServiceTest {
         areaId = UUID.randomUUID();
         wasteTypeId = UUID.randomUUID();
 
-        User citizenUser = User.builder()
-                .id(UUID.randomUUID())
+        sampleCitizen = CitizenProfile.builder()
+                .id(citizenId)
                 .firstName("Nguyen")
                 .lastName("Van A")
-                .build();
-
-        sampleCitizen = Citizen.builder()
-                .id(citizenId)
-                .user(citizenUser)
                 .currentPoints(100)
                 .build();
 
@@ -125,7 +119,7 @@ class WasteReportServiceTest {
                     .priority("NORMAL")
                     .build();
 
-            when(citizenRepository.findById(citizenId)).thenReturn(Optional.of(sampleCitizen));
+            when(citizenProfileRepository.findById(citizenId)).thenReturn(Optional.of(sampleCitizen));
             when(serviceAreaRepository.findById(areaId)).thenReturn(Optional.of(sampleArea));
             when(wasteTypeRepository.findById(wasteTypeId)).thenReturn(Optional.of(sampleWasteType));
             when(wasteReportRepository.save(any(WasteReport.class))).thenReturn(sampleReport);
@@ -145,7 +139,7 @@ class WasteReportServiceTest {
                     .citizenId(UUID.randomUUID())
                     .build();
 
-            when(citizenRepository.findById(any())).thenReturn(Optional.empty());
+            when(citizenProfileRepository.findById(any())).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> wasteReportService.createReport(request))
                     .isInstanceOf(EntityNotFoundException.class)
@@ -251,7 +245,7 @@ class WasteReportServiceTest {
             when(wasteReportRepository.findById(reportId)).thenReturn(Optional.of(sampleReport));
             when(wasteReportRepository.save(any(WasteReport.class))).thenReturn(sampleReport);
 
-            WasteReportResponse response = wasteReportService.updateReport(reportId, request);
+            wasteReportService.updateReport(reportId, request);
 
             assertThat(sampleReport.getEstimatedWeightKg()).isEqualTo(20.0);
             assertThat(sampleReport.getLocationText()).isEqualTo("Updated location");

@@ -2,8 +2,8 @@ package com.example.backendservice.features.waste.service;
 
 import com.example.backendservice.features.location.entity.ServiceArea;
 import com.example.backendservice.features.location.repository.ServiceAreaRepository;
-import com.example.backendservice.features.user.entity.Citizen;
-import com.example.backendservice.features.user.repository.CitizenRepository;
+import com.example.backendservice.features.user.entity.CitizenProfile;
+import com.example.backendservice.features.user.repository.CitizenProfileRepository;
 import com.example.backendservice.features.waste.dto.CreateWasteReportRequest;
 import com.example.backendservice.features.waste.dto.SuggestedReportDTO;
 import com.example.backendservice.features.waste.dto.WasteReportResponse;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 public class WasteReportServiceImpl implements WasteReportService {
 
     private final WasteReportRepository wasteReportRepository;
-    private final CitizenRepository citizenRepository;
+    private final CitizenProfileRepository citizenProfileRepository;
     private final ServiceAreaRepository serviceAreaRepository;
     private final WasteTypeRepository wasteTypeRepository;
 
@@ -48,7 +48,7 @@ public class WasteReportServiceImpl implements WasteReportService {
     public WasteReportResponse createReport(CreateWasteReportRequest request) {
         log.info("Creating waste report for citizen: {}", request.getCitizenId());
 
-        Citizen citizen = citizenRepository.findById(request.getCitizenId())
+        CitizenProfile citizen = citizenProfileRepository.findById(request.getCitizenId())
                 .orElseThrow(() -> new EntityNotFoundException("Citizen not found"));
 
         WasteReport report = WasteReport.builder()
@@ -187,8 +187,8 @@ public class WasteReportServiceImpl implements WasteReportService {
 
             scoredReports.add(SuggestedReportDTO.builder()
                     .reportId(report.getId())
-                    .citizenName(report.getCitizen().getUser() != null
-                            ? report.getCitizen().getUser().getFullName()
+                    .citizenName(report.getCitizen() != null
+                            ? report.getCitizen().getFullName()
                             : "Unknown")
                     .areaName(report.getArea() != null ? report.getArea().getName() : null)
                     .wasteTypeName(report.getPrimaryWasteType() != null
@@ -285,7 +285,7 @@ public class WasteReportServiceImpl implements WasteReportService {
         return WasteReportResponse.builder()
                 .id(report.getId())
                 .citizenId(report.getCitizen().getId())
-                .citizenName(report.getCitizen().getUser() != null ? report.getCitizen().getUser().getFullName() : null)
+                .citizenName(report.getCitizen() != null ? report.getCitizen().getFullName() : null)
                 .areaId(report.getArea() != null ? report.getArea().getId() : null)
                 .areaName(report.getArea() != null ? report.getArea().getName() : null)
                 .primaryWasteTypeId(report.getPrimaryWasteType() != null ? report.getPrimaryWasteType().getId() : null)

@@ -1,6 +1,8 @@
 package com.example.backendservice.features.enterprise.repository;
 
 import com.example.backendservice.features.enterprise.entity.Enterprise;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,6 +16,8 @@ public interface EnterpriseRepository extends JpaRepository<Enterprise, UUID> {
     Optional<Enterprise> findByOwnerId(UUID ownerId);
 
     List<Enterprise> findByStatus(String status);
+
+    Page<Enterprise> findByStatus(String status, Pageable pageable);
 
     List<Enterprise> findByPrimaryAreaId(UUID areaId);
 

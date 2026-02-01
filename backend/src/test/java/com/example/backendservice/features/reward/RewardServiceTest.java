@@ -7,7 +7,6 @@ import com.example.backendservice.features.reward.repository.RewardItemRepositor
 import com.example.backendservice.features.reward.repository.RewardRedemptionRepository;
 import com.example.backendservice.features.reward.service.RewardServiceImpl;
 import com.example.backendservice.features.user.entity.CitizenProfile;
-import com.example.backendservice.features.user.entity.User;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,27 +45,20 @@ class RewardServiceTest {
     private RewardItem sampleItem;
     private RewardRedemption sampleRedemption;
     private CitizenProfile sampleCitizen;
-    private UUID userId;
     private UUID citizenId;
     private UUID itemId;
     private UUID redemptionId;
 
     @BeforeEach
     void setUp() {
-        userId = UUID.randomUUID();
         citizenId = UUID.randomUUID();
         itemId = UUID.randomUUID();
         redemptionId = UUID.randomUUID();
 
-        User user = User.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .build();
-
         sampleCitizen = CitizenProfile.builder()
                 .id(citizenId)
-                .user(user)
+                .firstName("John")
+                .lastName("Doe")
                 .currentPoints(5000)
                 .build();
 

@@ -1,7 +1,7 @@
 package com.example.backendservice.features.waste.entity;
 
 import com.example.backendservice.features.location.entity.ServiceArea;
-import com.example.backendservice.features.user.entity.Citizen;
+import com.example.backendservice.features.user.entity.CitizenProfile;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -30,7 +30,7 @@ public class WasteReport {
     // Citizen tạo report
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "citizen_id", nullable = false)
-    private Citizen citizen;
+    private CitizenProfile citizen;
 
     // Khu vực
     @ManyToOne(fetch = FetchType.LAZY)

@@ -289,9 +289,9 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .createdAt(complaint.getCreatedAt())
                 .updatedAt(complaint.getUpdatedAt());
 
-        if (complaint.getCitizen() != null && complaint.getCitizen().getUser() != null) {
-            builder.citizenName(complaint.getCitizen().getUser().getFullName());
-            builder.citizenEmail(complaint.getCitizen().getUser().getEmail());
+        if (complaint.getCitizen() != null) {
+            builder.citizenName(complaint.getCitizen().getFullName());
+            builder.citizenEmail(complaint.getCitizen().getEmail());
         }
 
         if (complaint.getResolvedBy() != null) {

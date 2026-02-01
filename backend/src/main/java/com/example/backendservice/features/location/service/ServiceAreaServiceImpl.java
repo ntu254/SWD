@@ -54,7 +54,7 @@ public class ServiceAreaServiceImpl implements ServiceAreaService {
     public Page<ServiceAreaResponse> getAllServiceAreas(String status, Pageable pageable) {
         Page<ServiceArea> areas;
         if (status != null && !status.isEmpty()) {
-            areas = serviceAreaRepository.findAll(pageable); // TODO: Add findByStatus with Pageable
+            areas = serviceAreaRepository.findByStatus(status, pageable);
         } else {
             areas = serviceAreaRepository.findAll(pageable);
         }
