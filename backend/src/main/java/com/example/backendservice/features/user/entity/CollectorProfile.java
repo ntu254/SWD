@@ -20,8 +20,7 @@ import java.util.UUID;
 public class CollectorProfile {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
+    @Column(name = "user_id", columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)

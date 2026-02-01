@@ -1,12 +1,16 @@
 package com.example.backendservice.common.config;
 
+import com.example.backendservice.features.collector.entity.CollectionRequest;
+import com.example.backendservice.features.collector.repository.CollectionRequestRepository;
 import com.example.backendservice.features.complaint.entity.Complaint;
 import com.example.backendservice.features.complaint.repository.ComplaintRepository;
 import com.example.backendservice.features.notification.entity.Notification;
 import com.example.backendservice.features.notification.repository.NotificationRepository;
 import com.example.backendservice.features.user.entity.CitizenProfile;
+import com.example.backendservice.features.user.entity.CollectorProfile;
 import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.CitizenProfileRepository;
+import com.example.backendservice.features.user.repository.CollectorProfileRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,20 +19,33 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
-@Profile("dev") // Only run in dev profile
+@Profile({ "dev", "local" }) // Run in dev or local profile
 public class DataSeeder {
 
         private final UserRepository userRepository;
         private final CitizenProfileRepository citizenProfileRepository;
+        private final CollectorProfileRepository collectorProfileRepository;
+        private final CollectionRequestRepository collectionRequestRepository;
         private final ComplaintRepository complaintRepository;
         private final NotificationRepository notificationRepository;
         private final PasswordEncoder passwordEncoder;
+        private final TransactionTemplate transactionTemplate;
+
+        @PersistenceContext
+        private EntityManager entityManager;
 
         @Bean
         public CommandLineRunner seedData() {
@@ -36,11 +53,36 @@ public class DataSeeder {
                         if (userRepository.count() == 0) {
                                 log.info("Seeding sample data...");
                                 seedUsers();
+                                seedCollectors();
                                 seedNotifications();
                                 seedComplaints();
+                                seedCollectionRequests();
                                 log.info("Sample data seeded successfully!");
                         } else {
-                                log.info("Data already exists, skipping seeding.");
+                                log.info("Data already exists, checking for collector data...");
+
+                                // Check and seed missing collectors
+                                boolean needsSeedCollectors = userRepository.findByEmail("collector1@example.com")
+                                                .isEmpty()
+                                                || userRepository.findByEmail("collector2@example.com").isEmpty()
+                                                || userRepository.findByEmail("collector3@example.com").isEmpty();
+
+                                // Check if collector profiles exist
+                                boolean needsSeedProfiles = collectorProfileRepository.count() == 0;
+
+                                if (needsSeedCollectors || needsSeedProfiles) {
+                                        log.info("Seeding missing collector data...");
+                                        transactionTemplate.executeWithoutResult(status -> seedCollectorsIfMissing());
+                                        log.info("Collector data seeded successfully!");
+                                }
+
+                                if (collectionRequestRepository.count() == 0) {
+                                        log.info("Seeding collection requests...");
+                                        seedCollectionRequests();
+                                        log.info("Collection requests seeded successfully!");
+                                } else {
+                                        log.info("All collector data already exists.");
+                                }
                         }
                 };
         }
@@ -113,6 +155,293 @@ public class DataSeeder {
                 citizenProfileRepository.save(citizen3);
 
                 log.info("Created 1 admin and 3 citizens");
+        }
+
+        private void seedCollectors() {
+                // Create Collector 1
+                User collector1User = User.builder()
+                                .firstName("Mike")
+                                .lastName("Collector")
+                                .email("collector1@example.com")
+                                .password(passwordEncoder.encode("collector123"))
+                                .role("COLLECTOR")
+                                .enabled(true)
+                                .build();
+                userRepository.saveAndFlush(collector1User);
+
+                CollectorProfile collector1 = CollectorProfile.builder()
+                                .user(collector1User)
+                                .availabilityStatus("AVAILABLE")
+                                .vehicleType("MOTORCYCLE")
+                                .maxLoadKg(50.0)
+                                .build();
+                collectorProfileRepository.save(collector1);
+
+                // Create Collector 2
+                User collector2User = User.builder()
+                                .firstName("Sarah")
+                                .lastName("Driver")
+                                .email("collector2@example.com")
+                                .password(passwordEncoder.encode("collector123"))
+                                .role("COLLECTOR")
+                                .enabled(true)
+                                .build();
+                userRepository.saveAndFlush(collector2User);
+
+                CollectorProfile collector2 = CollectorProfile.builder()
+                                .user(collector2User)
+                                .availabilityStatus("AVAILABLE")
+                                .vehicleType("TRUCK")
+                                .maxLoadKg(500.0)
+                                .build();
+                collectorProfileRepository.save(collector2);
+
+                // Create Collector 3 (Busy)
+                User collector3User = User.builder()
+                                .firstName("Tom")
+                                .lastName("Hauler")
+                                .email("collector3@example.com")
+                                .password(passwordEncoder.encode("collector123"))
+                                .role("COLLECTOR")
+                                .enabled(true)
+                                .build();
+                userRepository.saveAndFlush(collector3User);
+
+                CollectorProfile collector3 = CollectorProfile.builder()
+                                .user(collector3User)
+                                .availabilityStatus("BUSY")
+                                .vehicleType("VAN")
+                                .maxLoadKg(200.0)
+                                .build();
+                collectorProfileRepository.save(collector3);
+
+                log.info("Created 3 collectors");
+        }
+
+        /**
+         * Seeds missing collectors and their profiles.
+         * This handles the case where some collectors exist but profiles are missing.
+         */
+        private void seedCollectorsIfMissing() {
+                // Collector 1
+                User collector1User = userRepository.findByEmail("collector1@example.com").orElse(null);
+                if (collector1User == null) {
+                        collector1User = User.builder()
+                                        .firstName("Mike")
+                                        .lastName("Collector")
+                                        .email("collector1@example.com")
+                                        .password(passwordEncoder.encode("collector123"))
+                                        .role("COLLECTOR")
+                                        .enabled(true)
+                                        .build();
+                        collector1User = userRepository.saveAndFlush(collector1User);
+                        log.info("Created collector1 user");
+                }
+
+                if (collectorProfileRepository.findById(collector1User.getId()).isEmpty()) {
+                        // Merge user to attach to current session
+                        User managedUser1 = entityManager.merge(collector1User);
+                        CollectorProfile collector1 = CollectorProfile.builder()
+                                        .user(managedUser1)
+                                        .availabilityStatus("AVAILABLE")
+                                        .vehicleType("MOTORCYCLE")
+                                        .maxLoadKg(50.0)
+                                        .build();
+                        entityManager.persist(collector1);
+                        entityManager.flush();
+                        log.info("Created collector1 profile");
+                }
+
+                // Collector 2
+                User collector2User = userRepository.findByEmail("collector2@example.com").orElse(null);
+                if (collector2User == null) {
+                        collector2User = User.builder()
+                                        .firstName("Sarah")
+                                        .lastName("Driver")
+                                        .email("collector2@example.com")
+                                        .password(passwordEncoder.encode("collector123"))
+                                        .role("COLLECTOR")
+                                        .enabled(true)
+                                        .build();
+                        collector2User = userRepository.saveAndFlush(collector2User);
+                        log.info("Created collector2 user");
+                }
+
+                if (collectorProfileRepository.findById(collector2User.getId()).isEmpty()) {
+                        // Merge user to attach to current session
+                        User managedUser2 = entityManager.merge(collector2User);
+                        CollectorProfile collector2 = CollectorProfile.builder()
+                                        .user(managedUser2)
+                                        .availabilityStatus("AVAILABLE")
+                                        .vehicleType("TRUCK")
+                                        .maxLoadKg(500.0)
+                                        .build();
+                        entityManager.persist(collector2);
+                        entityManager.flush();
+                        log.info("Created collector2 profile");
+                }
+
+                // Collector 3
+                User collector3User = userRepository.findByEmail("collector3@example.com").orElse(null);
+                if (collector3User == null) {
+                        collector3User = User.builder()
+                                        .firstName("Tom")
+                                        .lastName("Hauler")
+                                        .email("collector3@example.com")
+                                        .password(passwordEncoder.encode("collector123"))
+                                        .role("COLLECTOR")
+                                        .enabled(true)
+                                        .build();
+                        collector3User = userRepository.saveAndFlush(collector3User);
+                        log.info("Created collector3 user");
+                }
+
+                if (collectorProfileRepository.findById(collector3User.getId()).isEmpty()) {
+                        // Merge user to attach to current session
+                        User managedUser3 = entityManager.merge(collector3User);
+                        CollectorProfile collector3 = CollectorProfile.builder()
+                                        .user(managedUser3)
+                                        .availabilityStatus("BUSY")
+                                        .vehicleType("VAN")
+                                        .maxLoadKg(200.0)
+                                        .build();
+                        entityManager.persist(collector3);
+                        entityManager.flush();
+                        log.info("Created collector3 profile");
+                }
+
+                log.info("Verified all 3 collectors and profiles exist");
+        }
+
+        private void seedCollectionRequests() {
+                User collector1User = userRepository.findByEmail("collector1@example.com").orElseThrow();
+                // Fallback to collector1 if collector2 doesn't exist
+                User collector2User = userRepository.findByEmail("collector2@example.com")
+                                .orElse(collector1User);
+
+                Instant now = Instant.now();
+
+                // ========== Tasks for Collector 1 (collector1@example.com) ==========
+
+                // Task 1: ASSIGNED - Ready to be accepted
+                CollectionRequest task1 = CollectionRequest.builder()
+                                .collectorId(collector1User.getId())
+                                .reportId(UUID.randomUUID()) // Simulated report
+                                .status("ASSIGNED")
+                                .note("Pickup at 123 Main Street - 5kg recyclables")
+                                .assignedAt(now.minus(2, ChronoUnit.HOURS))
+                                .createdAt(now.minus(2, ChronoUnit.HOURS))
+                                .build();
+                collectionRequestRepository.save(task1);
+
+                // Task 2: ASSIGNED - Another task to accept
+                CollectionRequest task2 = CollectionRequest.builder()
+                                .collectorId(collector1User.getId())
+                                .reportId(UUID.randomUUID())
+                                .status("ASSIGNED")
+                                .note("Pickup at 456 Oak Ave - Electronic waste")
+                                .assignedAt(now.minus(1, ChronoUnit.HOURS))
+                                .createdAt(now.minus(1, ChronoUnit.HOURS))
+                                .build();
+                collectionRequestRepository.save(task2);
+
+                // Task 3: ON_THE_WAY - Already accepted, in progress
+                CollectionRequest task3 = CollectionRequest.builder()
+                                .collectorId(collector1User.getId())
+                                .reportId(UUID.randomUUID())
+                                .status("ON_THE_WAY")
+                                .note("Pickup at 789 Pine Road - Plastic bottles")
+                                .assignedAt(now.minus(3, ChronoUnit.HOURS))
+                                .acceptedAt(now.minus(2, ChronoUnit.HOURS))
+                                .onWayAt(now.minus(2, ChronoUnit.HOURS))
+                                .createdAt(now.minus(3, ChronoUnit.HOURS))
+                                .build();
+                collectionRequestRepository.save(task3);
+
+                // Task 4: COLLECTED - Completed, needs proof upload
+                CollectionRequest task4 = CollectionRequest.builder()
+                                .collectorId(collector1User.getId())
+                                .reportId(UUID.randomUUID())
+                                .status("COLLECTED")
+                                .note("Pickup at 321 Elm Street - Paper waste")
+                                .assignedAt(now.minus(1, ChronoUnit.DAYS))
+                                .acceptedAt(now.minus(1, ChronoUnit.DAYS).plus(30, ChronoUnit.MINUTES))
+                                .onWayAt(now.minus(1, ChronoUnit.DAYS).plus(30, ChronoUnit.MINUTES))
+                                .collectedAt(now.minus(1, ChronoUnit.DAYS).plus(90, ChronoUnit.MINUTES))
+                                .createdAt(now.minus(1, ChronoUnit.DAYS))
+                                .build();
+                collectionRequestRepository.save(task4);
+
+                // Task 5: COLLECTED with proof - Complete history
+                CollectionRequest task5 = CollectionRequest.builder()
+                                .collectorId(collector1User.getId())
+                                .reportId(UUID.randomUUID())
+                                .status("COLLECTED")
+                                .note("Pickup at 555 Cedar Lane - Mixed recyclables")
+                                .collectorProofImageUrl("https://storage.example.com/proof/task5.jpg")
+                                .assignedAt(now.minus(2, ChronoUnit.DAYS))
+                                .acceptedAt(now.minus(2, ChronoUnit.DAYS).plus(15, ChronoUnit.MINUTES))
+                                .onWayAt(now.minus(2, ChronoUnit.DAYS).plus(15, ChronoUnit.MINUTES))
+                                .collectedAt(now.minus(2, ChronoUnit.DAYS).plus(45, ChronoUnit.MINUTES))
+                                .createdAt(now.minus(2, ChronoUnit.DAYS))
+                                .build();
+                collectionRequestRepository.save(task5);
+
+                // Task 6: FAILED - Historical failed task
+                CollectionRequest task6 = CollectionRequest.builder()
+                                .collectorId(collector1User.getId())
+                                .reportId(UUID.randomUUID())
+                                .status("FAILED")
+                                .note("Address not found - no one answered")
+                                .assignedAt(now.minus(3, ChronoUnit.DAYS))
+                                .acceptedAt(now.minus(3, ChronoUnit.DAYS).plus(20, ChronoUnit.MINUTES))
+                                .onWayAt(now.minus(3, ChronoUnit.DAYS).plus(20, ChronoUnit.MINUTES))
+                                .createdAt(now.minus(3, ChronoUnit.DAYS))
+                                .build();
+                collectionRequestRepository.save(task6);
+
+                // Task 7: CANCELLED - Cancelled by system
+                CollectionRequest task7 = CollectionRequest.builder()
+                                .collectorId(collector1User.getId())
+                                .reportId(UUID.randomUUID())
+                                .status("CANCELLED")
+                                .note("Cancelled by citizen request")
+                                .assignedAt(now.minus(4, ChronoUnit.DAYS))
+                                .acceptedAt(now.minus(4, ChronoUnit.DAYS).plus(10, ChronoUnit.MINUTES))
+                                .onWayAt(now.minus(4, ChronoUnit.DAYS).plus(10, ChronoUnit.MINUTES))
+                                .createdAt(now.minus(4, ChronoUnit.DAYS))
+                                .build();
+                collectionRequestRepository.save(task7);
+
+                // ========== Tasks for Collector 2 (collector2@example.com) ==========
+
+                // Task 8: ASSIGNED for collector 2
+                CollectionRequest task8 = CollectionRequest.builder()
+                                .collectorId(collector2User.getId())
+                                .reportId(UUID.randomUUID())
+                                .status("ASSIGNED")
+                                .note("Large pickup - Industrial area")
+                                .assignedAt(now.minus(30, ChronoUnit.MINUTES))
+                                .createdAt(now.minus(30, ChronoUnit.MINUTES))
+                                .build();
+                collectionRequestRepository.save(task8);
+
+                // Task 9: COLLECTED for collector 2
+                CollectionRequest task9 = CollectionRequest.builder()
+                                .collectorId(collector2User.getId())
+                                .reportId(UUID.randomUUID())
+                                .status("COLLECTED")
+                                .note("Completed - Restaurant waste")
+                                .collectorProofImageUrl("https://storage.example.com/proof/task9.jpg")
+                                .assignedAt(now.minus(1, ChronoUnit.DAYS))
+                                .acceptedAt(now.minus(1, ChronoUnit.DAYS).plus(5, ChronoUnit.MINUTES))
+                                .onWayAt(now.minus(1, ChronoUnit.DAYS).plus(5, ChronoUnit.MINUTES))
+                                .collectedAt(now.minus(1, ChronoUnit.DAYS).plus(60, ChronoUnit.MINUTES))
+                                .createdAt(now.minus(1, ChronoUnit.DAYS))
+                                .build();
+                collectionRequestRepository.save(task9);
+
+                log.info("Created 9 collection requests for testing");
         }
 
         private void seedNotifications() {

@@ -5,6 +5,7 @@ import com.example.backendservice.common.dto.PageResponse;
 import com.example.backendservice.features.collector.dto.*;
 import com.example.backendservice.features.collector.service.CollectorTaskService;
 import com.example.backendservice.features.user.entity.User;
+import com.example.backendservice.features.user.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -29,6 +31,7 @@ import java.util.UUID;
 public class CollectorTaskController {
 
     private final CollectorTaskService collectorTaskService;
+    private final UserRepository userRepository;
 
     // ==================== TASK MANAGEMENT ====================
 
@@ -115,7 +118,10 @@ public class CollectorTaskController {
 
     private UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof User user) {
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetails userDetails) {
+            String email = userDetails.getUsername();
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new IllegalStateException("User not found: " + email));
             return user.getId();
         }
         throw new IllegalStateException("Unable to determine current user");
