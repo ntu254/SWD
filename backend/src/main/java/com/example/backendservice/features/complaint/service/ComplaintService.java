@@ -18,6 +18,17 @@ public interface ComplaintService {
 
     ComplaintResponse getComplaintById(UUID complaintId);
 
+    // Enterprise operations
+    Page<ComplaintResponse> getComplaintsByEnterprise(UUID enterpriseId, Pageable pageable);
+
+    Page<ComplaintResponse> getComplaintsByCollector(UUID collectorId, Pageable pageable);
+
+    ComplaintResponse startInvestigation(UUID complaintId, UUID adminId);
+
+    ComplaintResponse resolveComplaint(UUID complaintId, UUID adminId, String response);
+
+    ComplaintResponse rejectComplaint(UUID complaintId, UUID adminId, String reason);
+
     // Admin operations
     Page<ComplaintResponse> getAllComplaints(String status, String category, String priority, Pageable pageable);
 
@@ -26,4 +37,6 @@ public interface ComplaintService {
     void deleteComplaint(UUID complaintId);
 
     Map<String, Long> getComplaintStatistics();
+
+    long countComplaintsByCollector(UUID collectorId);
 }

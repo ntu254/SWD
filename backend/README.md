@@ -7,7 +7,7 @@ Built with **Spring Boot 3.5.0**, **Java 17**, and **PostgreSQL**.
 
 ## 🚀 Tech Stack
 
-- **Language:** Java 17
+- **Language:** Java 21
 - **Framework:** Spring Boot 3.5.0
 - **Database:** PostgreSQL 15 (Supabase / Local)
 - **Authentication:** Spring Security + JWT (JSON Web Token)

@@ -1,5 +1,5 @@
 ---
-description: Workflow for code refactoring in Reward Management or other modules
+description: Workflow for code refactoring in Enterprise, Task, or Reward modules
 ---
 
 # Refactoring Workflow
@@ -13,16 +13,17 @@ This workflow guides safe refactoring to improve code quality without breaking f
    - Define success criteria (e.g., specific metric improvement)
    - Ensure existing tests pass 100%
    
-   ### Common Refactoring Scenarios for Reward Module
-   - Extract validation logic to separate class (RewardValidator)
-   - Move DTO mapping to dedicated mapper (RewardMapper)
+   ### Common Refactoring Scenarios
+   - Extract validation logic to separate class (TaskValidator, CapacityValidator)
+   - Move DTO mapping to dedicated mapper (TaskMapper, ReportMapper)
    - Consolidate duplicate code across services
    - Improve exception handling hierarchy
+   - Extract analytics logic to AnalyticsService
 
 2. **Strategy**
    - Choose refactoring technique:
      - Extract Method: Break large methods into smaller ones
-     - Extract Class: Move validation to RewardValidator
+     - Extract Class: Move validation to TaskValidator
      - Rename: Improve naming for clarity
      - Move: Reorganize package structure
    - Plan incremental steps (baby steps)
@@ -32,35 +33,35 @@ This workflow guides safe refactoring to improve code quality without breaking f
    - Run tests after EVERY small change
    - DO NOT change public API contracts (unless planned)
    
-   ### Example: Extract Validation Logic
+   ### Example: Extract Capacity Validation Logic
    ```java
    // BEFORE: Validation in service
-   public RedemptionResponse approveRedemption(Long id, Long adminId) {
-       RewardRedemption redemption = repository.findById(id)
-           .orElseThrow(() -> new ResourceNotFoundException("Redemption", id));
+   public Task createTaskFromReport(Long reportId) {
+       WasteReport report = reportRepository.findById(reportId)
+           .orElseThrow(() -> new ResourceNotFoundException("Report", reportId));
        
-       if (redemption.getStatus() != RedemptionStatus.PENDING) {
-           throw new BusinessException("Already processed");
-       }
+       EnterpriseCapability capability = capabilityRepository
+           .findByAreaIdAndWasteTypeId(report.getAreaId(), report.getWasteTypeId())
+           .orElseThrow(() -> new NoCapabilityException(report.getAreaId()));
        
-       if (redemption.getRewardItem().getStock() < 1) {
-           throw new OutOfStockException(redemption.getRewardItem().getId());
+       if (capability.getDailyCapacityKg() - capability.getUsedCapacityKg() < report.getEstimatedWeightKg()) {
+           throw new CapacityExceededException(capability.getId());
        }
        // ... rest of logic
    }
    
    // AFTER: Validation in separate class
-   public RedemptionResponse approveRedemption(Long id, Long adminId) {
-       RewardRedemption redemption = repository.findById(id)
-           .orElseThrow(() -> new ResourceNotFoundException("Redemption", id));
+   public Task createTaskFromReport(Long reportId) {
+       WasteReport report = reportRepository.findById(reportId)
+           .orElseThrow(() -> new ResourceNotFoundException("Report", reportId));
        
-       validator.validateForApproval(redemption);
+       capacityValidator.validateCapacityForReport(report);
        // ... rest of logic
    }
    ```
 
 4. **Verification**
-   - Run full test suite: `./gradlew test`
+   - Run full test suite: `./mvnw test`
    - Check performance metrics if applicable
    - Verify all endpoints still work via Swagger
 

@@ -16,9 +16,15 @@ public class ComplaintResponse {
     private UUID citizenId;
     private String citizenName;
     private String citizenEmail;
+
+    private UUID collectorId;
+    private String collectorName;
+    private UUID taskAssignmentId;
+
     private String title;
     private String description;
     private String category;
+    private String evidenceImages;
     private String status;
     private String priority;
     private String adminResponse;

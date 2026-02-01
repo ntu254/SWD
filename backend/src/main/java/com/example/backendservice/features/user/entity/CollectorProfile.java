@@ -1,5 +1,6 @@
 package com.example.backendservice.features.user.entity;
 
+import com.example.backendservice.features.enterprise.entity.Enterprise;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -29,18 +30,25 @@ public class CollectorProfile {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "enterprise_id")
-    private UUID enterpriseId; // FK to Enterprise (khi có Enterprise entity)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "enterprise_id")
+    private Enterprise enterprise;
 
     @Column(name = "availability_status", length = 20)
     @Builder.Default
-    private String availabilityStatus = "available"; // available, busy
+    private String availabilityStatus = "AVAILABLE"; // AVAILABLE, BUSY, OFFLINE
 
     @Column(name = "vehicle_type", length = 50)
     private String vehicleType;
 
     @Column(name = "max_load_kg")
     private Double maxLoadKg;
+
+    @Column(name = "current_lat")
+    private Double currentLat;
+
+    @Column(name = "current_lng")
+    private Double currentLng;
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;

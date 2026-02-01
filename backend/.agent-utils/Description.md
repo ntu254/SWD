@@ -44,273 +44,195 @@ Người dùng xác nhận lại trước khi gửi
 
 đây là database 
 
-1. Người dùng & phân quyền
-APP_USER
-👉 Bảng lõi cho mọi loại người dùng (Citizen / Collector / Enterprise staff / Admin)
-•	id – định danh user
-•	full_name, email, phone, avatar_url
-•	password_hash
-•	status – active / blocked / deleted
-•	last_login_at, created_at, updated_at, deleted_at
-________________________________________
-USER_ROLE
-👉 Một user có thể có nhiều role hệ thống
-•	user_id – FK → APP_USER
-•	role – ADMIN / CITIZEN / COLLECTOR / ENTERPRISE
-•	created_at
-________________________________________
-2. Hồ sơ theo vai trò
-CITIZEN_PROFILE
-👉 Mở rộng cho Citizen
-•	user_id (PK, FK)
-•	default_location_id – vị trí mặc định
-•	points_balance – tổng điểm hiện tại
-•	rank_scope – phạm vi xếp hạng
-•	updated_at
-________________________________________
-COLLECTOR_PROFILE
-👉 Hồ sơ Collector
-•	user_id (PK, FK)
-•	enterprise_id – thuộc doanh nghiệp nào
-•	availability_status – available / busy
-•	vehicle_type, max_load_kg
-•	updated_at
-________________________________________
-3. Doanh nghiệp tái chế
-ENTERPRISE
-👉 Doanh nghiệp tái chế
-•	id, name, tax_code
-•	contact_email, contact_phone
-•	address_location_id
-•	status
-•	created_at, updated_at, deleted_at
-________________________________________
-ENTERPRISE_SERVICE_CONFIG
-👉 Cấu hình năng lực xử lý
-•	enterprise_id (PK, FK)
-•	capacity_per_day, capacity_unit
-•	service_area_type (district / city / polygon…)
-•	service_area_data (JSON)
-•	priority_rules (JSON)
-•	updated_at
-________________________________________
-ENTERPRISE_MEMBER
-👉 User thuộc doanh nghiệp (staff / manager)
-•	enterprise_id
-•	user_id
-•	role_in_enterprise
-•	created_at
-________________________________________
-4. Định vị
-LOCATION
-👉 Lưu vị trí chuẩn hóa
-•	id
-•	address_text, ward, district, city
-•	lat, lng, geohash
-•	created_at, updated_at
-________________________________________
-5. Rác & phân loại
-WASTE_TYPE
-👉 Danh mục loại rác
-•	id
-•	code, name, description
-•	category (Organic / Recyclable / Hazardous…)
-•	is_hazardous
-•	created_at, updated_at
-________________________________________
-ENTERPRISE_WASTE_TYPE
-👉 Doanh nghiệp nhận loại rác nào
-•	enterprise_id
-•	waste_type_id
-•	created_at
-________________________________________
-6. Báo cáo rác của Citizen
+1. Nhóm người dùng (User & Role profile)
+USER
+Bảng lõi lưu thông tin đăng nhập chung cho mọi loại người dùng.
+user_id (PK)
+full_name
+email
+phone
+role (phân loại: CITIZEN / COLLECTOR / ADMIN / …)
+points (điểm thưởng tích lũy)
+status (active, inactive, blocked,…)
+Tất cả các bảng hồ sơ chi tiết đều tham chiếu tới USER.
+
+CITIZEN
+Hồ sơ công dân (mở rộng từ USER).
+user_id (PK, FK → USER)
+area_id (FK → SERVICE_AREA)
+full_name, phone
+address_text
+latitude, longitude
+status
+point (điểm hiện có)
+Một công dân thuộc một khu vực phục vụ và có thể tạo nhiều báo cáo rác.
+
+COLLECTOR
+Hồ sơ nhân viên thu gom.
+user_id (PK, FK → USER)
+full_name, phone
+employment_status
+current_service_id (FK → SERVICE_AREA)
+Một collector có thể được gán nhiều nhiệm vụ thu gom.
+
+ADMIN
+Hồ sơ quản trị viên.
+user_id (PK, FK → USER)
+full_name, email
+status
+Admin xử lý khiếu nại, phê duyệt kết quả,…
+
+2. Khu vực phục vụ
+SERVICE_AREA
+Định nghĩa khu vực hoạt động.
+area_id (PK)
+user_id (FK → USER, người quản lý/khu vực)
+name
+geo_boundary_wkt (biên dạng khu vực)
+is_active
+created_at
+Quan hệ:
+Một SERVICE_AREA có nhiều CITIZEN
+Một SERVICE_AREA có nhiều COLLECTOR
+Dùng để giới hạn nhiệm vụ trong từng khu vực.
+
+3. Báo cáo rác và nhiệm vụ thu gom
 WASTE_REPORT
-👉 Báo cáo rác (trung tâm nghiệp vụ)
-•	id
-•	citizen_id
-•	location_id
-•	description
-•	waste_type_id
-•	status (Pending / Accepted / Assigned / Collected)
-•	is_verified, verified_by_user_id, verified_at
-•	created_at, updated_at
-________________________________________
-WASTE_REPORT_IMAGE
-👉 Ảnh của báo cáo
-•	id
-•	report_id
-•	image_url, thumb_url
-•	taken_at, created_at
-________________________________________
-7. Thu gom
-COLLECTION_REQUEST
-👉 Nhiệm vụ thu gom do báo cáo sinh ra
-•	id
-•	report_id
-•	enterprise_id
-•	collector_id
-•	status
-•	accepted_at, assigned_at, on_way_at, collected_at
-•	collector_proof_image_url
-•	note
-•	created_at, updated_at
-________________________________________
-STATUS_HISTORY
-👉 Audit trail cho mọi trạng thái
-•	id
-•	target_type, target_id
-•	from_status, to_status
-•	actor_user_id
-•	timestamp
-•	meta (JSON)
-________________________________________
-8. Điểm thưởng & quy tắc
-POINT_RULE
-👉 Quy tắc cộng điểm
-•	id
-•	enterprise_id
-•	name, is_active
-•	effective_from, effective_to
-•	rule_json (logic tính điểm)
-•	points, priority
-•	created_by_user_id
-•	created_at, updated_at
-________________________________________
+Công dân báo điểm có rác cần xử lý.
+report_id (PK)
+user_id (FK → CITIZEN/USER)
+area_id (FK → SERVICE_AREA)
+estimated_weight_kg
+location_text
+lat, lng
+description
+status
+created_at
+Một báo cáo có thể sinh ra một hoặc nhiều nhiệm vụ.
+
+TASK
+Nhiệm vụ thu gom được tạo từ báo cáo.
+task_id (PK)
+area_id (FK → SERVICE_AREA)
+report_id (FK → WASTE_REPORT)
+scheduled_date
+priority
+status
+created_at
+Một task sẽ được gán cho collector qua bảng trung gian.
+
+TASK_ASSIGNMENT
+Gán collector cho task.
+assignment_id (PK)
+task_id (FK → TASK)
+user_id (FK → COLLECTOR/USER)
+assigned_at
+accepted_at
+completed_at
+status
+Quan hệ N–N giữa Collector và Task (mỗi task có thể đổi người thực hiện theo thời gian).
+
+4. Ghi nhận quá trình thu gom
+COLLECTION_VISIT
+Lần ghé thu gom thực tế tại điểm báo cáo.
+visit_id (PK)
+task_id (FK → TASK)
+collector_id (FK → COLLECTOR/USER)
+visited_at
+result_status
+note
+collected_weight
+Một task có thể có nhiều visit (ví dụ quay lại nhiều lần).
+
+EVIDENCE_PHOTO
+Ảnh minh chứng.
+photo_id (PK)
+visit_id (FK → COLLECTION_VISIT)
+photo_url
+taken_at
+note
+Mỗi lần thu gom có nhiều ảnh chứng minh trước/sau.
+
+5. Phân loại rác và tính điểm thưởng
+WASTE_TYPE
+Loại rác.
+waste_type_id (PK)
+name
+description
+is_recyclable
+is_active
+
+WASTE_SCORE_SYSTEM
+Quy tắc tính điểm theo loại rác.
+score_id (PK)
+waste_type_id (FK → WASTE_TYPE)
+score_per_kg
+multiplier
+effective_from
+effective_to
+
+CITIZEN_REWARD_RULE
+Quy tắc thưởng cho công dân.
+rule_id (PK)
+waste_type_id (FK → WASTE_TYPE)
+points_per_kg
+bonus_fixed
+effective_from
+effective_to
+
 REWARD_TRANSACTION
-👉 Giao dịch điểm (cộng / trừ)
-•	id
-•	citizen_id
-•	request_id
-•	type
-•	points
-•	reason
-•	balance_after
-•	created_by_user_id
-•	created_at
-________________________________________
-9. Phần thưởng đổi điểm
-REWARD_ITEM
-👉 Phần thưởng
-•	id
-•	name
-•	points_cost
-•	stock
-•	status
-•	created_at, updated_at
-________________________________________
-REWARD_REDEMPTION
-👉 Lịch sử đổi thưởng
-•	id
-•	citizen_id
-•	reward_item_id
-•	status
-•	points_used
-•	created_at, updated_at
-________________________________________
-10. Khiếu nại & phản hồi
+Giao dịch cộng/trừ điểm cho công dân.
+txn_id (PK)
+user_id (FK → CITIZEN/USER)
+task_id (FK → TASK)
+visit_id (FK → COLLECTION_VISIT)
+points_delta
+reason_code
+created_at
+Khi hoàn thành thu gom và xác định khối lượng/loại rác → sinh bản ghi thưởng điểm.
+
+6. Năng lực xử lý theo loại rác
+ENTERPRISE_CAPABILITY
+Khả năng xử lý rác của đơn vị/khu vực.
+capability_id (PK)
+area_id (FK → SERVICE_AREA)
+waste_type_id (FK → WASTE_TYPE)
+daily_capacity_kg
+status
+note
+Dùng để điều phối, tránh giao quá tải.
+
+7. Khiếu nại và xử lý
 COMPLAINT
-👉 Khiếu nại (collector / hệ thống)
-•	id
-•	complainant_id
-•	request_id
-•	category
-•	message
-•	status
-•	resolver_user_id
-•	resolution_note
-•	created_at, resolved_at
-________________________________________
-COMPLAINT_ATTACHMENT
-👉 File đính kèm khiếu nại
-•	id
-•	complaint_id
-•	file_url
-•	created_at
-________________________________________
-FEEDBACK
-👉 Đánh giá / phản hồi nhẹ
-•	id
-•	sender_id
-•	report_id
-•	message
-•	feedback_type
-•	rating
-•	created_at
-________________________________________
-11. Thông báo & thiết bị
-NOTIFICATION
-👉 Thông báo hệ thống
-•	id
-•	recipient_user_id
-•	title, message
-•	type
-•	is_read, read_at
-•	created_at
-________________________________________
-DEVICE_TOKEN
-👉 Push notification
-•	id
-•	user_id
-•	platform
-•	token
-•	last_seen_at, created_at
-________________________________________
-12. Xếp hạng
-LEADERBOARD_SNAPSHOT
-👉 Snapshot bảng xếp hạng
-•	id
-•	scope_type, scope_id
-•	waste_type_id
-•	period_type
-•	period_start, period_end
-•	calculated_at
-________________________________________
-LEADERBOARD_ENTRY
-👉 Thứ hạng từng user
-•	snapshot_id
-•	user_id
-•	rank
-•	points
-________________________________________
-13. AI hỗ trợ phân loại
-AI_CLASSIFICATION_RESULT
-👉 Kết quả AI gợi ý loại rác
-•	id
-•	report_id
-•	suggested_waste_type_id
-•	confidence
-•	alternatives (JSON)
-•	model_version
-•	created_at
-ASSIGNMENT_LOG
-- report_id
-- enterprise_id
-- score
-- reason_json
-- created_at
-________________________________________
-COLLECTOR_LOCATION_LOG
-- collector_id
-- lat
-- lng
-- accuracy
-- recorded_at
-________________________________________
-REPORT_REVIEW
-- report_id
-- reviewer_id
-- result (APPROVED / REJECTED)
-- reason
-- created_at
-________________________________________
+Khiếu nại của công dân về kết quả thu gom.
+complaint_id (PK)
+user_id (FK → CITIZEN/USER)
+report_id (FK → WASTE_REPORT)
+task_id (FK → TASK)
+content
+status
+created_at
 
-SYSTEM_CONFIG
-- key (UK)
-- value (jsonb)
-- description
-- updated_by
-- updated_at
+COMPLAINT_RESOLUTION
+Kết quả xử lý khiếu nại (do admin thực hiện).
+resolution_id (PK)
+complaint_id (FK → COMPLAINT)
+resolver_id (FK → ADMIN/USER)
+decision
+note
+resolved_at
+Một complaint có thể có một bản resolution cuối cùng.
 
-
-và hiện tại tôi đang triển khai chức năng Quản lí phần thưởng đổi điểm của Administrator , hãy sửa đổi các file cần thiết trong folder  agent-utils và workflows  
+8. Đánh giá hiệu suất nhân viên
+COLLECTOR_KPI_DAILY
+Chỉ số hiệu suất theo ngày của collector.
+kpi_id (PK)
+user_id (FK → COLLECTOR/USER)
+area_id (FK → SERVICE_AREA)
+kpi_date
+tasks_completed
+total_weight_kg
+on_time_rate
+rating
+computed_at
+Dùng cho báo cáo, thưởng/phạt nội bộ.
