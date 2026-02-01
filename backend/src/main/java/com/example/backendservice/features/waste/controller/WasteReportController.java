@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/waste-reports")
+@RequestMapping("/api/v1/waste-reports")
 @RequiredArgsConstructor
 @Tag(name = "Waste Reports", description = "APIs báo cáo rác từ Citizen")
 public class WasteReportController {

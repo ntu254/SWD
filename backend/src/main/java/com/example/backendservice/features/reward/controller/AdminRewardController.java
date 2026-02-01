@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/rewards/admin")
+@RequestMapping("/api/v1/rewards/admin")
 @RequiredArgsConstructor
 @Tag(name = "Reward Management", description = "APIs for managing reward items and redemption requests (Admin only)")
 public class AdminRewardController {

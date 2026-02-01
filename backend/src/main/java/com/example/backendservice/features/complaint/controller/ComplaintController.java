@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/complaints")
+@RequestMapping("/api/v1/complaints")
 @RequiredArgsConstructor
 @Tag(name = "Complaint Management", description = "APIs for managing citizen complaints about system issues")
 public class ComplaintController {

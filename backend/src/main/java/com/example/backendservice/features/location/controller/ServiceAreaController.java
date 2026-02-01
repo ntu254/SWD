@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/service-areas")
+@RequestMapping("/api/v1/service-areas")
 @RequiredArgsConstructor
 @Tag(name = "Service Areas", description = "APIs for managing service areas")
 public class ServiceAreaController {

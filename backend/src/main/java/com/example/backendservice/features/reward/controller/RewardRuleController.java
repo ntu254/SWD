@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/reward-rules")
+@RequestMapping("/api/v1/reward-rules")
 @RequiredArgsConstructor
 @Tag(name = "Reward Rules", description = "APIs quản lý quy tắc tính điểm thưởng")
 public class RewardRuleController {

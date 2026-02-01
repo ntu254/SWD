@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/enterprises")
+@RequestMapping("/api/v1/enterprises")
 @RequiredArgsConstructor
 @Tag(name = "Enterprises", description = "APIs for managing recycling enterprises")
 public class EnterpriseController {

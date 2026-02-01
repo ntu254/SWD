@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/enterprises/{enterpriseId}/capabilities")
+@RequestMapping("/api/v1/enterprises/{enterpriseId}/capabilities")
 @RequiredArgsConstructor
 @Tag(name = "Enterprise Capabilities", description = "APIs for managing enterprise processing capabilities")
 public class EnterpriseCapabilityController {

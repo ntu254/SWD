@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/waste-types")
+@RequestMapping("/api/v1/waste-types")
 @RequiredArgsConstructor
 @Tag(name = "Waste Types", description = "APIs for managing waste types")
 public class WasteTypeController {
