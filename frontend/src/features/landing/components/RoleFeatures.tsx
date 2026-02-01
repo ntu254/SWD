@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { User, Truck, Building2, CheckCircle, BarChart, MapPin, TrendingUp, Clock, Navigation } from 'lucide-react';
 import Button from '@components/Button';
 
-type RoleType = 'citizen' | 'enterprise' | 'collector';
+type RoleType = 'citizen' | 'enterprise' | 'collector' | 'admin';
 
 const ROLE_DATA = {
   citizen: {
     title: 'Dành Cho Cư Dân (Citizen)',
     desc: 'Tham gia mạng lưới xanh, báo cáo rác thải thông minh và nhận quà hấp dẫn.',
     features: [
-      'AI Scan: Chụp ảnh nhận diện rác và gợi ý phân loại ngay lập tức.',
+      'AI Advisory: Hỗ trợ gợi ý loại rác từ ảnh chụp (Cư dân xác nhận phân loại).',
       'Tracking: Theo dõi trạng thái rác (Pending -> Collected) theo thời gian thực.',
       'Gamification: Tích điểm GreenPoints, đua Top bảng xếp hạng khu vực.',
       'Feedback: Đánh giá chất lượng thu gom của Collector.'
@@ -37,6 +37,17 @@ const ROLE_DATA = {
       'Đánh giá: Chấm điểm phân loại rác của người dân để cộng điểm.'
     ],
     cta: 'Đăng Ký Collector'
+  },
+  admin: {
+    title: 'Quản Trị Viên (Admin)',
+    desc: 'Giám sát toàn hệ thống, quản lý rewards và giải quyết khiếu nại.',
+    features: [
+      'Dashboard: Theo dõi toàn bộ hoạt động hệ thống real-time.',
+      'User Management: Quản lý Citizen, Enterprise, Collector.',
+      'Reward Management: Thiết lập quà tặng và duyệt redemption.',
+      'Complaint Resolution: Xử lý khiếu nại từ citizen về chất lượng.'
+    ],
+    cta: 'Đăng Nhập Admin'
   }
 };
 
@@ -48,25 +59,26 @@ const RoleFeatures: React.FC = () => {
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center mb-12">
           <h2 className="font-display text-4xl font-bold text-gray-900 mb-4">Giải Pháp Toàn Diện</h2>
-          <p className="text-gray-600">Kết nối chặt chẽ 3 nhân tố quan trọng của nền kinh tế tuần hoàn.</p>
+          <p className="text-gray-600">Kết nối chặt chẽ 4 nhân tố quan trọng của nền kinh tế tuần hoàn.</p>
         </div>
 
         {/* Tabs */}
         <div className="flex justify-center mb-12">
           <div className="bg-gray-100 p-1 rounded-full inline-flex">
-            {(['citizen', 'enterprise', 'collector'] as const).map((role) => (
+            {(['citizen', 'enterprise', 'collector', 'admin'] as const).map((role) => (
               <button
                 key={role}
                 onClick={() => setActiveTab(role)}
                 className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${activeTab === role
-                    ? 'bg-white text-brand-600 shadow-md'
-                    : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white text-brand-600 shadow-md'
+                  : 'text-gray-500 hover:text-gray-700'
                   } flex items-center gap-2 capitalize`}
               >
                 {role === 'citizen' && <User size={16} />}
                 {role === 'enterprise' && <Building2 size={16} />}
                 {role === 'collector' && <Truck size={16} />}
-                {role === 'citizen' ? 'Cư Dân' : role === 'enterprise' ? 'Doanh Nghiệp' : 'Collector'}
+                {role === 'admin' && <BarChart size={16} />}
+                {role === 'citizen' ? 'Cư Dân' : role === 'enterprise' ? 'Doanh Nghiệp' : role === 'collector' ? 'Collector' : 'Admin'}
               </button>
             ))}
           </div>
@@ -207,6 +219,38 @@ const RoleFeatures: React.FC = () => {
                       <Navigation size={16} />
                       <span>Xác Nhận & Di Chuyển</span>
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'admin' && (
+                <div className="space-y-4 animate-in slide-in-from-bottom-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <BarChart className="text-brand-500" size={20} />
+                    <span className="font-bold text-gray-800">System Overview</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                      <div className="text-xs text-gray-500 mb-1">Total Users</div>
+                      <div className="text-2xl font-bold text-blue-600">1,245</div>
+                    </div>
+                    <div className="bg-green-50 p-3 rounded-xl border border-green-100">
+                      <div className="text-xs text-gray-500 mb-1">Active Tasks</div>
+                      <div className="text-2xl font-bold text-green-600">387</div>
+                    </div>
+                    <div className="bg-amber-50 p-3 rounded-xl border border-amber-100">
+                      <div className="text-xs text-gray-500 mb-1">Complaints</div>
+                      <div className="text-2xl font-bold text-amber-600">12</div>
+                    </div>
+                    <div className="bg-purple-50 p-3 rounded-xl border border-purple-100">
+                      <div className="text-xs text-gray-500 mb-1">Redemptions</div>
+                      <div className="text-2xl font-bold text-purple-600">56</div>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-brand-500 to-brand-600 text-white p-4 rounded-xl">
+                    <div className="text-xs opacity-90 mb-1">System Performance</div>
+                    <div className="text-lg font-bold">98.5% Uptime</div>
+                    <div className="text-[10px] opacity-75 mt-1">All services operational ✓</div>
                   </div>
                 </div>
               )}

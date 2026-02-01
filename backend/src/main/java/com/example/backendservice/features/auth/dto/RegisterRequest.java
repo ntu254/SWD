@@ -30,5 +30,12 @@ public class RegisterRequest {
     @Size(min = 6, max = 100, message = "Password must be between 6 and 100 characters")
     private String password;
 
-    private String role; // Optional, defaults to USER if null
+    private String role; // Optional, defaults to CITIZEN if null
+
+    // === NEW FIELDS theo APP_USER schema ===
+
+    @Size(max = 20, message = "Phone must be at most 20 characters")
+    private String phone;
+
+    private String avatarUrl;
 }
