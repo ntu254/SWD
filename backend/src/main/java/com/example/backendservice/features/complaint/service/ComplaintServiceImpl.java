@@ -8,9 +8,9 @@ import com.example.backendservice.features.complaint.dto.CreateComplaintRequest;
 import com.example.backendservice.features.complaint.dto.UpdateComplaintStatusRequest;
 import com.example.backendservice.features.complaint.entity.Complaint;
 import com.example.backendservice.features.complaint.repository.ComplaintRepository;
-import com.example.backendservice.features.user.entity.Citizen;
+import com.example.backendservice.features.user.entity.CitizenProfile;
 import com.example.backendservice.features.user.entity.User;
-import com.example.backendservice.features.user.repository.CitizenRepository;
+import com.example.backendservice.features.user.repository.CitizenProfileRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,14 +32,14 @@ import java.util.UUID;
 public class ComplaintServiceImpl implements ComplaintService {
 
     private final ComplaintRepository complaintRepository;
-    private final CitizenRepository citizenRepository;
+    private final CitizenProfileRepository citizenProfileRepository;
     private final UserRepository userRepository;
     private final SseService sseService;
 
     @Override
     public ComplaintResponse createComplaint(UUID citizenId, CreateComplaintRequest request) {
-        Citizen citizen = citizenRepository.findById(citizenId)
-                .orElseThrow(() -> new ResourceNotFoundException("Citizen", "id", citizenId));
+        CitizenProfile citizen = citizenProfileRepository.findById(citizenId)
+                .orElseThrow(() -> new ResourceNotFoundException("CitizenProfile", "id", citizenId));
 
         Complaint complaint = Complaint.builder()
                 .citizen(citizen)

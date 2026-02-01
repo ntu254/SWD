@@ -12,11 +12,11 @@ import com.example.backendservice.features.auth.dto.AuthResponse;
 import com.example.backendservice.features.auth.dto.LoginRequest;
 import com.example.backendservice.features.auth.dto.RegisterRequest;
 import com.example.backendservice.features.user.dto.UserResponse;
-import com.example.backendservice.features.user.entity.Citizen;
+import com.example.backendservice.features.user.entity.CitizenProfile;
 import com.example.backendservice.features.user.entity.CollectorProfile;
 import com.example.backendservice.features.user.entity.RoleType;
 import com.example.backendservice.features.user.entity.User;
-import com.example.backendservice.features.user.repository.CitizenRepository;
+import com.example.backendservice.features.user.repository.CitizenProfileRepository;
 import com.example.backendservice.features.user.repository.CollectorProfileRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
 import com.example.backendservice.security.jwt.JwtTokenProvider;
@@ -32,11 +32,12 @@ import java.time.LocalDateTime;
 public class AuthServiceImpl implements AuthService {
 
         private final UserRepository userRepository;
-        private final CitizenRepository citizenRepository;
+        private final CitizenProfileRepository citizenProfileRepository;
         private final CollectorProfileRepository collectorProfileRepository;
         private final PasswordEncoder passwordEncoder;
         private final JwtTokenProvider jwtTokenProvider;
         private final AuthenticationManager authenticationManager;
+        private final com.example.backendservice.common.service.EmailService emailService;
 
         @Override
         @Transactional
@@ -77,13 +78,7 @@ public class AuthServiceImpl implements AuthService {
                 // Create profile based on role
                 createProfileBasedOnRole(savedUser, roleType);
 
-                String token = jwtTokenProvider.generateToken(savedUser.getEmail());
-
-                return AuthResponse.builder()
-                                .accessToken(token)
-                                .tokenType("Bearer")
-                                .user(mapToUserResponse(savedUser))
-                                .build();
+                return generateTokensAndCreateResponse(savedUser);
         }
 
         @Override
@@ -96,22 +91,17 @@ public class AuthServiceImpl implements AuthService {
                                                 request.getEmail(),
                                                 request.getPassword()));
 
-                String token = jwtTokenProvider.generateToken(authentication);
-
                 User user = userRepository.findByEmail(request.getEmail())
                                 .orElseThrow(() -> new BadRequestException("User not found"));
 
                 // Update lastLoginAt
                 user.setLastLoginAt(LocalDateTime.now());
                 userRepository.save(user);
-                log.info("[AUTH_LOGGED_IN] User logged in: id={}, lastLoginAt={}", user.getId(), user.getLastLoginAt());
-
-                return AuthResponse.builder()
-                                .accessToken(token)
-                                .tokenType("Bearer")
-                                .user(mapToUserResponse(user))
-                                .build();
+                
+                return generateTokensAndCreateResponse(user);
         }
+
+
 
         /**
          * Tạo profile tương ứng dựa trên role
@@ -119,12 +109,12 @@ public class AuthServiceImpl implements AuthService {
         private void createProfileBasedOnRole(User user, RoleType roleType) {
                 switch (roleType) {
                         case CITIZEN -> {
-                                Citizen citizen = Citizen.builder()
+                                CitizenProfile citizen = CitizenProfile.builder()
                                                 .user(user)
                                                 .currentPoints(0)
                                                 .membershipTier("Bronze")
                                                 .build();
-                                citizenRepository.save(citizen);
+                                citizenProfileRepository.save(citizen);
                                 log.info("[PROFILE_CREATED] Created CitizenProfile for user: {}", user.getId());
                         }
                         case COLLECTOR -> {
@@ -154,6 +144,93 @@ public class AuthServiceImpl implements AuthService {
                                 .enabled(user.isEnabled())
                                 .createdAt(user.getCreatedAt())
                                 .updatedAt(user.getUpdatedAt())
+                                .build();
+        }
+
+
+        @Override
+        @Transactional
+        public void forgotPassword(String email) {
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new BadRequestException("User not found with email: " + email));
+
+                String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+                user.setOtpCode(otp);
+                user.setOtpExpiry(LocalDateTime.now().plusMinutes(15));
+                userRepository.save(user);
+
+                emailService.sendOtpEmail(email, otp);
+                log.info("[AUTH_FORGOT_PASS] OTP sent to: {}", email);
+        }
+
+        @Override
+        @Transactional
+        public AuthResponse resetPassword(String email, String otp, String newPassword) {
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new BadRequestException("User not found"));
+
+                if (user.getOtpCode() == null || !user.getOtpCode().equals(otp)) {
+                        throw new BadRequestException("Invalid OTP");
+                }
+
+                if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
+                        throw new BadRequestException("OTP has expired");
+                }
+
+                user.setPassword(passwordEncoder.encode(newPassword));
+                user.setOtpCode(null);
+                user.setOtpExpiry(null);
+                
+                // Clear old refresh token on password reset for security
+                user.setRefreshToken(null); 
+                user.setRefreshTokenExpiry(null);
+                
+                User savedUser = userRepository.save(user);
+
+                log.info("[AUTH_RESET_PASS] Password reset successfully for: {}", email);
+                return generateTokensAndCreateResponse(savedUser);
+        }
+
+        @Override
+        @Transactional
+        public AuthResponse refreshToken(String refreshToken) {
+                User user = userRepository.findByRefreshToken(refreshToken)
+                                .orElseThrow(() -> new BadRequestException("Invalid or expired refresh token"));
+
+                if (user.getRefreshTokenExpiry().isBefore(LocalDateTime.now())) {
+                        throw new BadRequestException("Refresh token has expired");
+                }
+
+                return generateTokensAndCreateResponse(user);
+        }
+
+        @Override
+        @Transactional
+        public void logout(String email) {
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new BadRequestException("User not found"));
+                
+                user.setRefreshToken(null);
+                user.setRefreshTokenExpiry(null);
+                userRepository.save(user);
+                log.info("[AUTH_LOGOUT] User logged out: {}", email);
+        }
+
+        private AuthResponse generateTokensAndCreateResponse(User user) {
+                String accessToken = jwtTokenProvider.generateToken(user.getEmail());
+                String refreshToken = java.util.UUID.randomUUID().toString();
+
+                user.setRefreshToken(refreshToken);
+                user.setRefreshTokenExpiry(LocalDateTime.now().plusDays(30)); // Refresh Token valid for 30 days
+                user.setLastLoginAt(LocalDateTime.now());
+                
+                userRepository.save(user);
+
+                return AuthResponse.builder()
+                                .accessToken(accessToken)
+                                .refreshToken(refreshToken)
+                                .tokenType("Bearer")
+                                .user(mapToUserResponse(user))
                                 .build();
         }
 }

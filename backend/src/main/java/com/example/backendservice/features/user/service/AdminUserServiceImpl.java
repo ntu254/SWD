@@ -10,6 +10,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,15 @@ public class AdminUserServiceImpl implements AdminUserService {
     @Override
     @Transactional
     public AdminUserResponse createUser(CreateUserRequest request) {
+        // Security Check: Enterprise can only create COLLECTOR
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean isEnterprise = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ENTERPRISE") || a.getAuthority().equals("ENTERPRISE"));
+
+        if (isEnterprise && !"COLLECTOR".equals(request.getRole())) {
+            throw new BadRequestException("Enterprise users can only create COLLECTOR accounts");
+        }
+
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Email already exists");
         }

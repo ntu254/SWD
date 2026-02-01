@@ -1,13 +1,17 @@
 import React from 'react';
-import { LayoutDashboard, Gift, History, Settings, Users } from 'lucide-react';
+import { useAuth } from '@shared/contexts';
+import { LayoutDashboard, Gift, History, Settings, Users, Bell, MessageSquare } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
+  const { user } = useAuth();
   return (
     <aside className="w-64 bg-white border-r border-gray-200 hidden lg:flex flex-col z-10">
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">SWD</div>
-          <span className="font-bold text-xl text-gray-900">Admin</span>
+          <span className="font-bold text-xl text-gray-900">
+            {user?.role === 'ENTERPRISE' ? 'Enterprise' : 'Admin'}
+          </span>
         </div>
       </div>
 
@@ -17,6 +21,12 @@ export const Sidebar: React.FC = () => {
         </a>
         <a href="/admin/users" className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
           <Users size={20} /> User Management
+        </a>
+        <a href="/admin/notifications" className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+          <Bell size={20} /> Notifications
+        </a>
+        <a href="/admin/complaints" className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+          <MessageSquare size={20} /> Complaints
         </a>
         <a href="/admin/rewards" className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
           <Gift size={20} /> Rewards

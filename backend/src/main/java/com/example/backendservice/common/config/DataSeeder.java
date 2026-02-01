@@ -4,9 +4,9 @@ import com.example.backendservice.features.complaint.entity.Complaint;
 import com.example.backendservice.features.complaint.repository.ComplaintRepository;
 import com.example.backendservice.features.notification.entity.Notification;
 import com.example.backendservice.features.notification.repository.NotificationRepository;
-import com.example.backendservice.features.user.entity.Citizen;
+import com.example.backendservice.features.user.entity.CitizenProfile;
 import com.example.backendservice.features.user.entity.User;
-import com.example.backendservice.features.user.repository.CitizenRepository;
+import com.example.backendservice.features.user.repository.CitizenProfileRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ import java.time.LocalDateTime;
 public class DataSeeder {
 
         private final UserRepository userRepository;
-        private final CitizenRepository citizenRepository;
+        private final CitizenProfileRepository citizenProfileRepository;
         private final ComplaintRepository complaintRepository;
         private final NotificationRepository notificationRepository;
         private final PasswordEncoder passwordEncoder;
@@ -68,13 +68,13 @@ public class DataSeeder {
                                 .build();
                 userRepository.save(citizen1User);
 
-                Citizen citizen1 = Citizen.builder()
+                CitizenProfile citizen1 = CitizenProfile.builder()
                                 .user(citizen1User)
                                 .address("123 Main Street, District 1")
                                 .currentPoints(250)
                                 .membershipTier("Silver")
                                 .build();
-                citizenRepository.save(citizen1);
+                citizenProfileRepository.save(citizen1);
 
                 User citizen2User = User.builder()
                                 .firstName("Jane")
@@ -86,13 +86,13 @@ public class DataSeeder {
                                 .build();
                 userRepository.save(citizen2User);
 
-                Citizen citizen2 = Citizen.builder()
+                CitizenProfile citizen2 = CitizenProfile.builder()
                                 .user(citizen2User)
                                 .address("456 Oak Avenue, District 2")
                                 .currentPoints(500)
                                 .membershipTier("Gold")
                                 .build();
-                citizenRepository.save(citizen2);
+                citizenProfileRepository.save(citizen2);
 
                 User citizen3User = User.builder()
                                 .firstName("Bob")
@@ -104,13 +104,13 @@ public class DataSeeder {
                                 .build();
                 userRepository.save(citizen3User);
 
-                Citizen citizen3 = Citizen.builder()
+                CitizenProfile citizen3 = CitizenProfile.builder()
                                 .user(citizen3User)
                                 .address("789 Pine Road, District 3")
                                 .currentPoints(100)
                                 .membershipTier("Bronze")
                                 .build();
-                citizenRepository.save(citizen3);
+                citizenProfileRepository.save(citizen3);
 
                 log.info("Created 1 admin and 3 citizens");
         }
@@ -200,9 +200,9 @@ public class DataSeeder {
                 User admin = userRepository.findByEmail("admin@example.com").orElseThrow();
 
                 // Find citizens by user
-                Citizen citizen1 = citizenRepository.findByUser_Id(citizen1User.getId()).orElseThrow();
-                Citizen citizen2 = citizenRepository.findByUser_Id(citizen2User.getId()).orElseThrow();
-                Citizen citizen3 = citizenRepository.findByUser_Id(citizen3User.getId()).orElseThrow();
+                CitizenProfile citizen1 = citizenProfileRepository.findByUser_Id(citizen1User.getId()).orElseThrow();
+                CitizenProfile citizen2 = citizenProfileRepository.findByUser_Id(citizen2User.getId()).orElseThrow();
+                CitizenProfile citizen3 = citizenProfileRepository.findByUser_Id(citizen3User.getId()).orElseThrow();
 
                 // Pending complaints
                 Complaint complaint1 = Complaint.builder()
