@@ -63,6 +63,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/sse/stats").hasRole("ADMIN")
                         .requestMatchers("/api/sse/test-broadcast").hasRole("ADMIN")
 
+                        // Collector endpoints
+                        .requestMatchers("/api/v1/collector/**").hasRole("COLLECTOR")
+
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
