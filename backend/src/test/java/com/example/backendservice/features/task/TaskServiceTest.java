@@ -11,7 +11,6 @@ import com.example.backendservice.features.task.repository.TaskAssignmentReposit
 import com.example.backendservice.features.task.repository.TaskRepository;
 import com.example.backendservice.features.task.service.TaskServiceImpl;
 import com.example.backendservice.features.user.entity.CollectorProfile;
-import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.CollectorProfileRepository;
 import com.example.backendservice.features.waste.repository.WasteTypeRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -85,15 +84,10 @@ class TaskServiceTest {
                 .status("ACTIVE")
                 .build();
 
-        User collectorUser = User.builder()
-                .id(UUID.randomUUID())
-                .firstName("Collector")
-                .lastName("One")
-                .build();
-
         sampleCollector = CollectorProfile.builder()
                 .id(collectorId)
-                .user(collectorUser)
+                .firstName("Collector")
+                .lastName("One")
                 .availabilityStatus("AVAILABLE")
                 .build();
 

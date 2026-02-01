@@ -58,54 +58,39 @@ public class DataSeeder {
                 userRepository.save(admin);
 
                 // Create Citizens
-                User citizen1User = User.builder()
+                CitizenProfile citizen1 = CitizenProfile.builder()
                                 .firstName("John")
                                 .lastName("Doe")
                                 .email("john@example.com")
                                 .password(passwordEncoder.encode("citizen123"))
                                 .role("CITIZEN")
                                 .enabled(true)
-                                .build();
-                userRepository.save(citizen1User);
-
-                CitizenProfile citizen1 = CitizenProfile.builder()
-                                .user(citizen1User)
                                 .address("123 Main Street, District 1")
                                 .currentPoints(250)
                                 .membershipTier("Silver")
                                 .build();
                 citizenProfileRepository.save(citizen1);
 
-                User citizen2User = User.builder()
+                CitizenProfile citizen2 = CitizenProfile.builder()
                                 .firstName("Jane")
                                 .lastName("Smith")
                                 .email("jane@example.com")
                                 .password(passwordEncoder.encode("citizen123"))
                                 .role("CITIZEN")
                                 .enabled(true)
-                                .build();
-                userRepository.save(citizen2User);
-
-                CitizenProfile citizen2 = CitizenProfile.builder()
-                                .user(citizen2User)
                                 .address("456 Oak Avenue, District 2")
                                 .currentPoints(500)
                                 .membershipTier("Gold")
                                 .build();
                 citizenProfileRepository.save(citizen2);
 
-                User citizen3User = User.builder()
+                CitizenProfile citizen3 = CitizenProfile.builder()
                                 .firstName("Bob")
                                 .lastName("Johnson")
                                 .email("bob@example.com")
                                 .password(passwordEncoder.encode("citizen123"))
                                 .role("CITIZEN")
                                 .enabled(true)
-                                .build();
-                userRepository.save(citizen3User);
-
-                CitizenProfile citizen3 = CitizenProfile.builder()
-                                .user(citizen3User)
                                 .address("789 Pine Road, District 3")
                                 .currentPoints(100)
                                 .membershipTier("Bronze")
@@ -193,16 +178,17 @@ public class DataSeeder {
         }
 
         private void seedComplaints() {
-                // Find users first
-                User citizen1User = userRepository.findByEmail("john@example.com").orElseThrow();
-                User citizen2User = userRepository.findByEmail("jane@example.com").orElseThrow();
-                User citizen3User = userRepository.findByEmail("bob@example.com").orElseThrow();
+                // Find citizens directly
+                CitizenProfile citizen1 = citizenProfileRepository.findAll().stream()
+                                .filter(c -> "john@example.com".equals(c.getEmail()))
+                                .findFirst().orElseThrow();
+                CitizenProfile citizen2 = citizenProfileRepository.findAll().stream()
+                                .filter(c -> "jane@example.com".equals(c.getEmail()))
+                                .findFirst().orElseThrow();
+                CitizenProfile citizen3 = citizenProfileRepository.findAll().stream()
+                                .filter(c -> "bob@example.com".equals(c.getEmail()))
+                                .findFirst().orElseThrow();
                 User admin = userRepository.findByEmail("admin@example.com").orElseThrow();
-
-                // Find citizens by user
-                CitizenProfile citizen1 = citizenProfileRepository.findByUser_Id(citizen1User.getId()).orElseThrow();
-                CitizenProfile citizen2 = citizenProfileRepository.findByUser_Id(citizen2User.getId()).orElseThrow();
-                CitizenProfile citizen3 = citizenProfileRepository.findByUser_Id(citizen3User.getId()).orElseThrow();
 
                 // Pending complaints
                 Complaint complaint1 = Complaint.builder()

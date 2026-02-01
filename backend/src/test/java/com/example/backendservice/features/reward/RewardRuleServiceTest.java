@@ -7,7 +7,6 @@ import com.example.backendservice.features.reward.repository.CitizenRewardRuleRe
 import com.example.backendservice.features.reward.service.RewardRuleServiceImpl;
 import com.example.backendservice.features.waste.entity.WasteType;
 import com.example.backendservice.features.waste.repository.WasteTypeRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

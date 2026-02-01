@@ -31,7 +31,7 @@ public class RedemptionResponse {
         return RedemptionResponse.builder()
                 .id(entity.getId())
                 .citizenId(entity.getCitizen().getId())
-                .citizenName(entity.getCitizen().getUser() != null ? entity.getCitizen().getUser().getFullName() : null)
+                .citizenName(entity.getCitizen() != null ? entity.getCitizen().getFullName() : null)
                 .rewardItemId(entity.getRewardItem().getId())
                 .rewardItemName(entity.getRewardItem().getName())
                 .pointsUsed(entity.getPointsUsed())

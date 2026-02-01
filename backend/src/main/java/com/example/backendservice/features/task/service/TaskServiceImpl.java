@@ -282,7 +282,7 @@ public class TaskServiceImpl implements TaskService {
                 .taskId(assignment.getTask().getId())
                 .collectorId(assignment.getCollector().getId())
                 .collectorName(
-                        assignment.getCollector().getUser() != null ? assignment.getCollector().getUser().getFullName()
+                        assignment.getCollector() != null ? assignment.getCollector().getFullName()
                                 : null)
                 .status(assignment.getStatus())
                 .rejectionReason(assignment.getRejectionReason())

@@ -8,7 +8,6 @@ import com.example.backendservice.features.complaint.entity.Complaint;
 import com.example.backendservice.features.complaint.repository.ComplaintRepository;
 import com.example.backendservice.features.complaint.service.ComplaintServiceImpl;
 import com.example.backendservice.features.user.entity.CitizenProfile;
-import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.CitizenProfileRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,31 +51,23 @@ class ComplaintServiceTest {
     @InjectMocks
     private ComplaintServiceImpl complaintService;
 
-    private User testUser;
     private CitizenProfile testCitizen;
     private Complaint testComplaint;
-    private UUID userId;
     private UUID citizenId;
     private UUID complaintId;
 
     @BeforeEach
     void setUp() {
-        userId = UUID.randomUUID();
         citizenId = UUID.randomUUID();
         complaintId = UUID.randomUUID();
 
-        testUser = User.builder()
-                .id(userId)
+        testCitizen = CitizenProfile.builder()
+                .id(citizenId)
                 .firstName("John")
                 .lastName("Doe")
                 .email("john@example.com")
                 .password("password")
                 .role("CITIZEN")
-                .build();
-
-        testCitizen = CitizenProfile.builder()
-                .id(citizenId)
-                .user(testUser)
                 .address("123 Main St")
                 .currentPoints(100)
                 .membershipTier("Bronze")

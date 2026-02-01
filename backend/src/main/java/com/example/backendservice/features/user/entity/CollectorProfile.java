@@ -3,10 +3,12 @@ package com.example.backendservice.features.user.entity;
 import com.example.backendservice.features.enterprise.entity.Enterprise;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
+/**
+ * Entity cho bảng COLLECTOR_PROFILE
+ * Hồ sơ Collector thuộc một Enterprise
+ */
+import lombok.experimental.SuperBuilder;
 
 /**
  * Entity cho bảng COLLECTOR_PROFILE
@@ -15,20 +17,11 @@ import java.util.UUID;
 @Entity
 @Table(name = "collector_profiles")
 @Data
-@Builder
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CollectorProfile {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
-    @JoinColumn(name = "user_id")
-    private User user;
+public class CollectorProfile extends User {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "enterprise_id")
@@ -50,6 +43,4 @@ public class CollectorProfile {
     @Column(name = "current_lng")
     private Double currentLng;
 
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
 }

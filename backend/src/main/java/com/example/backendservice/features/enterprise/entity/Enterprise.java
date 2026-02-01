@@ -4,11 +4,7 @@ import com.example.backendservice.features.location.entity.ServiceArea;
 import com.example.backendservice.features.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Doanh nghiệp tái chế (Recycling Enterprise)
@@ -17,15 +13,11 @@ import java.util.UUID;
 @Entity
 @Table(name = "enterprises")
 @Data
-@Builder
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Enterprise {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
+public class Enterprise extends User {
 
     @Column(nullable = false, length = 200)
     private String name;
@@ -38,12 +30,6 @@ public class Enterprise {
 
     @Column(length = 500)
     private String address;
-
-    @Column(length = 20)
-    private String phone;
-
-    @Column(length = 100)
-    private String email;
 
     @Column(name = "tax_code", length = 50)
     private String taxCode;
@@ -61,13 +47,4 @@ public class Enterprise {
     @Column(length = 50)
     @Builder.Default
     private String status = "ACTIVE"; // PENDING, ACTIVE, SUSPENDED, INACTIVE
-
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
-
-    private LocalDateTime deletedAt;
 }

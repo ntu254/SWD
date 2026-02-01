@@ -4,13 +4,9 @@ import com.example.backendservice.features.user.entity.CitizenProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface CitizenProfileRepository extends JpaRepository<CitizenProfile, UUID> {
-
-    Optional<CitizenProfile> findByUser_Id(UUID userId);
-
-    boolean existsByUser_Id(UUID userId);
+    // Current ID is the same as User ID due to Joined inheritance
 }
