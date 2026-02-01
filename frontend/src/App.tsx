@@ -3,6 +3,7 @@ import { AuthProvider } from '@shared/contexts';
 import HomePage from './features/landing/pages/HomePage';
 import AuthPage from './features/auth/pages/AuthPage';
 import { RewardManagementPage } from '@features/reward-redemption';
+import { RewardExchangePage } from '@features/reward-exchange-service';
 import { UserManagementPage } from '@features/user-management';
 import { NotificationManagementPage } from '@features/notification-management/pages/NotificationManagementPage';
 import { ComplaintManagementPage } from '@features/complaint-management/pages/ComplaintManagementPage';
@@ -15,6 +16,11 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/auth" element={<AuthPage />} />
+
+          {/* User Routes */}
+          <Route path="/rewards" element={<RewardExchangePage />} />
+
+          {/* Admin Routes */}
           <Route path="/admin/rewards" element={<RewardManagementPage />} />
           <Route path="/admin/users" element={<UserManagementPage />} />
           <Route path="/admin/notifications" element={<NotificationManagementPage />} />
