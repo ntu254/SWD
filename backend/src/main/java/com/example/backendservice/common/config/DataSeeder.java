@@ -144,18 +144,13 @@ public class DataSeeder {
 
         private void seedCollectors() {
                 // Create Collector 1
-                User collector1User = User.builder()
+                CollectorProfile collector1 = CollectorProfile.builder()
                                 .firstName("Mike")
                                 .lastName("Collector")
                                 .email("collector1@example.com")
                                 .password(passwordEncoder.encode("collector123"))
                                 .role("COLLECTOR")
                                 .enabled(true)
-                                .build();
-                userRepository.saveAndFlush(collector1User);
-
-                CollectorProfile collector1 = CollectorProfile.builder()
-                                .user(collector1User)
                                 .availabilityStatus("AVAILABLE")
                                 .vehicleType("MOTORCYCLE")
                                 .maxLoadKg(50.0)
@@ -163,18 +158,13 @@ public class DataSeeder {
                 collectorProfileRepository.save(collector1);
 
                 // Create Collector 2
-                User collector2User = User.builder()
+                CollectorProfile collector2 = CollectorProfile.builder()
                                 .firstName("Sarah")
                                 .lastName("Driver")
                                 .email("collector2@example.com")
                                 .password(passwordEncoder.encode("collector123"))
                                 .role("COLLECTOR")
                                 .enabled(true)
-                                .build();
-                userRepository.saveAndFlush(collector2User);
-
-                CollectorProfile collector2 = CollectorProfile.builder()
-                                .user(collector2User)
                                 .availabilityStatus("AVAILABLE")
                                 .vehicleType("TRUCK")
                                 .maxLoadKg(500.0)
@@ -182,18 +172,13 @@ public class DataSeeder {
                 collectorProfileRepository.save(collector2);
 
                 // Create Collector 3 (Busy)
-                User collector3User = User.builder()
+                CollectorProfile collector3 = CollectorProfile.builder()
                                 .firstName("Tom")
                                 .lastName("Hauler")
                                 .email("collector3@example.com")
                                 .password(passwordEncoder.encode("collector123"))
                                 .role("COLLECTOR")
                                 .enabled(true)
-                                .build();
-                userRepository.saveAndFlush(collector3User);
-
-                CollectorProfile collector3 = CollectorProfile.builder()
-                                .user(collector3User)
                                 .availabilityStatus("BUSY")
                                 .vehicleType("VAN")
                                 .maxLoadKg(200.0)
@@ -209,93 +194,57 @@ public class DataSeeder {
          */
         private void seedCollectorsIfMissing() {
                 // Collector 1
-                User collector1User = userRepository.findByEmail("collector1@example.com").orElse(null);
-                if (collector1User == null) {
-                        collector1User = User.builder()
+                if (userRepository.findByEmail("collector1@example.com").isEmpty()) {
+                        CollectorProfile collector1 = CollectorProfile.builder()
                                         .firstName("Mike")
                                         .lastName("Collector")
                                         .email("collector1@example.com")
                                         .password(passwordEncoder.encode("collector123"))
                                         .role("COLLECTOR")
                                         .enabled(true)
-                                        .build();
-                        collector1User = userRepository.saveAndFlush(collector1User);
-                        log.info("Created collector1 user");
-                }
-
-                if (collectorProfileRepository.findById(collector1User.getId()).isEmpty()) {
-                        // Merge user to attach to current session
-                        User managedUser1 = entityManager.merge(collector1User);
-                        CollectorProfile collector1 = CollectorProfile.builder()
-                                        .user(managedUser1)
                                         .availabilityStatus("AVAILABLE")
                                         .vehicleType("MOTORCYCLE")
                                         .maxLoadKg(50.0)
                                         .build();
-                        entityManager.persist(collector1);
-                        entityManager.flush();
-                        log.info("Created collector1 profile");
+                        collectorProfileRepository.save(collector1);
+                        log.info("Created collector1");
                 }
 
                 // Collector 2
-                User collector2User = userRepository.findByEmail("collector2@example.com").orElse(null);
-                if (collector2User == null) {
-                        collector2User = User.builder()
+                if (userRepository.findByEmail("collector2@example.com").isEmpty()) {
+                        CollectorProfile collector2 = CollectorProfile.builder()
                                         .firstName("Sarah")
                                         .lastName("Driver")
                                         .email("collector2@example.com")
                                         .password(passwordEncoder.encode("collector123"))
                                         .role("COLLECTOR")
                                         .enabled(true)
-                                        .build();
-                        collector2User = userRepository.saveAndFlush(collector2User);
-                        log.info("Created collector2 user");
-                }
-
-                if (collectorProfileRepository.findById(collector2User.getId()).isEmpty()) {
-                        // Merge user to attach to current session
-                        User managedUser2 = entityManager.merge(collector2User);
-                        CollectorProfile collector2 = CollectorProfile.builder()
-                                        .user(managedUser2)
                                         .availabilityStatus("AVAILABLE")
                                         .vehicleType("TRUCK")
                                         .maxLoadKg(500.0)
                                         .build();
-                        entityManager.persist(collector2);
-                        entityManager.flush();
-                        log.info("Created collector2 profile");
+                        collectorProfileRepository.save(collector2);
+                        log.info("Created collector2");
                 }
 
                 // Collector 3
-                User collector3User = userRepository.findByEmail("collector3@example.com").orElse(null);
-                if (collector3User == null) {
-                        collector3User = User.builder()
+                if (userRepository.findByEmail("collector3@example.com").isEmpty()) {
+                        CollectorProfile collector3 = CollectorProfile.builder()
                                         .firstName("Tom")
                                         .lastName("Hauler")
                                         .email("collector3@example.com")
                                         .password(passwordEncoder.encode("collector123"))
                                         .role("COLLECTOR")
                                         .enabled(true)
-                                        .build();
-                        collector3User = userRepository.saveAndFlush(collector3User);
-                        log.info("Created collector3 user");
-                }
-
-                if (collectorProfileRepository.findById(collector3User.getId()).isEmpty()) {
-                        // Merge user to attach to current session
-                        User managedUser3 = entityManager.merge(collector3User);
-                        CollectorProfile collector3 = CollectorProfile.builder()
-                                        .user(managedUser3)
                                         .availabilityStatus("BUSY")
                                         .vehicleType("VAN")
                                         .maxLoadKg(200.0)
                                         .build();
-                        entityManager.persist(collector3);
-                        entityManager.flush();
-                        log.info("Created collector3 profile");
+                        collectorProfileRepository.save(collector3);
+                        log.info("Created collector3");
                 }
 
-                log.info("Verified all 3 collectors and profiles exist");
+                log.info("Verified all 3 collectors exist");
         }
 
         private void seedCollectionRequests() {
