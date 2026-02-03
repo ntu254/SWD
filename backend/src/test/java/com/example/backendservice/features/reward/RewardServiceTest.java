@@ -55,10 +55,21 @@ class RewardServiceTest {
         itemId = UUID.randomUUID();
         redemptionId = UUID.randomUUID();
 
-        sampleCitizen = CitizenProfile.builder()
+        // Use composition pattern - create User first, then CitizenProfile with User
+        // reference
+        com.example.backendservice.features.user.entity.User citizenUser = com.example.backendservice.features.user.entity.User
+                .builder()
                 .id(citizenId)
                 .firstName("John")
                 .lastName("Doe")
+                .email("john@example.com")
+                .password("password")
+                .enabled(true)
+                .build();
+
+        sampleCitizen = CitizenProfile.builder()
+                .id(UUID.randomUUID())
+                .user(citizenUser)
                 .currentPoints(5000)
                 .build();
 

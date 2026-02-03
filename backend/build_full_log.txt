@@ -1,0 +1,23 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< com.example:backend-service >---------------------
+[INFO] Building backend-service 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.4.0:clean (default-clean) @ backend-service ---
+[INFO] Deleting D:\SU26\SWD392_PROJECT\SWD\backend\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ backend-service ---
+[INFO] Copying 4 resources from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ backend-service ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 160 source files with javac [debug parameters release 21] to target\classes
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  5.234 s
+[INFO] Finished at: 2026-02-03T09:32:21+07:00
+[INFO] ------------------------------------------------------------------------

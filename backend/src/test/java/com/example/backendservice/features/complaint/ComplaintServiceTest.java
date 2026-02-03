@@ -61,13 +61,22 @@ class ComplaintServiceTest {
         citizenId = UUID.randomUUID();
         complaintId = UUID.randomUUID();
 
-        testCitizen = CitizenProfile.builder()
+        // Use composition pattern - create User first, then CitizenProfile with User
+        // reference
+        com.example.backendservice.features.user.entity.User citizenUser = com.example.backendservice.features.user.entity.User
+                .builder()
                 .id(citizenId)
                 .firstName("John")
                 .lastName("Doe")
                 .email("john@example.com")
                 .password("password")
                 .role("CITIZEN")
+                .enabled(true)
+                .build();
+
+        testCitizen = CitizenProfile.builder()
+                .id(UUID.randomUUID())
+                .user(citizenUser)
                 .address("123 Main St")
                 .currentPoints(100)
                 .membershipTier("Bronze")

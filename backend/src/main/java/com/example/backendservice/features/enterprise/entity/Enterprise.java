@@ -4,20 +4,30 @@ import com.example.backendservice.features.location.entity.ServiceArea;
 import com.example.backendservice.features.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Doanh nghiệp tái chế (Recycling Enterprise)
  * Quản lý năng lực xử lý rác, Collector, và khu vực phục vụ
+ * 
+ * Sử dụng Composition thay vì Inheritance - Enterprise là entity độc lập
  */
 @Entity
 @Table(name = "enterprises")
 @Data
-@EqualsAndHashCode(callSuper = true)
-@SuperBuilder
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Enterprise extends User {
+public class Enterprise {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID id;
 
     @Column(nullable = false, length = 200)
     private String name;
@@ -34,17 +44,37 @@ public class Enterprise extends User {
     @Column(name = "tax_code", length = 50)
     private String taxCode;
 
-    // Owner/Admin của Enterprise
+    @Column(name = "phone", length = 20)
+    private String phone;
+
+    @Column(name = "email", length = 100)
+    private String email;
+
+    // Owner/Admin của Enterprise (FK to User)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User owner;
 
     // Khu vực chính
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "primary_area_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private ServiceArea primaryArea;
 
     @Column(length = 50)
     @Builder.Default
     private String status = "ACTIVE"; // PENDING, ACTIVE, SUSPENDED, INACTIVE
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+
+    // Soft delete support
+    private LocalDateTime deletedAt;
 }

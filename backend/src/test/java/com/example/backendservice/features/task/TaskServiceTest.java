@@ -84,10 +84,21 @@ class TaskServiceTest {
                 .status("ACTIVE")
                 .build();
 
-        sampleCollector = CollectorProfile.builder()
+        // Use composition pattern - create User first, then CollectorProfile with User
+        // reference
+        com.example.backendservice.features.user.entity.User collectorUser = com.example.backendservice.features.user.entity.User
+                .builder()
                 .id(collectorId)
                 .firstName("Collector")
                 .lastName("One")
+                .email("collector@example.com")
+                .password("password")
+                .enabled(true)
+                .build();
+
+        sampleCollector = CollectorProfile.builder()
+                .id(UUID.randomUUID())
+                .user(collectorUser)
                 .availabilityStatus("AVAILABLE")
                 .build();
 

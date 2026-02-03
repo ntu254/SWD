@@ -66,10 +66,21 @@ class WasteReportServiceTest {
         areaId = UUID.randomUUID();
         wasteTypeId = UUID.randomUUID();
 
-        sampleCitizen = CitizenProfile.builder()
+        // Use composition pattern - create User first, then CitizenProfile with User
+        // reference
+        com.example.backendservice.features.user.entity.User citizenUser = com.example.backendservice.features.user.entity.User
+                .builder()
                 .id(citizenId)
                 .firstName("Nguyen")
                 .lastName("Van A")
+                .email("nguyen@example.com")
+                .password("password")
+                .enabled(true)
+                .build();
+
+        sampleCitizen = CitizenProfile.builder()
+                .id(UUID.randomUUID())
+                .user(citizenUser)
                 .currentPoints(100)
                 .build();
 

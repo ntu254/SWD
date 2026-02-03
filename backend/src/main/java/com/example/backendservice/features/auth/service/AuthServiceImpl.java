@@ -10,12 +10,15 @@ import com.example.backendservice.common.exception.BadRequestException;
 import com.example.backendservice.features.auth.dto.AuthResponse;
 import com.example.backendservice.features.auth.dto.LoginRequest;
 import com.example.backendservice.features.auth.dto.RegisterRequest;
-import com.example.backendservice.features.user.dto.UserResponse;
 import com.example.backendservice.features.enterprise.entity.Enterprise;
+import com.example.backendservice.features.enterprise.repository.EnterpriseRepository;
+import com.example.backendservice.features.user.dto.UserResponse;
 import com.example.backendservice.features.user.entity.CitizenProfile;
 import com.example.backendservice.features.user.entity.CollectorProfile;
 import com.example.backendservice.features.user.entity.RoleType;
 import com.example.backendservice.features.user.entity.User;
+import com.example.backendservice.features.user.repository.CitizenProfileRepository;
+import com.example.backendservice.features.user.repository.CollectorProfileRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
 import com.example.backendservice.security.jwt.JwtTokenProvider;
 
@@ -30,6 +33,9 @@ import java.time.LocalDateTime;
 public class AuthServiceImpl implements AuthService {
 
         private final UserRepository userRepository;
+        private final CitizenProfileRepository citizenProfileRepository;
+        private final CollectorProfileRepository collectorProfileRepository;
+        private final EnterpriseRepository enterpriseRepository;
         private final PasswordEncoder passwordEncoder;
         private final JwtTokenProvider jwtTokenProvider;
         private final AuthenticationManager authenticationManager;
@@ -54,63 +60,55 @@ public class AuthServiceImpl implements AuthService {
                         roleStr = "CITIZEN";
                 }
 
-                User user;
-                if (roleType == RoleType.CITIZEN) {
-                        user = CitizenProfile.builder()
-                                        .firstName(request.getFirstName())
-                                        .lastName(request.getLastName())
-                                        .email(request.getEmail())
-                                        .password(passwordEncoder.encode(request.getPassword()))
-                                        .role(roleStr)
-                                        .phone(request.getPhone())
-                                        .avatarUrl(request.getAvatarUrl())
-                                        .enabled(true)
-                                        .currentPoints(0)
-                                        .membershipTier("Bronze")
-                                        .build();
-                } else if (roleType == RoleType.COLLECTOR) {
-                        user = CollectorProfile.builder()
-                                        .firstName(request.getFirstName())
-                                        .lastName(request.getLastName())
-                                        .email(request.getEmail())
-                                        .password(passwordEncoder.encode(request.getPassword()))
-                                        .role(roleStr)
-                                        .phone(request.getPhone())
-                                        .avatarUrl(request.getAvatarUrl())
-                                        .enabled(true)
-                                        .availabilityStatus("AVAILABLE")
-                                        .build();
-                } else if (roleType == RoleType.ENTERPRISE) {
-                        user = Enterprise.builder()
-                                        .firstName(request.getFirstName())
-                                        .lastName(request.getLastName())
-                                        .email(request.getEmail())
-                                        .password(passwordEncoder.encode(request.getPassword()))
-                                        .role(roleStr)
-                                        .phone(request.getPhone())
-                                        .avatarUrl(request.getAvatarUrl())
-                                        .enabled(true)
-                                        .name(request.getFirstName() + " " + request.getLastName()) // Default name
-                                        .status("ACTIVE")
-                                        .build();
-                } else {
-                        user = User.builder()
-                                        .firstName(request.getFirstName())
-                                        .lastName(request.getLastName())
-                                        .email(request.getEmail())
-                                        .password(passwordEncoder.encode(request.getPassword()))
-                                        .role(roleStr)
-                                        .phone(request.getPhone())
-                                        .avatarUrl(request.getAvatarUrl())
-                                        .enabled(true)
-                                        .build();
-                }
+                // 1. Tạo User trước (base entity)
+                User user = User.builder()
+                                .firstName(request.getFirstName())
+                                .lastName(request.getLastName())
+                                .email(request.getEmail())
+                                .password(passwordEncoder.encode(request.getPassword()))
+                                .role(roleStr)
+                                .phone(request.getPhone())
+                                .avatarUrl(request.getAvatarUrl())
+                                .enabled(true)
+                                .build();
 
                 // Add role to roles collection
                 user.addRole(roleType);
 
+                // Save user first
                 User savedUser = userRepository.save(user);
-                log.info("[AUTH_REGISTERED] {} registered with id: {}", roleType, savedUser.getId());
+                log.info("[AUTH_REGISTERED] User registered with id: {}", savedUser.getId());
+
+                // 2. Tạo profile tương ứng dựa trên role (Composition pattern)
+                if (roleType == RoleType.CITIZEN) {
+                        CitizenProfile citizenProfile = CitizenProfile.builder()
+                                        .user(savedUser)
+                                        .currentPoints(0)
+                                        .membershipTier("Bronze")
+                                        .build();
+                        citizenProfileRepository.save(citizenProfile);
+                        log.info("[AUTH_REGISTERED] CitizenProfile created for user: {}", savedUser.getId());
+
+                } else if (roleType == RoleType.COLLECTOR) {
+                        CollectorProfile collectorProfile = CollectorProfile.builder()
+                                        .user(savedUser)
+                                        .availabilityStatus("AVAILABLE")
+                                        .build();
+                        collectorProfileRepository.save(collectorProfile);
+                        log.info("[AUTH_REGISTERED] CollectorProfile created for user: {}", savedUser.getId());
+
+                } else if (roleType == RoleType.ENTERPRISE) {
+                        // Enterprise là entity độc lập, owner là user vừa tạo
+                        Enterprise enterprise = Enterprise.builder()
+                                        .name(request.getFirstName() + " " + request.getLastName())
+                                        .email(request.getEmail())
+                                        .phone(request.getPhone())
+                                        .owner(savedUser)
+                                        .status("ACTIVE")
+                                        .build();
+                        enterpriseRepository.save(enterprise);
+                        log.info("[AUTH_REGISTERED] Enterprise created for user: {}", savedUser.getId());
+                }
 
                 return generateTokensAndCreateResponse(savedUser);
         }

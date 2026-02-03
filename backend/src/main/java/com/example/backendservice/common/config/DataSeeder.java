@@ -8,6 +8,7 @@ import com.example.backendservice.features.notification.entity.Notification;
 import com.example.backendservice.features.notification.repository.NotificationRepository;
 import com.example.backendservice.features.user.entity.CitizenProfile;
 import com.example.backendservice.features.user.entity.CollectorProfile;
+import com.example.backendservice.features.user.entity.RoleType;
 import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.CitizenProfileRepository;
 import com.example.backendservice.features.user.repository.CollectorProfileRepository;
@@ -15,9 +16,9 @@ import com.example.backendservice.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -32,7 +33,7 @@ import jakarta.persistence.PersistenceContext;
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
-@Profile({ "dev", "local" }) // Run in dev or local profile
+@ConditionalOnProperty(name = "app.seeder.enabled", havingValue = "true", matchIfMissing = false)
 public class DataSeeder {
 
         private final UserRepository userRepository;
@@ -97,42 +98,64 @@ public class DataSeeder {
                                 .role("ADMIN")
                                 .enabled(true)
                                 .build();
+                admin.addRole(RoleType.ADMIN);
                 userRepository.save(admin);
 
-                // Create Citizens
-                CitizenProfile citizen1 = CitizenProfile.builder()
+                // Create Citizens với Composition pattern
+                // Citizen 1
+                User citizenUser1 = User.builder()
                                 .firstName("John")
                                 .lastName("Doe")
                                 .email("john@example.com")
                                 .password(passwordEncoder.encode("citizen123"))
                                 .role("CITIZEN")
                                 .enabled(true)
+                                .build();
+                citizenUser1.addRole(RoleType.CITIZEN);
+                User savedCitizenUser1 = userRepository.save(citizenUser1);
+
+                CitizenProfile citizen1 = CitizenProfile.builder()
+                                .user(savedCitizenUser1)
                                 .address("123 Main Street, District 1")
                                 .currentPoints(250)
                                 .membershipTier("Silver")
                                 .build();
                 citizenProfileRepository.save(citizen1);
 
-                CitizenProfile citizen2 = CitizenProfile.builder()
+                // Citizen 2
+                User citizenUser2 = User.builder()
                                 .firstName("Jane")
                                 .lastName("Smith")
                                 .email("jane@example.com")
                                 .password(passwordEncoder.encode("citizen123"))
                                 .role("CITIZEN")
                                 .enabled(true)
+                                .build();
+                citizenUser2.addRole(RoleType.CITIZEN);
+                User savedCitizenUser2 = userRepository.save(citizenUser2);
+
+                CitizenProfile citizen2 = CitizenProfile.builder()
+                                .user(savedCitizenUser2)
                                 .address("456 Oak Avenue, District 2")
                                 .currentPoints(500)
                                 .membershipTier("Gold")
                                 .build();
                 citizenProfileRepository.save(citizen2);
 
-                CitizenProfile citizen3 = CitizenProfile.builder()
+                // Citizen 3
+                User citizenUser3 = User.builder()
                                 .firstName("Bob")
                                 .lastName("Johnson")
                                 .email("bob@example.com")
                                 .password(passwordEncoder.encode("citizen123"))
                                 .role("CITIZEN")
                                 .enabled(true)
+                                .build();
+                citizenUser3.addRole(RoleType.CITIZEN);
+                User savedCitizenUser3 = userRepository.save(citizenUser3);
+
+                CitizenProfile citizen3 = CitizenProfile.builder()
+                                .user(savedCitizenUser3)
                                 .address("789 Pine Road, District 3")
                                 .currentPoints(100)
                                 .membershipTier("Bronze")
@@ -143,14 +166,20 @@ public class DataSeeder {
         }
 
         private void seedCollectors() {
-                // Create Collector 1
-                CollectorProfile collector1 = CollectorProfile.builder()
+                // Create Collector 1 với Composition pattern
+                User collectorUser1 = User.builder()
                                 .firstName("Mike")
                                 .lastName("Collector")
                                 .email("collector1@example.com")
                                 .password(passwordEncoder.encode("collector123"))
                                 .role("COLLECTOR")
                                 .enabled(true)
+                                .build();
+                collectorUser1.addRole(RoleType.COLLECTOR);
+                User savedCollectorUser1 = userRepository.save(collectorUser1);
+
+                CollectorProfile collector1 = CollectorProfile.builder()
+                                .user(savedCollectorUser1)
                                 .availabilityStatus("AVAILABLE")
                                 .vehicleType("MOTORCYCLE")
                                 .maxLoadKg(50.0)
@@ -158,13 +187,19 @@ public class DataSeeder {
                 collectorProfileRepository.save(collector1);
 
                 // Create Collector 2
-                CollectorProfile collector2 = CollectorProfile.builder()
+                User collectorUser2 = User.builder()
                                 .firstName("Sarah")
                                 .lastName("Driver")
                                 .email("collector2@example.com")
                                 .password(passwordEncoder.encode("collector123"))
                                 .role("COLLECTOR")
                                 .enabled(true)
+                                .build();
+                collectorUser2.addRole(RoleType.COLLECTOR);
+                User savedCollectorUser2 = userRepository.save(collectorUser2);
+
+                CollectorProfile collector2 = CollectorProfile.builder()
+                                .user(savedCollectorUser2)
                                 .availabilityStatus("AVAILABLE")
                                 .vehicleType("TRUCK")
                                 .maxLoadKg(500.0)
@@ -172,13 +207,19 @@ public class DataSeeder {
                 collectorProfileRepository.save(collector2);
 
                 // Create Collector 3 (Busy)
-                CollectorProfile collector3 = CollectorProfile.builder()
+                User collectorUser3 = User.builder()
                                 .firstName("Tom")
                                 .lastName("Hauler")
                                 .email("collector3@example.com")
                                 .password(passwordEncoder.encode("collector123"))
                                 .role("COLLECTOR")
                                 .enabled(true)
+                                .build();
+                collectorUser3.addRole(RoleType.COLLECTOR);
+                User savedCollectorUser3 = userRepository.save(collectorUser3);
+
+                CollectorProfile collector3 = CollectorProfile.builder()
+                                .user(savedCollectorUser3)
                                 .availabilityStatus("BUSY")
                                 .vehicleType("VAN")
                                 .maxLoadKg(200.0)
@@ -195,13 +236,19 @@ public class DataSeeder {
         private void seedCollectorsIfMissing() {
                 // Collector 1
                 if (userRepository.findByEmail("collector1@example.com").isEmpty()) {
-                        CollectorProfile collector1 = CollectorProfile.builder()
+                        User collectorUser1 = User.builder()
                                         .firstName("Mike")
                                         .lastName("Collector")
                                         .email("collector1@example.com")
                                         .password(passwordEncoder.encode("collector123"))
                                         .role("COLLECTOR")
                                         .enabled(true)
+                                        .build();
+                        collectorUser1.addRole(RoleType.COLLECTOR);
+                        User savedUser = userRepository.save(collectorUser1);
+
+                        CollectorProfile collector1 = CollectorProfile.builder()
+                                        .user(savedUser)
                                         .availabilityStatus("AVAILABLE")
                                         .vehicleType("MOTORCYCLE")
                                         .maxLoadKg(50.0)
@@ -212,13 +259,19 @@ public class DataSeeder {
 
                 // Collector 2
                 if (userRepository.findByEmail("collector2@example.com").isEmpty()) {
-                        CollectorProfile collector2 = CollectorProfile.builder()
+                        User collectorUser2 = User.builder()
                                         .firstName("Sarah")
                                         .lastName("Driver")
                                         .email("collector2@example.com")
                                         .password(passwordEncoder.encode("collector123"))
                                         .role("COLLECTOR")
                                         .enabled(true)
+                                        .build();
+                        collectorUser2.addRole(RoleType.COLLECTOR);
+                        User savedUser = userRepository.save(collectorUser2);
+
+                        CollectorProfile collector2 = CollectorProfile.builder()
+                                        .user(savedUser)
                                         .availabilityStatus("AVAILABLE")
                                         .vehicleType("TRUCK")
                                         .maxLoadKg(500.0)
@@ -229,13 +282,19 @@ public class DataSeeder {
 
                 // Collector 3
                 if (userRepository.findByEmail("collector3@example.com").isEmpty()) {
-                        CollectorProfile collector3 = CollectorProfile.builder()
+                        User collectorUser3 = User.builder()
                                         .firstName("Tom")
                                         .lastName("Hauler")
                                         .email("collector3@example.com")
                                         .password(passwordEncoder.encode("collector123"))
                                         .role("COLLECTOR")
                                         .enabled(true)
+                                        .build();
+                        collectorUser3.addRole(RoleType.COLLECTOR);
+                        User savedUser = userRepository.save(collectorUser3);
+
+                        CollectorProfile collector3 = CollectorProfile.builder()
+                                        .user(savedUser)
                                         .availabilityStatus("BUSY")
                                         .vehicleType("VAN")
                                         .maxLoadKg(200.0)
@@ -456,16 +515,13 @@ public class DataSeeder {
         }
 
         private void seedComplaints() {
-                // Find citizens directly
-                CitizenProfile citizen1 = citizenProfileRepository.findAll().stream()
-                                .filter(c -> "john@example.com".equals(c.getEmail()))
-                                .findFirst().orElseThrow();
-                CitizenProfile citizen2 = citizenProfileRepository.findAll().stream()
-                                .filter(c -> "jane@example.com".equals(c.getEmail()))
-                                .findFirst().orElseThrow();
-                CitizenProfile citizen3 = citizenProfileRepository.findAll().stream()
-                                .filter(c -> "bob@example.com".equals(c.getEmail()))
-                                .findFirst().orElseThrow();
+                // Find citizens using new composition pattern - find by user email
+                CitizenProfile citizen1 = citizenProfileRepository.findByUser_Email("john@example.com")
+                                .orElseThrow(() -> new RuntimeException("Citizen john@example.com not found"));
+                CitizenProfile citizen2 = citizenProfileRepository.findByUser_Email("jane@example.com")
+                                .orElseThrow(() -> new RuntimeException("Citizen jane@example.com not found"));
+                CitizenProfile citizen3 = citizenProfileRepository.findByUser_Email("bob@example.com")
+                                .orElseThrow(() -> new RuntimeException("Citizen bob@example.com not found"));
                 User admin = userRepository.findByEmail("admin@example.com").orElseThrow();
 
                 // Pending complaints
