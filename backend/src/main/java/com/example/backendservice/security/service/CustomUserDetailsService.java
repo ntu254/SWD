@@ -1,18 +1,19 @@
 package com.example.backendservice.security.service;
 
-import java.util.Collections;
-
+import com.example.backendservice.features.user.entity.User;
+import com.example.backendservice.features.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.example.backendservice.features.user.entity.User;
-import com.example.backendservice.features.user.repository.UserRepository;
+import java.util.Collections;
 
-import lombok.RequiredArgsConstructor;
-
+/**
+ * Custom UserDetailsService implementation for Spring Security
+ */
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
@@ -26,13 +27,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
-                user.getPassword(),
-                user.isEnabled(),
+                user.getPasswordHash(),
+                user.getAccountStatus() == com.example.backendservice.features.user.entity.AccountStatus.ACTIVE,
                 true,
                 true,
                 true,
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
-        );
-
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
     }
 }

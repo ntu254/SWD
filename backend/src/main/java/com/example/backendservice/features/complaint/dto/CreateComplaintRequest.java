@@ -1,35 +1,23 @@
 package com.example.backendservice.features.complaint.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class CreateComplaintRequest {
 
-    @NotNull(message = "Citizen ID is required")
-    private UUID citizenId;
+    private UUID reportId; // Optional
 
-    private UUID collectorId; // Optional: Collector being complained about
-    private UUID taskAssignmentId; // Optional: Related task assignment
+    private UUID visitId; // Optional
 
-    @NotBlank(message = "Title is required")
-    @Size(max = 255, message = "Title must be less than 255 characters")
-    private String title;
-
-    @NotBlank(message = "Description is required")
-    @Size(max = 2000, message = "Description must be less than 2000 characters")
-    private String description;
-
-    private String category; // LATE_ARRIVAL, RUDE_BEHAVIOR, INCOMPLETE_COLLECTION, DAMAGE, POINTS_ERROR,
-                             // BUG, SERVICE_ISSUE, OTHER
-    private String evidenceImages; // JSON array of image URLs
-    private String priority; // LOW, NORMAL, HIGH, URGENT
+    @NotBlank(message = "Content is required")
+    private String content;
 }

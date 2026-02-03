@@ -1,6 +1,11 @@
 package com.example.backendservice.features.task.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -9,26 +14,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TaskResponse {
-
-    private UUID id;
-    private UUID wasteReportId;
-    private UUID enterpriseId;
-    private String enterpriseName;
+    private UUID taskId;
+    private UUID reportId;
     private UUID areaId;
     private String areaName;
-    private UUID wasteTypeId;
-    private String wasteTypeName;
-    private Double estimatedWeightKg;
-    private Double actualWeightKg;
-    private String locationText;
-    private Double lat;
-    private Double lng;
-    private String notes;
-    private String status;
-    private String priority;
-    private LocalDateTime scheduledAt;
-    private LocalDateTime startedAt;
-    private LocalDateTime completedAt;
-    private Integer pointsAwarded;
+    private LocalDate scheduledDate;
+    private String status; // PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

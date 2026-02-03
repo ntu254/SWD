@@ -1,6 +1,10 @@
 package com.example.backendservice.features.waste.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -9,14 +13,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WasteTypeResponse {
-
-    private UUID id;
+    private UUID typeId;
+    private String code;
     private String name;
-    private String nameVi;
     private String description;
-    private String iconUrl;
-    private String colorCode;
-    private Double basePointsPerKg;
-    private String status;
+    private Double pointsPerKg;
+    private Boolean isActive;
     private LocalDateTime createdAt;
 }

@@ -1,8 +1,6 @@
 package com.example.backendservice.features.task.repository;
 
 import com.example.backendservice.features.task.entity.TaskAssignment;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,20 +13,35 @@ import java.util.UUID;
 @Repository
 public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, UUID> {
 
-    List<TaskAssignment> findByTaskId(UUID taskId);
+        Optional<TaskAssignment> findByAssignmentId(UUID assignmentId);
 
-    Page<TaskAssignment> findByCollectorId(UUID collectorId, Pageable pageable);
+        @Query("SELECT ta FROM TaskAssignment ta WHERE ta.task.taskId = :taskId")
+        List<TaskAssignment> findByTaskId(@Param("taskId") UUID taskId);
 
-    @Query("SELECT ta FROM TaskAssignment ta WHERE ta.collector.id = :collectorId AND ta.status = :status")
-    Page<TaskAssignment> findByCollectorIdAndStatus(
-            @Param("collectorId") UUID collectorId,
-            @Param("status") String status,
-            Pageable pageable);
+        @Query("SELECT ta FROM TaskAssignment ta WHERE ta.collectorUser.userId = :collectorUserId ORDER BY ta.acceptedAt DESC")
+        List<TaskAssignment> findByCollectorUserId(@Param("collectorUserId") UUID collectorUserId);
 
-    Optional<TaskAssignment> findByTaskIdAndCollectorId(UUID taskId, UUID collectorId);
+        @Query("SELECT ta FROM TaskAssignment ta WHERE ta.status = :status")
+        List<TaskAssignment> findByStatus(@Param("status") String status);
 
-    @Query("SELECT COUNT(ta) FROM TaskAssignment ta WHERE ta.collector.id = :collectorId AND ta.status IN :statuses")
-    long countActiveAssignments(
-            @Param("collectorId") UUID collectorId,
-            @Param("statuses") List<String> statuses);
+        @Query("SELECT ta FROM TaskAssignment ta WHERE ta.collectorUser.userId = :collectorUserId AND ta.status = :status")
+        List<TaskAssignment> findByCollectorUserIdAndStatus(
+                        @Param("collectorUserId") UUID collectorUserId,
+                        @Param("status") String status);
+
+        @Query("SELECT ta FROM TaskAssignment ta WHERE ta.task.taskId = :taskId AND ta.status = 'ASSIGNED'")
+        Optional<TaskAssignment> findActiveByTaskId(@Param("taskId") UUID taskId);
+
+        @Query("SELECT COUNT(ta) FROM TaskAssignment ta WHERE ta.collectorUser.userId = :collectorUserId AND ta.status = :status")
+        Long countByCollectorUserIdAndStatus(
+                        @Param("collectorUserId") UUID collectorUserId,
+                        @Param("status") String status);
+
+        @Query("SELECT ta FROM TaskAssignment ta WHERE ta.collectorUser.userId = :collectorUserId AND ta.unassignedAt IS NULL")
+        List<TaskAssignment> findActiveAssignmentsByCollectorUserId(@Param("collectorUserId") UUID collectorUserId);
+
+        @Query("SELECT ta FROM TaskAssignment ta WHERE ta.task.taskId = :taskId AND ta.collectorUser.userId = :collectorUserId")
+        Optional<TaskAssignment> findByTaskIdAndCollectorUserId(
+                        @Param("taskId") UUID taskId,
+                        @Param("collectorUserId") UUID collectorUserId);
 }

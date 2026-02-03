@@ -1,12 +1,13 @@
 package com.example.backendservice.features.waste.service;
 
-import com.example.backendservice.features.waste.dto.CreateWasteTypeRequest;
-import com.example.backendservice.features.waste.dto.WasteTypeResponse;
+import com.example.backendservice.common.exception.ResourceNotFoundException;
+import com.example.backendservice.features.waste.dto.*;
 import com.example.backendservice.features.waste.entity.WasteType;
 import com.example.backendservice.features.waste.repository.WasteTypeRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,88 +25,101 @@ public class WasteTypeServiceImpl implements WasteTypeService {
     @Override
     @Transactional
     public WasteTypeResponse createWasteType(CreateWasteTypeRequest request) {
-        log.info("Creating waste type: {}", request.getName());
-
+        // Check name uniqueness (using name instead of code as per entity)
         if (wasteTypeRepository.existsByName(request.getName())) {
-            throw new IllegalArgumentException("Waste type with name '" + request.getName() + "' already exists");
+            throw new IllegalArgumentException("Waste type name already exists: " + request.getName());
         }
 
         WasteType wasteType = WasteType.builder()
                 .name(request.getName())
-                .nameVi(request.getNameVi())
                 .description(request.getDescription())
-                .iconUrl(request.getIconUrl())
-                .colorCode(request.getColorCode())
-                .basePointsPerKg(request.getBasePointsPerKg() != null ? request.getBasePointsPerKg() : 10.0)
-                .status("ACTIVE")
+                .isActive(true)
+                .isRecyclable(true)
                 .build();
 
         wasteType = wasteTypeRepository.save(wasteType);
-        return mapToResponse(wasteType);
+        log.info("Created waste type: {}", wasteType.getName());
+
+        return toResponse(wasteType);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public WasteTypeResponse getWasteTypeById(UUID id) {
-        WasteType wasteType = findById(id);
-        return mapToResponse(wasteType);
+    public WasteTypeResponse getWasteTypeById(UUID typeId) {
+        WasteType wasteType = wasteTypeRepository.findByWasteTypeId(typeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Waste type not found: " + typeId));
+        return toResponse(wasteType);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<WasteTypeResponse> getAllWasteTypes(String status) {
-        List<WasteType> types;
-        if (status != null && !status.isEmpty()) {
-            types = wasteTypeRepository.findByStatus(status);
-        } else {
-            types = wasteTypeRepository.findAll();
-        }
-        return types.stream().map(this::mapToResponse).collect(Collectors.toList());
+    public WasteTypeResponse getWasteTypeByCode(String code) {
+        // Using name instead of code since entity doesn't have code field
+        WasteType wasteType = wasteTypeRepository.findByName(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Waste type not found with name: " + code));
+        return toResponse(wasteType);
+    }
+
+    @Override
+    public List<WasteTypeResponse> getAllActiveWasteTypes() {
+        return wasteTypeRepository.findAllActive().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<WasteTypeResponse> getAllWasteTypes(Pageable pageable) {
+        return wasteTypeRepository.findAll(pageable).map(this::toResponse);
     }
 
     @Override
     @Transactional
-    public WasteTypeResponse updateWasteType(UUID id, CreateWasteTypeRequest request) {
-        log.info("Updating waste type: {}", id);
+    public WasteTypeResponse updateWasteType(UUID typeId, CreateWasteTypeRequest request) {
+        WasteType wasteType = wasteTypeRepository.findByWasteTypeId(typeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Waste type not found: " + typeId));
 
-        WasteType wasteType = findById(id);
-        wasteType.setName(request.getName());
-        wasteType.setNameVi(request.getNameVi());
-        wasteType.setDescription(request.getDescription());
-        wasteType.setIconUrl(request.getIconUrl());
-        wasteType.setColorCode(request.getColorCode());
-        if (request.getBasePointsPerKg() != null) {
-            wasteType.setBasePointsPerKg(request.getBasePointsPerKg());
+        // Check name uniqueness if changed
+        if (!wasteType.getName().equals(request.getName()) &&
+                wasteTypeRepository.existsByName(request.getName())) {
+            throw new IllegalArgumentException("Waste type name already exists: " + request.getName());
         }
+
+        wasteType.setName(request.getName());
+        wasteType.setDescription(request.getDescription());
 
         wasteType = wasteTypeRepository.save(wasteType);
-        return mapToResponse(wasteType);
+        log.info("Updated waste type: {}", wasteType.getName());
+
+        return toResponse(wasteType);
     }
 
     @Override
     @Transactional
-    public void deleteWasteType(UUID id) {
-        log.info("Deleting waste type: {}", id);
-        WasteType wasteType = findById(id);
-        wasteTypeRepository.delete(wasteType);
+    public void deactivateWasteType(UUID typeId) {
+        WasteType wasteType = wasteTypeRepository.findByWasteTypeId(typeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Waste type not found: " + typeId));
+
+        wasteType.setIsActive(false);
+        wasteTypeRepository.save(wasteType);
+        log.info("Deactivated waste type: {}", wasteType.getName());
     }
 
-    private WasteType findById(UUID id) {
-        return wasteTypeRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("WasteType not found with id: " + id));
+    @Override
+    @Transactional
+    public void activateWasteType(UUID typeId) {
+        WasteType wasteType = wasteTypeRepository.findByWasteTypeId(typeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Waste type not found: " + typeId));
+
+        wasteType.setIsActive(true);
+        wasteTypeRepository.save(wasteType);
+        log.info("Activated waste type: {}", wasteType.getName());
     }
 
-    private WasteTypeResponse mapToResponse(WasteType wasteType) {
+    private WasteTypeResponse toResponse(WasteType wasteType) {
         return WasteTypeResponse.builder()
-                .id(wasteType.getId())
+                .typeId(wasteType.getWasteTypeId())
+                .code(wasteType.getName()) // Using name as code since entity doesn't have code
                 .name(wasteType.getName())
-                .nameVi(wasteType.getNameVi())
                 .description(wasteType.getDescription())
-                .iconUrl(wasteType.getIconUrl())
-                .colorCode(wasteType.getColorCode())
-                .basePointsPerKg(wasteType.getBasePointsPerKg())
-                .status(wasteType.getStatus())
-                .createdAt(wasteType.getCreatedAt())
+                .isActive(wasteType.getIsActive())
                 .build();
     }
 }

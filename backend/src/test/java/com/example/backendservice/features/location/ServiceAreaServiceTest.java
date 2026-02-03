@@ -1,11 +1,11 @@
 package com.example.backendservice.features.location;
 
+import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.features.location.dto.CreateServiceAreaRequest;
 import com.example.backendservice.features.location.dto.ServiceAreaResponse;
 import com.example.backendservice.features.location.entity.ServiceArea;
 import com.example.backendservice.features.location.repository.ServiceAreaRepository;
 import com.example.backendservice.features.location.service.ServiceAreaServiceImpl;
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -46,13 +46,10 @@ class ServiceAreaServiceTest {
         areaId = UUID.randomUUID();
 
         sampleArea = ServiceArea.builder()
-                .id(areaId)
+                .areaId(areaId)
                 .name("District 1")
-                .description("Central district")
-                .centerLat(10.7769)
-                .centerLng(106.7009)
-                .radiusKm(5.0)
-                .status("ACTIVE")
+                .geoBoundaryWkt("POLYGON((10.77 106.70, 10.77 106.71, 10.78 106.71, 10.78 106.70, 10.77 106.70))")
+                .isActive(true)
                 .createdAt(LocalDateTime.now())
                 .build();
     }
@@ -66,10 +63,10 @@ class ServiceAreaServiceTest {
         void createServiceArea_Success() {
             CreateServiceAreaRequest request = CreateServiceAreaRequest.builder()
                     .name("New Area")
-                    .description("A new service area")
-                    .centerLat(10.8)
-                    .centerLng(106.7)
-                    .radiusKm(3.0)
+                    .wardCode("W001")
+                    .districtCode("D001")
+                    .city("Ho Chi Minh")
+                    .geoPolygon("POLYGON((...))")
                     .build();
 
             when(serviceAreaRepository.save(any(ServiceArea.class))).thenReturn(sampleArea);
@@ -89,12 +86,12 @@ class ServiceAreaServiceTest {
         @Test
         @DisplayName("Should get service area by id successfully")
         void getServiceAreaById_Success() {
-            when(serviceAreaRepository.findById(areaId)).thenReturn(Optional.of(sampleArea));
+            when(serviceAreaRepository.findByAreaId(areaId)).thenReturn(Optional.of(sampleArea));
 
             ServiceAreaResponse response = serviceAreaService.getServiceAreaById(areaId);
 
             assertThat(response).isNotNull();
-            assertThat(response.getId()).isEqualTo(areaId);
+            assertThat(response.getAreaId()).isEqualTo(areaId);
             assertThat(response.getName()).isEqualTo("District 1");
         }
 
@@ -102,10 +99,10 @@ class ServiceAreaServiceTest {
         @DisplayName("Should throw exception when area not found")
         void getServiceAreaById_NotFound() {
             UUID randomId = UUID.randomUUID();
-            when(serviceAreaRepository.findById(randomId)).thenReturn(Optional.empty());
+            when(serviceAreaRepository.findByAreaId(randomId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> serviceAreaService.getServiceAreaById(randomId))
-                    .isInstanceOf(EntityNotFoundException.class)
+                    .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("not found");
         }
 
@@ -117,10 +114,21 @@ class ServiceAreaServiceTest {
 
             when(serviceAreaRepository.findAll(pageable)).thenReturn(page);
 
-            Page<ServiceAreaResponse> result = serviceAreaService.getAllServiceAreas(null, pageable);
+            Page<ServiceAreaResponse> result = serviceAreaService.getAllServiceAreas(pageable);
 
             assertThat(result.getContent()).hasSize(1);
             assertThat(result.getContent().get(0).getName()).isEqualTo("District 1");
+        }
+
+        @Test
+        @DisplayName("Should get all active service areas")
+        void getAllActiveServiceAreas_Success() {
+            when(serviceAreaRepository.findAllActive()).thenReturn(List.of(sampleArea));
+
+            List<ServiceAreaResponse> result = serviceAreaService.getAllActiveServiceAreas();
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getName()).isEqualTo("District 1");
         }
     }
 
@@ -133,13 +141,13 @@ class ServiceAreaServiceTest {
         void updateServiceArea_Success() {
             CreateServiceAreaRequest request = CreateServiceAreaRequest.builder()
                     .name("Updated Name")
-                    .description("Updated description")
-                    .centerLat(10.9)
-                    .centerLng(106.8)
-                    .radiusKm(4.0)
+                    .wardCode("W002")
+                    .districtCode("D002")
+                    .city("Hanoi")
+                    .geoPolygon("POLYGON((new...))")
                     .build();
 
-            when(serviceAreaRepository.findById(areaId)).thenReturn(Optional.of(sampleArea));
+            when(serviceAreaRepository.findByAreaId(areaId)).thenReturn(Optional.of(sampleArea));
             when(serviceAreaRepository.save(any(ServiceArea.class))).thenReturn(sampleArea);
 
             ServiceAreaResponse response = serviceAreaService.updateServiceArea(areaId, request);
@@ -150,47 +158,31 @@ class ServiceAreaServiceTest {
     }
 
     @Nested
-    @DisplayName("Delete Service Area Tests")
-    class DeleteServiceAreaTests {
-
-        @Test
-        @DisplayName("Should delete service area successfully")
-        void deleteServiceArea_Success() {
-            when(serviceAreaRepository.findById(areaId)).thenReturn(Optional.of(sampleArea));
-            doNothing().when(serviceAreaRepository).delete(any(ServiceArea.class));
-
-            serviceAreaService.deleteServiceArea(areaId);
-
-            verify(serviceAreaRepository, times(1)).delete(sampleArea);
-        }
-    }
-
-    @Nested
     @DisplayName("Status Change Tests")
     class StatusChangeTests {
 
         @Test
         @DisplayName("Should activate service area")
         void activateServiceArea_Success() {
-            sampleArea.setStatus("INACTIVE");
-            when(serviceAreaRepository.findById(areaId)).thenReturn(Optional.of(sampleArea));
+            sampleArea.setIsActive(false);
+            when(serviceAreaRepository.findByAreaId(areaId)).thenReturn(Optional.of(sampleArea));
             when(serviceAreaRepository.save(any(ServiceArea.class))).thenReturn(sampleArea);
 
             serviceAreaService.activateServiceArea(areaId);
 
-            assertThat(sampleArea.getStatus()).isEqualTo("ACTIVE");
+            assertThat(sampleArea.getIsActive()).isTrue();
             verify(serviceAreaRepository, times(1)).save(sampleArea);
         }
 
         @Test
         @DisplayName("Should deactivate service area")
         void deactivateServiceArea_Success() {
-            when(serviceAreaRepository.findById(areaId)).thenReturn(Optional.of(sampleArea));
+            when(serviceAreaRepository.findByAreaId(areaId)).thenReturn(Optional.of(sampleArea));
             when(serviceAreaRepository.save(any(ServiceArea.class))).thenReturn(sampleArea);
 
             serviceAreaService.deactivateServiceArea(areaId);
 
-            assertThat(sampleArea.getStatus()).isEqualTo("INACTIVE");
+            assertThat(sampleArea.getIsActive()).isFalse();
             verify(serviceAreaRepository, times(1)).save(sampleArea);
         }
     }

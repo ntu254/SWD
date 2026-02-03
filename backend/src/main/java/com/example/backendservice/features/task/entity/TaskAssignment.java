@@ -1,17 +1,15 @@
 package com.example.backendservice.features.task.entity;
 
-import com.example.backendservice.features.user.entity.CollectorProfile;
+import com.example.backendservice.features.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Gán nhiệm vụ cho Collector (Task Assignment)
- * Theo dõi ai được gán, trạng thái hoàn thành
+ * Entity cho bảng TASK_ASSIGNMENT
+ * Gán nhiệm vụ cho Collector
  */
 @Entity
 @Table(name = "task_assignments")
@@ -23,49 +21,43 @@ public class TaskAssignment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "assignment_id", columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID assignmentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Task task;
 
+    /**
+     * Collector được gán (User có role COLLECTOR)
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "collector_id", nullable = false)
-    private CollectorProfile collector;
-
-    @Column(length = 50)
-    @Builder.Default
-    private String status = "ASSIGNED"; // ASSIGNED, ACCEPTED, REJECTED, IN_PROGRESS, COMPLETED, FAILED
-
-    @Column(name = "rejection_reason", length = 500)
-    private String rejectionReason;
-
-    @Column(name = "evidence_images", columnDefinition = "TEXT")
-    private String evidenceImages; // JSON array of image URLs
-
-    @Column(name = "collected_weight_kg")
-    private Double collectedWeightKg;
-
-    @Column(columnDefinition = "TEXT")
-    private String notes;
-
-    @Column(name = "assigned_at")
-    private LocalDateTime assignedAt;
+    @JoinColumn(name = "collector_user_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User collectorUser;
 
     @Column(name = "accepted_at")
     private LocalDateTime acceptedAt;
 
-    @Column(name = "started_at")
-    private LocalDateTime startedAt;
+    @Column(name = "unassigned_at")
+    private LocalDateTime unassignedAt;
 
-    @Column(name = "completed_at")
-    private LocalDateTime completedAt;
+    @Column(length = 30)
+    @Builder.Default
+    private String status = "ASSIGNED"; // ASSIGNED, ACCEPTED, REJECTED, COMPLETED, UNASSIGNED
 
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "collector_note", columnDefinition = "TEXT")
+    private String collectorNote;
 
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    // Helper method
+    public UUID getCollectorUserId() {
+        return collectorUser != null ? collectorUser.getUserId() : null;
+    }
+
+    public UUID getTaskId() {
+        return task != null ? task.getTaskId() : null;
+    }
 }

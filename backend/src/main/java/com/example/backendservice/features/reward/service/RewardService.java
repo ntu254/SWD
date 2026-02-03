@@ -4,29 +4,41 @@ import com.example.backendservice.features.reward.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface RewardService {
 
-    // ===================== REWARD ITEM CRUD =====================
+    // Transactions
+    RewardTransactionResponse createTransaction(CreateRewardTransactionRequest request);
 
-    RewardItemResponse createRewardItem(CreateRewardItemRequest request);
+    RewardTransactionResponse earnPoints(UUID citizenUserId, Integer points, String description, UUID referenceId);
 
-    RewardItemResponse updateRewardItem(UUID id, UpdateRewardItemRequest request);
+    RewardTransactionResponse redeemPoints(UUID citizenUserId, Integer points, String description);
 
-    RewardItemResponse getRewardItemById(UUID id);
+    RewardTransactionResponse getTransactionById(UUID transactionId);
 
-    Page<RewardItemResponse> getAllRewardItems(String status, String search, Pageable pageable);
+    Page<RewardTransactionResponse> getTransactionsByCitizen(UUID citizenUserId, Pageable pageable);
 
-    void deleteRewardItem(UUID id);
+    Page<RewardTransactionResponse> getAllTransactions(Pageable pageable);
 
-    // ===================== REDEMPTION MANAGEMENT =====================
+    Integer getCitizenPoints(UUID citizenUserId);
 
-    Page<RedemptionResponse> getAllRedemptions(String status, Pageable pageable);
+    // Rules
+    RewardRuleResponse createRewardRule(CreateRewardRuleRequest request);
 
-    RedemptionResponse getRedemptionById(UUID id);
+    RewardRuleResponse getRewardRuleById(UUID ruleId);
 
-    RedemptionResponse approveRedemption(UUID id);
+    List<RewardRuleResponse> getActiveRewardRules();
 
-    RedemptionResponse rejectRedemption(UUID id, RejectRedemptionRequest request);
+    RewardRuleResponse getRewardRuleBySortingLevel(String sortingLevel);
+
+    Page<RewardRuleResponse> getAllRewardRules(Pageable pageable);
+
+    RewardRuleResponse updateRewardRule(UUID ruleId, CreateRewardRuleRequest request);
+
+    void deleteRewardRule(UUID ruleId);
+
+    // Calculate points
+    Integer calculatePoints(String sortingLevel, Double quantityKg, Double basePointsPerKg);
 }

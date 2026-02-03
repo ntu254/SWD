@@ -1,22 +1,21 @@
 package com.example.backendservice.features.enterprise.entity;
 
 import com.example.backendservice.features.location.entity.ServiceArea;
+import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.waste.entity.WasteType;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Năng lực xử lý của Enterprise (Enterprise Capability)
- * Định nghĩa loại rác và công suất xử lý cho mỗi khu vực
+ * Entity cho bảng ENTERPRISE_CAPABILITY
+ * Năng lực xử lý của Enterprise theo loại rác và khu vực
  */
 @Entity
 @Table(name = "enterprise_capabilities", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "enterprise_id", "area_id", "waste_type_id" })
+        @UniqueConstraint(columnNames = { "enterprise_user_id", "waste_type_id", "service_area_id" })
 })
 @Data
 @Builder
@@ -26,48 +25,51 @@ public class EnterpriseCapability {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "capability_id", columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID capabilityId;
 
+    /**
+     * Enterprise (User có role ENTERPRISE)
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "enterprise_id", nullable = false)
-    private Enterprise enterprise;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "area_id", nullable = false)
-    private ServiceArea area;
+    @JoinColumn(name = "enterprise_user_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User enterpriseUser;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "waste_type_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private WasteType wasteType;
 
     @Column(name = "daily_capacity_kg", nullable = false)
     private Double dailyCapacityKg;
 
-    @Column(name = "used_capacity_kg")
-    @Builder.Default
-    private Double usedCapacityKg = 0.0;
+    @Column(name = "effective_from")
+    private LocalDate effectiveFrom;
 
-    @Column(name = "price_per_kg")
-    private Double pricePerKg;
+    @Column(name = "effective_to")
+    private LocalDate effectiveTo;
 
-    @Column(length = 50)
-    @Builder.Default
-    private String status = "ACTIVE"; // ACTIVE, INACTIVE
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "service_area_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private ServiceArea serviceArea;
 
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
-
-    // Helper method
-    public Double getAvailableCapacity() {
-        return dailyCapacityKg - usedCapacityKg;
+    // Helper methods
+    public UUID getEnterpriseUserId() {
+        return enterpriseUser != null ? enterpriseUser.getUserId() : null;
     }
 
-    public boolean hasCapacity(Double requiredKg) {
-        return getAvailableCapacity() >= requiredKg;
+    public boolean isEffective(LocalDate date) {
+        if (effectiveFrom != null && date.isBefore(effectiveFrom)) {
+            return false;
+        }
+        if (effectiveTo != null && date.isAfter(effectiveTo)) {
+            return false;
+        }
+        return true;
     }
 }

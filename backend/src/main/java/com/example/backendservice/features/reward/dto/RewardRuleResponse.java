@@ -1,6 +1,11 @@
 package com.example.backendservice.features.reward.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -9,17 +14,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RewardRuleResponse {
-
-    private UUID id;
-    private UUID wasteTypeId;
-    private String wasteTypeName;
-    private Double pointsPerKg;
-    private Double bonusPercentage;
-    private Double minWeightKg;
-    private Integer maxPointsPerDay;
-    private String description;
-    private String status;
-    private LocalDateTime validFrom;
-    private LocalDateTime validUntil;
+    private UUID ruleId;
+    private String sortingLevel; // NONE, BASIC, INTERMEDIATE, ADVANCED
+    private Integer pointsFixed;
+    private Double multiplier;
+    private LocalDate effectiveFrom;
+    private LocalDate effectiveTo;
     private LocalDateTime createdAt;
 }

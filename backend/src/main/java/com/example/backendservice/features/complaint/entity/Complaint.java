@@ -1,20 +1,19 @@
 package com.example.backendservice.features.complaint.entity;
 
-import com.example.backendservice.features.task.entity.TaskAssignment;
-import com.example.backendservice.features.user.entity.CollectorProfile;
-import com.example.backendservice.features.user.entity.CitizenProfile;
-
+import com.example.backendservice.features.collection.entity.CollectionVisit;
+import com.example.backendservice.features.reward.entity.RewardTransaction;
 import com.example.backendservice.features.user.entity.User;
+import com.example.backendservice.features.waste.entity.WasteReport;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Đơn khiếu nại từ Citizen về Collector hoặc dịch vụ
+ * Entity cho bảng COMPLAINT
+ * Đơn khiếu nại từ người dùng
  */
 @Entity
 @Table(name = "complaints")
@@ -26,60 +25,58 @@ public class Complaint {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "complaint_id", columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID complaintId;
 
+    /**
+     * Người tạo complaint
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "citizen_id", nullable = false)
-    private CitizenProfile citizen;
+    @JoinColumn(name = "created_by_user_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User createdByUser;
 
-    // Optional: Collector being complained about
+    /**
+     * Report liên quan (nếu có)
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "collector_id")
-    private CollectorProfile collector;
+    @JoinColumn(name = "report_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private WasteReport wasteReport;
 
-    // Optional: Related task assignment
+    /**
+     * Visit liên quan (nếu có)
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_assignment_id")
-    private TaskAssignment taskAssignment;
+    @JoinColumn(name = "visit_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private CollectionVisit visit;
 
-    @Column(name = "title", nullable = false)
-    private String title;
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String content;
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
-
-    @Column(name = "category")
+    @Column(length = 30)
     @Builder.Default
-    private String category = "OTHER";
-    // LATE_ARRIVAL, RUDE_BEHAVIOR, INCOMPLETE_COLLECTION, DAMAGE, POINTS_ERROR,
-    // BUG, SERVICE_ISSUE, OTHER
-
-    @Column(name = "evidence_images", columnDefinition = "TEXT")
-    private String evidenceImages; // JSON array of image URLs
-
-    @Column(name = "status")
-    @Builder.Default
-    private String status = "PENDING"; // PENDING, INVESTIGATING, RESOLVED, REJECTED
-
-    @Column(name = "priority")
-    @Builder.Default
-    private String priority = "NORMAL"; // LOW, NORMAL, HIGH, URGENT
-
-    @Column(name = "admin_response", columnDefinition = "TEXT")
-    private String adminResponse;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resolved_by")
-    private User resolvedBy;
-
-    @Column(name = "resolved_at")
-    private LocalDateTime resolvedAt;
+    private String status = "OPEN"; // OPEN, INVESTIGATING, RESOLVED, REJECTED
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    /**
+     * RewardTransaction được tạo khi resolve complaint (bồi thường)
+     */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reward_transaction_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private RewardTransaction rewardTransaction;
+
+    // Helper methods
+    public UUID getCreatedByUserId() {
+        return createdByUser != null ? createdByUser.getUserId() : null;
+    }
 }

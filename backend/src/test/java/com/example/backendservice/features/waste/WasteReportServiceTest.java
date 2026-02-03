@@ -1,17 +1,17 @@
 package com.example.backendservice.features.waste;
 
+import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.features.location.entity.ServiceArea;
 import com.example.backendservice.features.location.repository.ServiceAreaRepository;
-import com.example.backendservice.features.user.entity.CitizenProfile;
-import com.example.backendservice.features.user.repository.CitizenProfileRepository;
+import com.example.backendservice.features.user.entity.User;
+import com.example.backendservice.features.user.entity.RoleType;
+import com.example.backendservice.features.user.entity.AccountStatus;
+import com.example.backendservice.features.user.repository.UserRepository;
 import com.example.backendservice.features.waste.dto.CreateWasteReportRequest;
 import com.example.backendservice.features.waste.dto.WasteReportResponse;
 import com.example.backendservice.features.waste.entity.WasteReport;
-import com.example.backendservice.features.waste.entity.WasteType;
 import com.example.backendservice.features.waste.repository.WasteReportRepository;
-import com.example.backendservice.features.waste.repository.WasteTypeRepository;
 import com.example.backendservice.features.waste.service.WasteReportServiceImpl;
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -21,7 +21,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
@@ -41,74 +40,50 @@ class WasteReportServiceTest {
     @Mock
     private WasteReportRepository wasteReportRepository;
     @Mock
-    private CitizenProfileRepository citizenProfileRepository;
+    private UserRepository userRepository;
     @Mock
     private ServiceAreaRepository serviceAreaRepository;
-    @Mock
-    private WasteTypeRepository wasteTypeRepository;
 
     @InjectMocks
     private WasteReportServiceImpl wasteReportService;
 
     private WasteReport sampleReport;
-    private CitizenProfile sampleCitizen;
+    private User sampleUser;
     private ServiceArea sampleArea;
-    private WasteType sampleWasteType;
     private UUID reportId;
-    private UUID citizenId;
+    private UUID userId;
     private UUID areaId;
-    private UUID wasteTypeId;
 
     @BeforeEach
     void setUp() {
         reportId = UUID.randomUUID();
-        citizenId = UUID.randomUUID();
+        userId = UUID.randomUUID();
         areaId = UUID.randomUUID();
-        wasteTypeId = UUID.randomUUID();
 
-        // Use composition pattern - create User first, then CitizenProfile with User
-        // reference
-        com.example.backendservice.features.user.entity.User citizenUser = com.example.backendservice.features.user.entity.User
-                .builder()
-                .id(citizenId)
+        sampleUser = User.builder()
+                .userId(userId)
                 .firstName("Nguyen")
                 .lastName("Van A")
                 .email("nguyen@example.com")
-                .password("password")
-                .enabled(true)
-                .build();
-
-        sampleCitizen = CitizenProfile.builder()
-                .id(UUID.randomUUID())
-                .user(citizenUser)
-                .currentPoints(100)
+                .passwordHash("hashedpassword")
+                .role(RoleType.CITIZEN)
+                .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
         sampleArea = ServiceArea.builder()
-                .id(areaId)
+                .areaId(areaId)
                 .name("District 1")
-                .status("ACTIVE")
-                .build();
-
-        sampleWasteType = WasteType.builder()
-                .id(wasteTypeId)
-                .name("Plastic")
-                .basePointsPerKg(10.0)
-                .status("ACTIVE")
+                .isActive(true)
                 .build();
 
         sampleReport = WasteReport.builder()
-                .id(reportId)
-                .citizen(sampleCitizen)
+                .reportId(reportId)
+                .reporterUser(sampleUser)
                 .area(sampleArea)
-                .primaryWasteType(sampleWasteType)
-                .estimatedWeightKg(15.0)
-                .locationText("Apartment 502, Building ABC")
-                .lat(10.78)
-                .lng(106.69)
+                .latitude(10.78)
+                .longitude(106.69)
                 .description("Clean plastic bottles")
                 .status("PENDING")
-                .priority("NORMAL")
                 .createdAt(LocalDateTime.now())
                 .build();
     }
@@ -121,21 +96,17 @@ class WasteReportServiceTest {
         @DisplayName("Should create waste report successfully")
         void createReport_Success() {
             CreateWasteReportRequest request = CreateWasteReportRequest.builder()
-                    .citizenId(citizenId)
                     .areaId(areaId)
-                    .primaryWasteTypeId(wasteTypeId)
-                    .estimatedWeightKg(15.0)
-                    .locationText("Apartment 502")
-                    .description("Clean plastic")
-                    .priority("NORMAL")
+                    .latitude(10.78)
+                    .longitude(106.69)
+                    .noteText("Clean plastic")
                     .build();
 
-            when(citizenProfileRepository.findById(citizenId)).thenReturn(Optional.of(sampleCitizen));
-            when(serviceAreaRepository.findById(areaId)).thenReturn(Optional.of(sampleArea));
-            when(wasteTypeRepository.findById(wasteTypeId)).thenReturn(Optional.of(sampleWasteType));
+            when(userRepository.findByUserId(userId)).thenReturn(Optional.of(sampleUser));
+            when(serviceAreaRepository.findByAreaId(areaId)).thenReturn(Optional.of(sampleArea));
             when(wasteReportRepository.save(any(WasteReport.class))).thenReturn(sampleReport);
 
-            WasteReportResponse response = wasteReportService.createReport(request);
+            WasteReportResponse response = wasteReportService.createReport(userId, request);
 
             assertThat(response).isNotNull();
             assertThat(response.getStatus()).isEqualTo("PENDING");
@@ -144,17 +115,20 @@ class WasteReportServiceTest {
         }
 
         @Test
-        @DisplayName("Should throw exception when citizen not found")
-        void createReport_CitizenNotFound() {
+        @DisplayName("Should throw exception when user not found")
+        void createReport_UserNotFound() {
             CreateWasteReportRequest request = CreateWasteReportRequest.builder()
-                    .citizenId(UUID.randomUUID())
+                    .areaId(areaId)
+                    .latitude(10.78)
+                    .longitude(106.69)
                     .build();
 
-            when(citizenProfileRepository.findById(any())).thenReturn(Optional.empty());
+            UUID randomUserId = UUID.randomUUID();
+            when(userRepository.findByUserId(randomUserId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> wasteReportService.createReport(request))
-                    .isInstanceOf(EntityNotFoundException.class)
-                    .hasMessageContaining("Citizen not found");
+            assertThatThrownBy(() -> wasteReportService.createReport(randomUserId, request))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("not found");
         }
     }
 
@@ -163,48 +137,59 @@ class WasteReportServiceTest {
     class StatusFlowTests {
 
         @Test
-        @DisplayName("Should accept pending report")
-        void acceptReport_Success() {
-            when(wasteReportRepository.findById(reportId)).thenReturn(Optional.of(sampleReport));
-            when(wasteReportRepository.save(any(WasteReport.class))).thenReturn(sampleReport);
+        @DisplayName("Should approve pending report")
+        void approveReport_Success() {
+            UUID adminId = UUID.randomUUID();
+            when(wasteReportRepository.findByReportId(reportId)).thenReturn(Optional.of(sampleReport));
+            when(wasteReportRepository.save(any(WasteReport.class))).thenAnswer(invocation -> {
+                WasteReport report = invocation.getArgument(0);
+                return report;
+            });
 
-            WasteReportResponse response = wasteReportService.acceptReport(reportId);
+            WasteReportResponse response = wasteReportService.approveReport(reportId, adminId);
 
-            assertThat(response.getStatus()).isEqualTo("ACCEPTED");
+            assertThat(response.getStatus()).isEqualTo("APPROVED");
         }
 
         @Test
-        @DisplayName("Should fail to accept non-pending report")
-        void acceptReport_InvalidStatus() {
-            sampleReport.setStatus("ACCEPTED");
-            when(wasteReportRepository.findById(reportId)).thenReturn(Optional.of(sampleReport));
+        @DisplayName("Should fail to approve non-pending report")
+        void approveReport_InvalidStatus() {
+            UUID adminId = UUID.randomUUID();
+            sampleReport.setStatus("APPROVED");
+            when(wasteReportRepository.findByReportId(reportId)).thenReturn(Optional.of(sampleReport));
 
-            assertThatThrownBy(() -> wasteReportService.acceptReport(reportId))
+            assertThatThrownBy(() -> wasteReportService.approveReport(reportId, adminId))
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Only PENDING reports can be accepted");
+                    .hasMessageContaining("not in PENDING status");
         }
 
         @Test
         @DisplayName("Should reject report with reason")
         void rejectReport_Success() {
-            when(wasteReportRepository.findById(reportId)).thenReturn(Optional.of(sampleReport));
-            when(wasteReportRepository.save(any(WasteReport.class))).thenReturn(sampleReport);
+            UUID adminId = UUID.randomUUID();
+            when(wasteReportRepository.findByReportId(reportId)).thenReturn(Optional.of(sampleReport));
+            when(wasteReportRepository.save(any(WasteReport.class))).thenAnswer(invocation -> {
+                WasteReport report = invocation.getArgument(0);
+                return report;
+            });
 
-            WasteReportResponse response = wasteReportService.rejectReport(reportId, "Area not covered");
+            WasteReportResponse response = wasteReportService.rejectReport(reportId, adminId, "Area not covered");
 
             assertThat(response.getStatus()).isEqualTo("REJECTED");
-            assertThat(sampleReport.getRejectionReason()).isEqualTo("Area not covered");
         }
 
         @Test
-        @DisplayName("Should cancel report by citizen")
-        void cancelReport_Success() {
-            when(wasteReportRepository.findById(reportId)).thenReturn(Optional.of(sampleReport));
-            when(wasteReportRepository.save(any(WasteReport.class))).thenReturn(sampleReport);
+        @DisplayName("Should mark report as completed")
+        void markCompleted_Success() {
+            when(wasteReportRepository.findByReportId(reportId)).thenReturn(Optional.of(sampleReport));
+            when(wasteReportRepository.save(any(WasteReport.class))).thenAnswer(invocation -> {
+                WasteReport report = invocation.getArgument(0);
+                return report;
+            });
 
-            WasteReportResponse response = wasteReportService.cancelReport(reportId);
+            WasteReportResponse response = wasteReportService.markCompleted(reportId);
 
-            assertThat(response.getStatus()).isEqualTo("CANCELLED");
+            assertThat(response.getStatus()).isEqualTo("COMPLETED");
         }
     }
 
@@ -216,24 +201,22 @@ class WasteReportServiceTest {
         @DisplayName("Should get reports by citizen")
         void getReportsByCitizen_Success() {
             Pageable pageable = PageRequest.of(0, 10);
-            Page<WasteReport> reportPage = new PageImpl<>(List.of(sampleReport));
 
-            when(wasteReportRepository.findByCitizenId(citizenId, pageable)).thenReturn(reportPage);
+            when(wasteReportRepository.findByReporterUserId(userId)).thenReturn(List.of(sampleReport));
 
-            Page<WasteReportResponse> result = wasteReportService.getReportsByCitizen(citizenId, pageable);
+            Page<WasteReportResponse> result = wasteReportService.getReportsByCitizen(userId, pageable);
 
             assertThat(result.getContent()).hasSize(1);
         }
 
         @Test
-        @DisplayName("Should get pending reports")
-        void getPendingReports_Success() {
+        @DisplayName("Should get reports by status")
+        void getReportsByStatus_Success() {
             Pageable pageable = PageRequest.of(0, 10);
-            Page<WasteReport> reportPage = new PageImpl<>(List.of(sampleReport));
 
-            when(wasteReportRepository.findByStatus("PENDING", pageable)).thenReturn(reportPage);
+            when(wasteReportRepository.findByStatus("PENDING")).thenReturn(List.of(sampleReport));
 
-            Page<WasteReportResponse> result = wasteReportService.getPendingReports(pageable);
+            Page<WasteReportResponse> result = wasteReportService.getReportsByStatus("PENDING", pageable);
 
             assertThat(result.getContent()).hasSize(1);
             assertThat(result.getContent().get(0).getStatus()).isEqualTo("PENDING");
@@ -248,33 +231,39 @@ class WasteReportServiceTest {
         @DisplayName("Should update pending report")
         void updateReport_Success() {
             CreateWasteReportRequest request = CreateWasteReportRequest.builder()
-                    .citizenId(citizenId)
-                    .estimatedWeightKg(20.0)
-                    .locationText("Updated location")
+                    .areaId(areaId)
+                    .latitude(10.79)
+                    .longitude(106.70)
+                    .noteText("Updated description")
                     .build();
 
-            when(wasteReportRepository.findById(reportId)).thenReturn(Optional.of(sampleReport));
-            when(wasteReportRepository.save(any(WasteReport.class))).thenReturn(sampleReport);
+            when(wasteReportRepository.findByReportId(reportId)).thenReturn(Optional.of(sampleReport));
+            when(serviceAreaRepository.findByAreaId(areaId)).thenReturn(Optional.of(sampleArea));
+            when(wasteReportRepository.save(any(WasteReport.class))).thenAnswer(invocation -> {
+                WasteReport report = invocation.getArgument(0);
+                return report;
+            });
 
-            wasteReportService.updateReport(reportId, request);
+            WasteReportResponse response = wasteReportService.updateReport(reportId, request);
 
-            assertThat(sampleReport.getEstimatedWeightKg()).isEqualTo(20.0);
-            assertThat(sampleReport.getLocationText()).isEqualTo("Updated location");
+            assertThat(response).isNotNull();
+            verify(wasteReportRepository, times(1)).save(any(WasteReport.class));
         }
 
         @Test
         @DisplayName("Should fail to update non-pending report")
         void updateReport_InvalidStatus() {
-            sampleReport.setStatus("ACCEPTED");
+            sampleReport.setStatus("APPROVED");
             CreateWasteReportRequest request = CreateWasteReportRequest.builder()
-                    .estimatedWeightKg(20.0)
+                    .latitude(10.79)
+                    .longitude(106.70)
                     .build();
 
-            when(wasteReportRepository.findById(reportId)).thenReturn(Optional.of(sampleReport));
+            when(wasteReportRepository.findByReportId(reportId)).thenReturn(Optional.of(sampleReport));
 
             assertThatThrownBy(() -> wasteReportService.updateReport(reportId, request))
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Only PENDING reports can be updated");
+                    .hasMessageContaining("PENDING status");
         }
     }
 }

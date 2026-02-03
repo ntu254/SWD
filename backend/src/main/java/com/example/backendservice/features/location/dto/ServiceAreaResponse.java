@@ -1,6 +1,10 @@
 package com.example.backendservice.features.location.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -9,14 +13,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ServiceAreaResponse {
-
-    private UUID id;
+    private UUID areaId;
     private String name;
-    private String description;
-    private Double centerLat;
-    private Double centerLng;
-    private Double radiusKm;
-    private String status;
+    private String wardCode;
+    private String districtCode;
+    private String city;
+    private String geoPolygon;
+    private Boolean isActive;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Khu vực hoạt động (Service Area)
- * Định nghĩa vùng địa lý mà Enterprise/Collector phục vụ
+ * Entity cho bảng SERVICE_AREA
+ * Khu vực hoạt động - định nghĩa vùng địa lý
  */
 @Entity
 @Table(name = "service_areas")
@@ -22,37 +22,28 @@ public class ServiceArea {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "area_id", columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID areaId;
 
     @Column(nullable = false, length = 200)
     private String name;
 
-    @Column(length = 500)
-    private String description;
+    /**
+     * WKT (Well-Known Text) format cho boundary
+     * Ví dụ: POLYGON((lng1 lat1, lng2 lat2, ...))
+     */
+    @Column(name = "geo_boundary_wkt", columnDefinition = "TEXT")
+    private String geoBoundaryWkt;
 
-    // Polygon hoặc tọa độ trung tâm
-    @Column(name = "center_lat")
-    private Double centerLat;
-
-    @Column(name = "center_lng")
-    private Double centerLng;
-
-    @Column(name = "radius_km")
-    private Double radiusKm;
-
-    // GeoJSON boundary (optional, for complex areas)
-    @Column(name = "boundary_geojson", columnDefinition = "TEXT")
-    private String boundaryGeoJson;
-
-    @Column(length = 50)
+    @Column(name = "is_active")
     @Builder.Default
-    private String status = "ACTIVE"; // ACTIVE, INACTIVE
+    private Boolean isActive = true;
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }

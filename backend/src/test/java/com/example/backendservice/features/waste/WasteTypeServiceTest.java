@@ -1,11 +1,11 @@
 package com.example.backendservice.features.waste;
 
+import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.features.waste.dto.CreateWasteTypeRequest;
 import com.example.backendservice.features.waste.dto.WasteTypeResponse;
 import com.example.backendservice.features.waste.entity.WasteType;
 import com.example.backendservice.features.waste.repository.WasteTypeRepository;
 import com.example.backendservice.features.waste.service.WasteTypeServiceImpl;
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -14,8 +14,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -42,14 +45,11 @@ class WasteTypeServiceTest {
         wasteTypeId = UUID.randomUUID();
 
         sampleWasteType = WasteType.builder()
-                .id(wasteTypeId)
+                .wasteTypeId(wasteTypeId)
                 .name("Plastic")
-                .nameVi("Nhựa")
                 .description("Recyclable plastic materials")
-                .colorCode("#4CAF50")
-                .basePointsPerKg(15.0)
-                .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
+                .isRecyclable(true)
+                .isActive(true)
                 .build();
     }
 
@@ -62,9 +62,7 @@ class WasteTypeServiceTest {
         void createWasteType_Success() {
             CreateWasteTypeRequest request = CreateWasteTypeRequest.builder()
                     .name("Paper")
-                    .nameVi("Giấy")
                     .description("Recyclable paper")
-                    .basePointsPerKg(10.0)
                     .build();
 
             when(wasteTypeRepository.existsByName("Paper")).thenReturn(false);
@@ -98,12 +96,12 @@ class WasteTypeServiceTest {
         @Test
         @DisplayName("Should get waste type by id successfully")
         void getWasteTypeById_Success() {
-            when(wasteTypeRepository.findById(wasteTypeId)).thenReturn(Optional.of(sampleWasteType));
+            when(wasteTypeRepository.findByWasteTypeId(wasteTypeId)).thenReturn(Optional.of(sampleWasteType));
 
             WasteTypeResponse response = wasteTypeService.getWasteTypeById(wasteTypeId);
 
             assertThat(response).isNotNull();
-            assertThat(response.getId()).isEqualTo(wasteTypeId);
+            assertThat(response.getTypeId()).isEqualTo(wasteTypeId);
             assertThat(response.getName()).isEqualTo("Plastic");
         }
 
@@ -111,33 +109,35 @@ class WasteTypeServiceTest {
         @DisplayName("Should throw exception when waste type not found")
         void getWasteTypeById_NotFound() {
             UUID randomId = UUID.randomUUID();
-            when(wasteTypeRepository.findById(randomId)).thenReturn(Optional.empty());
+            when(wasteTypeRepository.findByWasteTypeId(randomId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> wasteTypeService.getWasteTypeById(randomId))
-                    .isInstanceOf(EntityNotFoundException.class)
+                    .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("not found");
         }
 
         @Test
-        @DisplayName("Should get all waste types")
-        void getAllWasteTypes_Success() {
-            when(wasteTypeRepository.findAll()).thenReturn(List.of(sampleWasteType));
+        @DisplayName("Should get all active waste types")
+        void getAllActiveWasteTypes_Success() {
+            when(wasteTypeRepository.findAllActive()).thenReturn(List.of(sampleWasteType));
 
-            List<WasteTypeResponse> result = wasteTypeService.getAllWasteTypes(null);
+            List<WasteTypeResponse> result = wasteTypeService.getAllActiveWasteTypes();
 
             assertThat(result).hasSize(1);
             assertThat(result.get(0).getName()).isEqualTo("Plastic");
         }
 
         @Test
-        @DisplayName("Should filter waste types by status")
-        void getAllWasteTypes_FilterByStatus() {
-            when(wasteTypeRepository.findByStatus("ACTIVE")).thenReturn(List.of(sampleWasteType));
+        @DisplayName("Should get all waste types with pagination")
+        void getAllWasteTypes_Success() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<WasteType> page = new PageImpl<>(List.of(sampleWasteType));
 
-            List<WasteTypeResponse> result = wasteTypeService.getAllWasteTypes("ACTIVE");
+            when(wasteTypeRepository.findAll(pageable)).thenReturn(page);
 
-            assertThat(result).hasSize(1);
-            verify(wasteTypeRepository, times(1)).findByStatus("ACTIVE");
+            Page<WasteTypeResponse> result = wasteTypeService.getAllWasteTypes(pageable);
+
+            assertThat(result.getContent()).hasSize(1);
         }
     }
 
@@ -150,12 +150,11 @@ class WasteTypeServiceTest {
         void updateWasteType_Success() {
             CreateWasteTypeRequest request = CreateWasteTypeRequest.builder()
                     .name("Updated Plastic")
-                    .nameVi("Nhựa cập nhật")
                     .description("Updated description")
-                    .basePointsPerKg(20.0)
                     .build();
 
-            when(wasteTypeRepository.findById(wasteTypeId)).thenReturn(Optional.of(sampleWasteType));
+            when(wasteTypeRepository.findByWasteTypeId(wasteTypeId)).thenReturn(Optional.of(sampleWasteType));
+            when(wasteTypeRepository.existsByName("Updated Plastic")).thenReturn(false);
             when(wasteTypeRepository.save(any(WasteType.class))).thenReturn(sampleWasteType);
 
             WasteTypeResponse response = wasteTypeService.updateWasteType(wasteTypeId, request);
@@ -166,18 +165,32 @@ class WasteTypeServiceTest {
     }
 
     @Nested
-    @DisplayName("Delete Waste Type Tests")
-    class DeleteWasteTypeTests {
+    @DisplayName("Activate/Deactivate Waste Type Tests")
+    class ActivateDeactivateTests {
 
         @Test
-        @DisplayName("Should delete waste type successfully")
-        void deleteWasteType_Success() {
-            when(wasteTypeRepository.findById(wasteTypeId)).thenReturn(Optional.of(sampleWasteType));
-            doNothing().when(wasteTypeRepository).delete(any(WasteType.class));
+        @DisplayName("Should deactivate waste type successfully")
+        void deactivateWasteType_Success() {
+            when(wasteTypeRepository.findByWasteTypeId(wasteTypeId)).thenReturn(Optional.of(sampleWasteType));
+            when(wasteTypeRepository.save(any(WasteType.class))).thenReturn(sampleWasteType);
 
-            wasteTypeService.deleteWasteType(wasteTypeId);
+            wasteTypeService.deactivateWasteType(wasteTypeId);
 
-            verify(wasteTypeRepository, times(1)).delete(sampleWasteType);
+            assertThat(sampleWasteType.getIsActive()).isFalse();
+            verify(wasteTypeRepository, times(1)).save(sampleWasteType);
+        }
+
+        @Test
+        @DisplayName("Should activate waste type successfully")
+        void activateWasteType_Success() {
+            sampleWasteType.setIsActive(false);
+            when(wasteTypeRepository.findByWasteTypeId(wasteTypeId)).thenReturn(Optional.of(sampleWasteType));
+            when(wasteTypeRepository.save(any(WasteType.class))).thenReturn(sampleWasteType);
+
+            wasteTypeService.activateWasteType(wasteTypeId);
+
+            assertThat(sampleWasteType.getIsActive()).isTrue();
+            verify(wasteTypeRepository, times(1)).save(sampleWasteType);
         }
     }
 }

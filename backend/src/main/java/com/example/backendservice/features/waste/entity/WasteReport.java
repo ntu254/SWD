@@ -1,18 +1,17 @@
 package com.example.backendservice.features.waste.entity;
 
 import com.example.backendservice.features.location.entity.ServiceArea;
-import com.example.backendservice.features.user.entity.CitizenProfile;
+import com.example.backendservice.features.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Báo cáo rác (Waste Report)
- * Citizen tạo báo cáo về rác cần thu gom
+ * Entity cho bảng WASTE_REPORT
+ * Báo cáo rác - Citizen tạo báo cáo về rác cần thu gom
  */
 @Entity
 @Table(name = "waste_reports")
@@ -24,60 +23,58 @@ public class WasteReport {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "report_id", columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID reportId;
 
-    // Citizen tạo report
+    /**
+     * Người tạo báo cáo (User có role CITIZEN)
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "citizen_id", nullable = false)
-    private CitizenProfile citizen;
+    @JoinColumn(name = "reporter_user_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User reporterUser;
 
-    // Khu vực
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "area_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private ServiceArea area;
 
-    // Loại rác chính (optional, có thể nhiều loại)
+    @Column(name = "requested_pickup_time")
+    private LocalDateTime requestedPickupTime;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "primary_waste_type_id")
-    private WasteType primaryWasteType;
-
-    @Column(name = "estimated_weight_kg")
-    private Double estimatedWeightKg;
-
-    @Column(name = "location_text", length = 500)
-    private String locationText; // Địa chỉ chi tiết
-
-    @Column(name = "lat")
-    private Double lat;
-
-    @Column(name = "lng")
-    private Double lng;
+    @JoinColumn(name = "waste_type_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private WasteType wasteType;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "image_urls", columnDefinition = "TEXT")
-    private String imageUrls; // JSON array of image URLs
-
-    @Column(length = 50)
+    @Column(length = 30)
     @Builder.Default
-    private String status = "PENDING"; // PENDING, ACCEPTED, REJECTED, ASSIGNED, COMPLETED, CANCELLED
-
-    @Column(name = "rejection_reason", length = 500)
-    private String rejectionReason;
-
-    @Column(length = 20)
-    @Builder.Default
-    private String priority = "NORMAL"; // LOW, NORMAL, HIGH, URGENT
-
-    @Column(name = "preferred_date")
-    private LocalDateTime preferredDate; // Ngày Citizen muốn thu gom
+    private String status = "PENDING"; // PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Column(name = "gps_accuracy_meters")
+    private Double gpsAccuracyMeters;
+
+    @Column(name = "report_photo_url")
+    private String reportPhotoUrl;
+
+    // Helper method
+    public UUID getReporterUserId() {
+        return reporterUser != null ? reporterUser.getUserId() : null;
+    }
 }

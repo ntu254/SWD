@@ -1,200 +1,190 @@
 package com.example.backendservice.features.notification.service;
 
-import com.example.backendservice.common.exception.ResourceNotFoundException;
-import com.example.backendservice.common.sse.SseEventData;
-import com.example.backendservice.common.sse.SseService;
 import com.example.backendservice.features.notification.dto.CreateNotificationRequest;
 import com.example.backendservice.features.notification.dto.NotificationResponse;
 import com.example.backendservice.features.notification.dto.UpdateNotificationRequest;
-import com.example.backendservice.features.notification.entity.Notification;
-import com.example.backendservice.features.notification.repository.NotificationRepository;
-import com.example.backendservice.features.user.entity.User;
-import com.example.backendservice.features.user.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Implementation of NotificationService
+ * Using in-memory storage since there's no Notification entity yet
+ */
 @Service
-@RequiredArgsConstructor
-@Transactional
 @Slf4j
 public class NotificationServiceImpl implements NotificationService {
 
-    private final NotificationRepository notificationRepository;
-    private final UserRepository userRepository;
-    private final SseService sseService;
+    // In-memory storage for notifications (placeholder until entity is created)
+    private final ConcurrentHashMap<UUID, NotificationResponse> notifications = new ConcurrentHashMap<>();
 
     @Override
     public NotificationResponse createNotification(UUID adminId, CreateNotificationRequest request) {
-        User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new ResourceNotFoundException("Admin", "id", adminId));
+        log.info("Creating notification by admin: {}", adminId);
 
-        Notification notification = Notification.builder()
+        NotificationResponse notification = NotificationResponse.builder()
+                .id(UUID.randomUUID())
                 .title(request.getTitle())
                 .content(request.getContent())
                 .type(request.getType() != null ? request.getType() : "General")
                 .targetAudience(request.getTargetAudience() != null ? request.getTargetAudience() : "All")
                 .priority(request.getPriority() != null ? request.getPriority() : "Normal")
+                .isActive(true)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
-                .createdBy(admin)
-                .isActive(true)
+                .createdById(adminId)
+                .createdByName("Admin")
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
 
-        Notification savedNotification = notificationRepository.save(notification);
-        NotificationResponse response = mapToResponse(savedNotification);
+        notifications.put(notification.getId(), notification);
+        log.info("Notification created: {}", notification.getId());
 
-        // Send real-time notification via SSE
-        sendNotificationViaSSE(response);
-
-        return response;
+        return notification;
     }
 
     @Override
     public NotificationResponse updateNotification(UUID notificationId, UpdateNotificationRequest request) {
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", notificationId));
+        log.info("Updating notification: {}", notificationId);
 
+        NotificationResponse notification = notifications.get(notificationId);
+        if (notification == null) {
+            throw new IllegalArgumentException("Notification not found: " + notificationId);
+        }
+
+        // Update fields if provided
         if (request.getTitle() != null) {
             notification.setTitle(request.getTitle());
         }
         if (request.getContent() != null) {
             notification.setContent(request.getContent());
         }
-        if (request.getType() != null) {
-            notification.setType(request.getType());
-        }
-        if (request.getTargetAudience() != null) {
-            notification.setTargetAudience(request.getTargetAudience());
-        }
-        if (request.getPriority() != null) {
-            notification.setPriority(request.getPriority());
-        }
-        if (request.getIsActive() != null) {
-            notification.setIsActive(request.getIsActive());
-        }
-        if (request.getStartDate() != null) {
-            notification.setStartDate(request.getStartDate());
-        }
-        if (request.getEndDate() != null) {
-            notification.setEndDate(request.getEndDate());
-        }
+        notification.setUpdatedAt(LocalDateTime.now());
 
-        Notification updatedNotification = notificationRepository.save(notification);
-        NotificationResponse response = mapToResponse(updatedNotification);
+        notifications.put(notificationId, notification);
+        log.info("Notification updated: {}", notificationId);
 
-        // Send real-time update notification via SSE if still active
-        if (Boolean.TRUE.equals(updatedNotification.getIsActive())) {
-            sendNotificationUpdateViaSSE(response);
-        }
-
-        return response;
+        return notification;
     }
 
     @Override
     public void deleteNotification(UUID notificationId) {
-        if (!notificationRepository.existsById(notificationId)) {
-            throw new ResourceNotFoundException("Notification", "id", notificationId);
-        }
-        notificationRepository.deleteById(notificationId);
+        log.info("Deleting notification: {}", notificationId);
+        notifications.remove(notificationId);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Page<NotificationResponse> getAllNotifications(String type, String targetAudience, Boolean isActive,
             Pageable pageable) {
-        return notificationRepository.findAllWithFilters(type, targetAudience, isActive, pageable)
-                .map(this::mapToResponse);
+        log.debug("Getting all notifications with filters");
+
+        List<NotificationResponse> filtered = new ArrayList<>(notifications.values());
+
+        // Filter by type
+        if (type != null && !type.isEmpty()) {
+            filtered = filtered.stream()
+                    .filter(n -> type.equals(n.getType()))
+                    .toList();
+        }
+
+        // Filter by targetAudience
+        if (targetAudience != null && !targetAudience.isEmpty()) {
+            filtered = filtered.stream()
+                    .filter(n -> targetAudience.equals(n.getTargetAudience()))
+                    .toList();
+        }
+
+        // Filter by isActive
+        if (isActive != null) {
+            filtered = filtered.stream()
+                    .filter(n -> isActive.equals(n.getIsActive()))
+                    .toList();
+        }
+
+        // Manual pagination
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+
+        if (start > filtered.size()) {
+            return new PageImpl<>(List.of(), pageable, filtered.size());
+        }
+
+        return new PageImpl<>(
+                filtered.subList(start, end),
+                pageable,
+                filtered.size());
     }
 
     @Override
-    @Transactional(readOnly = true)
     public NotificationResponse getNotificationById(UUID notificationId) {
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", notificationId));
-        return mapToResponse(notification);
+        NotificationResponse notification = notifications.get(notificationId);
+        if (notification == null) {
+            throw new IllegalArgumentException("Notification not found: " + notificationId);
+        }
+        return notification;
     }
 
     @Override
     public NotificationResponse toggleNotificationStatus(UUID notificationId) {
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", notificationId));
+        log.info("Toggling notification status: {}", notificationId);
+
+        NotificationResponse notification = notifications.get(notificationId);
+        if (notification == null) {
+            throw new IllegalArgumentException("Notification not found: " + notificationId);
+        }
 
         notification.setIsActive(!notification.getIsActive());
-        Notification updatedNotification = notificationRepository.save(notification);
-        return mapToResponse(updatedNotification);
+        notification.setUpdatedAt(LocalDateTime.now());
+        notifications.put(notificationId, notification);
+
+        return notification;
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Page<NotificationResponse> getActiveNotificationsForUser(String userRole, Pageable pageable) {
-        return notificationRepository.findActiveNotificationsForAudience(userRole, LocalDateTime.now(), pageable)
-                .map(this::mapToResponse);
+        log.debug("Getting active notifications for role: {}", userRole);
+
+        LocalDateTime now = LocalDateTime.now();
+
+        List<NotificationResponse> filtered = notifications.values().stream()
+                .filter(n -> n.getIsActive() != null && n.getIsActive())
+                .filter(n -> n.getStartDate() == null || !n.getStartDate().isAfter(now))
+                .filter(n -> n.getEndDate() == null || !n.getEndDate().isBefore(now))
+                .filter(n -> "All".equals(n.getTargetAudience()) ||
+                        (userRole != null && n.getTargetAudience().contains(userRole)))
+                .toList();
+
+        // Manual pagination
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+
+        if (start > filtered.size()) {
+            return new PageImpl<>(List.of(), pageable, filtered.size());
+        }
+
+        return new PageImpl<>(
+                filtered.subList(start, end),
+                pageable,
+                filtered.size());
     }
 
     @Override
-    @Transactional(readOnly = true)
     public long countActiveNotifications() {
-        return notificationRepository.countByIsActiveTrue();
-    }
+        LocalDateTime now = LocalDateTime.now();
 
-    /**
-     * Send new notification to users via SSE
-     */
-    private void sendNotificationViaSSE(NotificationResponse notification) {
-        try {
-            SseEventData eventData = SseEventData.notification(notification, notification.getTargetAudience());
-            sseService.sendEvent(eventData);
-            log.info("SSE notification sent: {} to audience: {}", notification.getTitle(),
-                    notification.getTargetAudience());
-        } catch (Exception e) {
-            log.error("Failed to send SSE notification: {}", e.getMessage());
-        }
-    }
-
-    /**
-     * Send notification update to users via SSE
-     */
-    private void sendNotificationUpdateViaSSE(NotificationResponse notification) {
-        try {
-            SseEventData eventData = SseEventData.builder()
-                    .eventType("NOTIFICATION_UPDATE")
-                    .payload(notification)
-                    .timestamp(LocalDateTime.now())
-                    .targetAudience(notification.getTargetAudience())
-                    .build();
-            sseService.sendEvent(eventData);
-            log.info("SSE notification update sent: {}", notification.getTitle());
-        } catch (Exception e) {
-            log.error("Failed to send SSE notification update: {}", e.getMessage());
-        }
-    }
-
-    private NotificationResponse mapToResponse(Notification notification) {
-        NotificationResponse.NotificationResponseBuilder builder = NotificationResponse.builder()
-                .id(notification.getId())
-                .title(notification.getTitle())
-                .content(notification.getContent())
-                .type(notification.getType())
-                .targetAudience(notification.getTargetAudience())
-                .priority(notification.getPriority())
-                .isActive(notification.getIsActive())
-                .startDate(notification.getStartDate())
-                .endDate(notification.getEndDate())
-                .createdAt(notification.getCreatedAt())
-                .updatedAt(notification.getUpdatedAt());
-
-        if (notification.getCreatedBy() != null) {
-            builder.createdById(notification.getCreatedBy().getId());
-            builder.createdByName(notification.getCreatedBy().getFullName());
-        }
-
-        return builder.build();
+        return notifications.values().stream()
+                .filter(n -> n.getIsActive() != null && n.getIsActive())
+                .filter(n -> n.getStartDate() == null || !n.getStartDate().isAfter(now))
+                .filter(n -> n.getEndDate() == null || !n.getEndDate().isBefore(now))
+                .count();
     }
 }

@@ -1,18 +1,20 @@
 package com.example.backendservice.features.location.service;
 
-import com.example.backendservice.features.location.dto.CreateServiceAreaRequest;
-import com.example.backendservice.features.location.dto.ServiceAreaResponse;
+import com.example.backendservice.common.exception.ResourceNotFoundException;
+import com.example.backendservice.features.location.dto.*;
 import com.example.backendservice.features.location.entity.ServiceArea;
 import com.example.backendservice.features.location.repository.ServiceAreaRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,102 +26,113 @@ public class ServiceAreaServiceImpl implements ServiceAreaService {
     @Override
     @Transactional
     public ServiceAreaResponse createServiceArea(CreateServiceAreaRequest request) {
-        log.info("Creating service area: {}", request.getName());
-
-        ServiceArea area = ServiceArea.builder()
+        ServiceArea serviceArea = ServiceArea.builder()
                 .name(request.getName())
-                .description(request.getDescription())
-                .centerLat(request.getCenterLat())
-                .centerLng(request.getCenterLng())
-                .radiusKm(request.getRadiusKm())
-                .boundaryGeoJson(request.getBoundaryGeoJson())
-                .status("ACTIVE")
+                .geoBoundaryWkt(request.getGeoPolygon())
+                .isActive(true)
                 .build();
 
-        area = serviceAreaRepository.save(area);
-        log.info("Created service area with id: {}", area.getId());
+        serviceArea = serviceAreaRepository.save(serviceArea);
+        log.info("Created service area: {}", serviceArea.getName());
 
-        return mapToResponse(area);
+        return toResponse(serviceArea);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public ServiceAreaResponse getServiceAreaById(UUID id) {
-        ServiceArea area = findById(id);
-        return mapToResponse(area);
+    public ServiceAreaResponse getServiceAreaById(UUID areaId) {
+        ServiceArea serviceArea = serviceAreaRepository.findByAreaId(areaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Service area not found: " + areaId));
+        return toResponse(serviceArea);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Page<ServiceAreaResponse> getAllServiceAreas(String status, Pageable pageable) {
-        Page<ServiceArea> areas;
-        if (status != null && !status.isEmpty()) {
-            areas = serviceAreaRepository.findByStatus(status, pageable);
-        } else {
-            areas = serviceAreaRepository.findAll(pageable);
-        }
-        return areas.map(this::mapToResponse);
+    public List<ServiceAreaResponse> getAllActiveServiceAreas() {
+        return serviceAreaRepository.findAllActive().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
-    @Transactional
-    public ServiceAreaResponse updateServiceArea(UUID id, CreateServiceAreaRequest request) {
-        log.info("Updating service area: {}", id);
-
-        ServiceArea area = findById(id);
-        area.setName(request.getName());
-        area.setDescription(request.getDescription());
-        area.setCenterLat(request.getCenterLat());
-        area.setCenterLng(request.getCenterLng());
-        area.setRadiusKm(request.getRadiusKm());
-        if (request.getBoundaryGeoJson() != null) {
-            area.setBoundaryGeoJson(request.getBoundaryGeoJson());
-        }
-
-        area = serviceAreaRepository.save(area);
-        return mapToResponse(area);
+    public Page<ServiceAreaResponse> getAllServiceAreas(Pageable pageable) {
+        return serviceAreaRepository.findAll(pageable).map(this::toResponse);
     }
 
     @Override
-    @Transactional
-    public void deleteServiceArea(UUID id) {
-        log.info("Deleting service area: {}", id);
-        ServiceArea area = findById(id);
-        serviceAreaRepository.delete(area);
+    public Page<ServiceAreaResponse> getServiceAreasByCity(String city, Pageable pageable) {
+        // ServiceArea doesn't have city field, search by name containing city
+        List<ServiceArea> areas = serviceAreaRepository.findByNameContainingIgnoreCase(city);
+        List<ServiceAreaResponse> responses = areas.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
+
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
     }
 
     @Override
-    @Transactional
-    public void activateServiceArea(UUID id) {
-        ServiceArea area = findById(id);
-        area.setStatus("ACTIVE");
-        serviceAreaRepository.save(area);
+    public Page<ServiceAreaResponse> getServiceAreasByDistrict(String districtCode, Pageable pageable) {
+        // ServiceArea doesn't have districtCode field, search by name containing
+        // district
+        List<ServiceArea> areas = serviceAreaRepository.findByNameContainingIgnoreCase(districtCode);
+        List<ServiceAreaResponse> responses = areas.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
+
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
     }
 
     @Override
     @Transactional
-    public void deactivateServiceArea(UUID id) {
-        ServiceArea area = findById(id);
-        area.setStatus("INACTIVE");
-        serviceAreaRepository.save(area);
+    public ServiceAreaResponse updateServiceArea(UUID areaId, CreateServiceAreaRequest request) {
+        ServiceArea serviceArea = serviceAreaRepository.findByAreaId(areaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Service area not found: " + areaId));
+
+        serviceArea.setName(request.getName());
+        serviceArea.setGeoBoundaryWkt(request.getGeoPolygon());
+
+        serviceArea = serviceAreaRepository.save(serviceArea);
+        log.info("Updated service area: {}", serviceArea.getName());
+
+        return toResponse(serviceArea);
     }
 
-    private ServiceArea findById(UUID id) {
-        return serviceAreaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("ServiceArea not found with id: " + id));
+    @Override
+    @Transactional
+    public void deactivateServiceArea(UUID areaId) {
+        ServiceArea serviceArea = serviceAreaRepository.findByAreaId(areaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Service area not found: " + areaId));
+
+        serviceArea.setIsActive(false);
+        serviceAreaRepository.save(serviceArea);
+        log.info("Deactivated service area: {}", serviceArea.getName());
     }
 
-    private ServiceAreaResponse mapToResponse(ServiceArea area) {
+    @Override
+    @Transactional
+    public void activateServiceArea(UUID areaId) {
+        ServiceArea serviceArea = serviceAreaRepository.findByAreaId(areaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Service area not found: " + areaId));
+
+        serviceArea.setIsActive(true);
+        serviceAreaRepository.save(serviceArea);
+        log.info("Activated service area: {}", serviceArea.getName());
+    }
+
+    private ServiceAreaResponse toResponse(ServiceArea serviceArea) {
         return ServiceAreaResponse.builder()
-                .id(area.getId())
-                .name(area.getName())
-                .description(area.getDescription())
-                .centerLat(area.getCenterLat())
-                .centerLng(area.getCenterLng())
-                .radiusKm(area.getRadiusKm())
-                .status(area.getStatus())
-                .createdAt(area.getCreatedAt())
-                .updatedAt(area.getUpdatedAt())
+                .areaId(serviceArea.getAreaId())
+                .name(serviceArea.getName())
+                .wardCode(null)
+                .districtCode(null)
+                .city(null)
+                .geoPolygon(serviceArea.getGeoBoundaryWkt())
+                .isActive(serviceArea.getIsActive())
+                .createdAt(serviceArea.getCreatedAt())
                 .build();
     }
 }

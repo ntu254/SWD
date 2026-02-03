@@ -1,83 +1,90 @@
 package com.example.backendservice.features.enterprise.service;
 
+import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.features.enterprise.dto.CreateEnterpriseRequest;
 import com.example.backendservice.features.enterprise.dto.EnterpriseResponse;
-import com.example.backendservice.features.enterprise.entity.Enterprise;
-import com.example.backendservice.features.enterprise.repository.EnterpriseRepository;
-import com.example.backendservice.features.location.entity.ServiceArea;
-import com.example.backendservice.features.location.repository.ServiceAreaRepository;
+import com.example.backendservice.features.user.entity.RoleType;
 import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+/**
+ * Implementation of EnterpriseService
+ * Manages enterprise users (Users with role ENTERPRISE)
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class EnterpriseServiceImpl implements EnterpriseService {
 
-    private final EnterpriseRepository enterpriseRepository;
     private final UserRepository userRepository;
-    private final ServiceAreaRepository serviceAreaRepository;
 
     @Override
     @Transactional
     public EnterpriseResponse createEnterprise(CreateEnterpriseRequest request, UUID ownerId) {
-        log.info("Creating enterprise: {} for owner: {}", request.getName(), ownerId);
+        log.info("Creating enterprise for owner: {}", ownerId);
 
-        User owner = userRepository.findById(ownerId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + ownerId));
+        // Get or validate owner exists
+        User owner = userRepository.findByUserId(ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Owner not found: " + ownerId));
 
-        ServiceArea primaryArea = null;
-        if (request.getPrimaryAreaId() != null) {
-            primaryArea = serviceAreaRepository.findById(request.getPrimaryAreaId())
-                    .orElseThrow(() -> new EntityNotFoundException(
-                            "ServiceArea not found with id: " + request.getPrimaryAreaId()));
+        // Update owner's display name and role if needed
+        owner.setDisplayName(request.getName());
+        if (owner.getRole() != RoleType.ENTERPRISE) {
+            owner.setRole(RoleType.ENTERPRISE);
         }
+        owner.setPhone(request.getPhone());
 
-        Enterprise enterprise = Enterprise.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .logoUrl(request.getLogoUrl())
-                .address(request.getAddress())
-                .phone(request.getPhone())
-                .email(request.getEmail())
-                .taxCode(request.getTaxCode())
-                .owner(owner)
-                .primaryArea(primaryArea)
-                .status("ACTIVE")
-                .build();
+        owner = userRepository.save(owner);
+        log.info("Enterprise created/updated for user: {}", owner.getUserId());
 
-        enterprise = enterpriseRepository.save(enterprise);
-        log.info("Created enterprise with id: {}", enterprise.getId());
-
-        return mapToResponse(enterprise);
+        return toResponse(owner);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public EnterpriseResponse getEnterpriseById(UUID id) {
-        Enterprise enterprise = findById(id);
-        return mapToResponse(enterprise);
+        User enterprise = userRepository.findByUserId(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Enterprise not found: " + id));
+
+        if (enterprise.getRole() != RoleType.ENTERPRISE) {
+            throw new IllegalArgumentException("User is not an enterprise: " + id);
+        }
+
+        return toResponse(enterprise);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Page<EnterpriseResponse> getAllEnterprises(String status, Pageable pageable) {
-        Page<Enterprise> enterprises;
-        if (status != null && !status.isEmpty()) {
-            enterprises = enterpriseRepository.findByStatus(status, pageable);
-        } else {
-            enterprises = enterpriseRepository.findAll(pageable);
+        log.debug("Getting all enterprises with status: {}", status);
+
+        List<User> enterprises = userRepository.findAllActiveEnterprises();
+
+        List<EnterpriseResponse> responses = enterprises.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+
+        // Manual pagination
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), responses.size());
+
+        if (start > responses.size()) {
+            return new PageImpl<>(List.of(), pageable, responses.size());
         }
-        return enterprises.map(this::mapToResponse);
+
+        return new PageImpl<>(
+                responses.subList(start, end),
+                pageable,
+                responses.size());
     }
 
     @Override
@@ -85,79 +92,85 @@ public class EnterpriseServiceImpl implements EnterpriseService {
     public EnterpriseResponse updateEnterprise(UUID id, CreateEnterpriseRequest request) {
         log.info("Updating enterprise: {}", id);
 
-        Enterprise enterprise = findById(id);
-        enterprise.setName(request.getName());
-        enterprise.setDescription(request.getDescription());
-        enterprise.setLogoUrl(request.getLogoUrl());
-        enterprise.setAddress(request.getAddress());
-        enterprise.setPhone(request.getPhone());
-        enterprise.setEmail(request.getEmail());
-        enterprise.setTaxCode(request.getTaxCode());
+        User enterprise = userRepository.findByUserId(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Enterprise not found: " + id));
 
-        if (request.getPrimaryAreaId() != null) {
-            ServiceArea area = serviceAreaRepository.findById(request.getPrimaryAreaId())
-                    .orElseThrow(() -> new EntityNotFoundException("ServiceArea not found"));
-            enterprise.setPrimaryArea(area);
+        if (request.getName() != null) {
+            enterprise.setDisplayName(request.getName());
+        }
+        if (request.getPhone() != null) {
+            enterprise.setPhone(request.getPhone());
         }
 
-        enterprise = enterpriseRepository.save(enterprise);
-        return mapToResponse(enterprise);
+        enterprise = userRepository.save(enterprise);
+        log.info("Enterprise updated: {}", enterprise.getUserId());
+
+        return toResponse(enterprise);
     }
 
     @Override
     @Transactional
     public void deleteEnterprise(UUID id) {
-        log.info("Soft deleting enterprise: {}", id);
-        Enterprise enterprise = findById(id);
-        enterprise.setStatus("INACTIVE");
-        enterprise.setDeletedAt(java.time.LocalDateTime.now());
-        enterpriseRepository.save(enterprise);
+        log.info("Deleting enterprise: {}", id);
+
+        User enterprise = userRepository.findByUserId(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Enterprise not found: " + id));
+
+        // Soft delete
+        enterprise.setAccountStatus(com.example.backendservice.features.user.entity.AccountStatus.PENDING_DELETE);
+        userRepository.save(enterprise);
+        log.info("Enterprise deleted: {}", id);
     }
 
     @Override
     @Transactional
     public void activateEnterprise(UUID id) {
-        Enterprise enterprise = findById(id);
-        enterprise.setStatus("ACTIVE");
-        enterpriseRepository.save(enterprise);
+        log.info("Activating enterprise: {}", id);
+
+        User enterprise = userRepository.findByUserId(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Enterprise not found: " + id));
+
+        enterprise.setAccountStatus(com.example.backendservice.features.user.entity.AccountStatus.ACTIVE);
+        userRepository.save(enterprise);
+        log.info("Enterprise activated: {}", id);
     }
 
     @Override
     @Transactional
     public void suspendEnterprise(UUID id) {
-        Enterprise enterprise = findById(id);
-        enterprise.setStatus("SUSPENDED");
-        enterpriseRepository.save(enterprise);
+        log.info("Suspending enterprise: {}", id);
+
+        User enterprise = userRepository.findByUserId(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Enterprise not found: " + id));
+
+        enterprise.setAccountStatus(com.example.backendservice.features.user.entity.AccountStatus.DISABLED);
+        userRepository.save(enterprise);
+        log.info("Enterprise suspended: {}", id);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public EnterpriseResponse getMyEnterprise(UUID ownerId) {
-        Enterprise enterprise = enterpriseRepository.findByOwnerId(ownerId)
-                .orElseThrow(() -> new EntityNotFoundException("Enterprise not found for owner: " + ownerId));
-        return mapToResponse(enterprise);
+        User enterprise = userRepository.findByUserId(ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Enterprise not found: " + ownerId));
+
+        return toResponse(enterprise);
     }
 
-    private Enterprise findById(UUID id) {
-        return enterpriseRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Enterprise not found with id: " + id));
-    }
-
-    private EnterpriseResponse mapToResponse(Enterprise enterprise) {
+    private EnterpriseResponse toResponse(User enterprise) {
         return EnterpriseResponse.builder()
-                .id(enterprise.getId())
-                .name(enterprise.getName())
-                .description(enterprise.getDescription())
-                .logoUrl(enterprise.getLogoUrl())
-                .address(enterprise.getAddress())
+                .id(enterprise.getUserId())
+                .name(enterprise.getDisplayName())
+                .description(null) // Not stored in User entity
+                .logoUrl(enterprise.getAvatarUrl())
+                .address(null) // Not stored in User entity
                 .phone(enterprise.getPhone())
                 .email(enterprise.getEmail())
-                .taxCode(enterprise.getTaxCode())
-                .ownerId(enterprise.getOwner() != null ? enterprise.getOwner().getId() : null)
-                .ownerName(enterprise.getOwner() != null ? enterprise.getOwner().getFullName() : null)
-                .primaryAreaId(enterprise.getPrimaryArea() != null ? enterprise.getPrimaryArea().getId() : null)
-                .primaryAreaName(enterprise.getPrimaryArea() != null ? enterprise.getPrimaryArea().getName() : null)
-                .status(enterprise.getStatus())
+                .taxCode(null) // Not stored in User entity
+                .ownerId(enterprise.getUserId())
+                .ownerName(enterprise.getFirstName() + " " + enterprise.getLastName())
+                .primaryAreaId(null) // Not stored in User entity
+                .primaryAreaName(null)
+                .status(enterprise.getAccountStatus().name())
                 .createdAt(enterprise.getCreatedAt())
                 .build();
     }

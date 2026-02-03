@@ -1,20 +1,46 @@
 package com.example.backendservice.features.user.service;
 
-import java.util.List;
-import java.util.UUID;
+import com.example.backendservice.features.user.dto.*;
+import com.example.backendservice.features.user.entity.RoleType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import com.example.backendservice.features.user.dto.UpdateUserRequest;
-import com.example.backendservice.features.user.dto.UserResponse;
+import java.util.UUID;
 
 public interface UserService {
 
-    UserResponse getUserById(UUID id);
+    // User CRUD
+    UserResponse createUser(CreateUserRequest request);
+
+    UserResponse getUserById(UUID userId);
 
     UserResponse getUserByEmail(String email);
 
-    List<UserResponse> getAllUsers();
+    UserResponse updateUser(UUID userId, UpdateUserRequest request);
 
-    UserResponse updateUser(UUID id, UpdateUserRequest request);
+    void deleteUser(UUID userId);
 
-    void deleteUser(UUID id);
+    // User listing
+    Page<UserResponse> getAllUsers(Pageable pageable);
+
+    Page<UserResponse> getUsersByRole(RoleType role, Pageable pageable);
+
+    // Citizen profile
+    CitizenProfileResponse getCitizenProfile(UUID userId);
+
+    CitizenProfileResponse updateCitizenProfile(UUID userId, UpdateCitizenProfileRequest request);
+
+    // Collector profile
+    CollectorProfileResponse getCollectorProfile(UUID userId);
+
+    CollectorProfileResponse updateCollectorProfile(UUID userId, UpdateCollectorProfileRequest request);
+
+    CollectorProfileResponse updateCollectorLocation(UUID userId, Double lat, Double lng);
+
+    CollectorProfileResponse setCollectorAvailability(UUID userId, Boolean isAvailable);
+
+    // Password management
+    void changePassword(UUID userId, String oldPassword, String newPassword);
+
+    void resetPassword(String email);
 }

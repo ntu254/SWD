@@ -1,37 +1,37 @@
 package com.example.backendservice.features.waste.service;
 
-import com.example.backendservice.features.waste.dto.CreateWasteReportRequest;
-import com.example.backendservice.features.waste.dto.SuggestedReportDTO;
-import com.example.backendservice.features.waste.dto.WasteReportResponse;
+import com.example.backendservice.features.waste.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface WasteReportService {
 
-    WasteReportResponse createReport(CreateWasteReportRequest request);
+    // CRUD
+    WasteReportResponse createReport(UUID citizenUserId, CreateWasteReportRequest request);
 
-    WasteReportResponse getReportById(UUID id);
+    WasteReportResponse getReportById(UUID reportId);
 
-    Page<WasteReportResponse> getReportsByCitizen(UUID citizenId, Pageable pageable);
+    Page<WasteReportResponse> getReportsByCitizen(UUID citizenUserId, Pageable pageable);
 
-    Page<WasteReportResponse> getReportsByArea(UUID areaId, String status, Pageable pageable);
+    Page<WasteReportResponse> getReportsByArea(UUID areaId, Pageable pageable);
 
-    Page<WasteReportResponse> getPendingReports(Pageable pageable);
+    Page<WasteReportResponse> getReportsByStatus(String status, Pageable pageable);
 
-    WasteReportResponse updateReport(UUID id, CreateWasteReportRequest request);
+    Page<WasteReportResponse> getAllReports(Pageable pageable);
 
-    // Status Flow
-    WasteReportResponse acceptReport(UUID id);
+    // Status management
+    WasteReportResponse approveReport(UUID reportId, UUID adminUserId);
 
-    WasteReportResponse rejectReport(UUID id, String reason);
+    WasteReportResponse rejectReport(UUID reportId, UUID adminUserId, String reason);
 
-    WasteReportResponse cancelReport(UUID id);
+    WasteReportResponse assignToTask(UUID reportId, UUID taskId);
 
-    // Priority Scoring
-    List<SuggestedReportDTO> getSuggestedReports(UUID enterpriseId, UUID areaId, int limit);
+    WasteReportResponse markCompleted(UUID reportId);
 
-    Double calculatePriorityScore(UUID reportId);
+    // Update
+    WasteReportResponse updateReport(UUID reportId, CreateWasteReportRequest request);
+
+    void deleteReport(UUID reportId);
 }

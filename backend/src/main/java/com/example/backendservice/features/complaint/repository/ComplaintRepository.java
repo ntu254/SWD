@@ -1,56 +1,38 @@
 package com.example.backendservice.features.complaint.repository;
 
 import com.example.backendservice.features.complaint.entity.Complaint;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface ComplaintRepository extends JpaRepository<Complaint, UUID> {
 
-        // Find all complaints by citizen
-        Page<Complaint> findByCitizen_Id(UUID citizenId, Pageable pageable);
+        Optional<Complaint> findByComplaintId(UUID complaintId);
 
-        // Find complaints by collector
-        Page<Complaint> findByCollector_Id(UUID collectorId, Pageable pageable);
+        @Query("SELECT c FROM Complaint c WHERE c.createdByUser.userId = :createdByUserId ORDER BY c.createdAt DESC")
+        List<Complaint> findByCreatedByUserId(@Param("createdByUserId") UUID createdByUserId);
 
-        // Find complaints by task assignment
-        List<Complaint> findByTaskAssignment_Id(UUID taskAssignmentId);
+        @Query("SELECT c FROM Complaint c WHERE c.wasteReport.reportId = :reportId")
+        List<Complaint> findByReportId(@Param("reportId") UUID reportId);
 
-        // Find complaints by status
-        Page<Complaint> findByStatus(String status, Pageable pageable);
+        @Query("SELECT c FROM Complaint c WHERE c.visit.visitId = :visitId")
+        List<Complaint> findByVisitId(@Param("visitId") UUID visitId);
 
-        // Find complaints by category
-        Page<Complaint> findByCategory(String category, Pageable pageable);
+        @Query("SELECT c FROM Complaint c WHERE c.status = :status ORDER BY c.createdAt DESC")
+        List<Complaint> findByStatus(@Param("status") String status);
 
-        // Count complaints by status
-        long countByStatus(String status);
+        @Query("SELECT c FROM Complaint c WHERE c.status = 'OPEN' ORDER BY c.createdAt ASC")
+        List<Complaint> findOpenComplaints();
 
-        // Count complaints by collector
-        long countByCollector_Id(UUID collectorId);
+        @Query("SELECT COUNT(c) FROM Complaint c WHERE c.createdByUser.userId = :createdByUserId")
+        Long countByCreatedByUserId(@Param("createdByUserId") UUID createdByUserId);
 
-        // Find all complaints with filters for admin
-        @Query("SELECT c FROM Complaint c WHERE " +
-                        "(:status IS NULL OR c.status = :status) AND " +
-                        "(:category IS NULL OR c.category = :category) AND " +
-                        "(:priority IS NULL OR c.priority = :priority)")
-        Page<Complaint> findAllWithFilters(
-                        @Param("status") String status,
-                        @Param("category") String category,
-                        @Param("priority") String priority,
-                        Pageable pageable);
-
-        // Get complaints statistics
-        @Query("SELECT c.status, COUNT(c) FROM Complaint c GROUP BY c.status")
-        List<Object[]> getComplaintStatsByStatus();
-
-        // Get complaints by collector in enterprise
-        @Query("SELECT c FROM Complaint c WHERE c.collector.enterprise.id = :enterpriseId")
-        Page<Complaint> findByEnterpriseId(@Param("enterpriseId") UUID enterpriseId, Pageable pageable);
+        @Query("SELECT COUNT(c) FROM Complaint c WHERE c.status = :status")
+        Long countByStatus(@Param("status") String status);
 }

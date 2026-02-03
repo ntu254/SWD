@@ -1,20 +1,20 @@
 package com.example.backendservice.features.task.entity;
 
-import com.example.backendservice.features.enterprise.entity.Enterprise;
 import com.example.backendservice.features.location.entity.ServiceArea;
+import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.waste.entity.WasteReport;
-import com.example.backendservice.features.waste.entity.WasteType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Nhiệm vụ thu gom rác (Collection Task)
- * Được tạo từ WasteReport và gán cho Collector
+ * Entity cho bảng TASK
+ * Nhiệm vụ thu gom rác - được tạo từ WasteReport
  */
 @Entity
 @Table(name = "tasks")
@@ -26,71 +26,67 @@ public class Task {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "task_id", columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID taskId;
 
-    // Source: Waste Report
+    /**
+     * Enterprise xử lý task (User có role ENTERPRISE)
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "waste_report_id")
-    private WasteReport wasteReport;
+    @JoinColumn(name = "enterprise_user_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User enterpriseUser;
 
-    // Enterprise xử lý
+    /**
+     * Người tạo task (Admin hoặc Enterprise)
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "enterprise_id", nullable = false)
-    private Enterprise enterprise;
+    @JoinColumn(name = "created_by_user_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User createdByUser;
 
-    // Khu vực
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "area_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private ServiceArea area;
 
-    // Loại rác
+    /**
+     * Source: Waste Report
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "waste_type_id")
-    private WasteType wasteType;
+    @JoinColumn(name = "report_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private WasteReport wasteReport;
 
-    @Column(name = "estimated_weight_kg")
-    private Double estimatedWeightKg;
-
-    @Column(name = "actual_weight_kg")
-    private Double actualWeightKg;
-
-    @Column(name = "location_text", length = 500)
-    private String locationText;
-
-    @Column(name = "lat")
-    private Double lat;
-
-    @Column(name = "lng")
-    private Double lng;
-
-    @Column(columnDefinition = "TEXT")
-    private String notes;
-
-    @Column(length = 50)
-    @Builder.Default
-    private String status = "PENDING"; // PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED
+    @Column(name = "scheduled_date")
+    private LocalDate scheduledDate;
 
     @Column(length = 20)
     @Builder.Default
     private String priority = "NORMAL"; // LOW, NORMAL, HIGH, URGENT
 
-    @Column(name = "scheduled_at")
-    private LocalDateTime scheduledAt;
-
-    @Column(name = "started_at")
-    private LocalDateTime startedAt;
-
-    @Column(name = "completed_at")
-    private LocalDateTime completedAt;
-
-    @Column(name = "points_awarded")
-    private Integer pointsAwarded;
+    @Column(length = 30)
+    @Builder.Default
+    private String status = "PENDING"; // PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // Helper methods
+    public UUID getEnterpriseUserId() {
+        return enterpriseUser != null ? enterpriseUser.getUserId() : null;
+    }
+
+    public UUID getReportId() {
+        return wasteReport != null ? wasteReport.getReportId() : null;
+    }
 }

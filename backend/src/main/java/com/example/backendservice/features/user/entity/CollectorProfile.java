@@ -1,6 +1,6 @@
 package com.example.backendservice.features.user.entity;
 
-import com.example.backendservice.features.enterprise.entity.Enterprise;
+import com.example.backendservice.features.location.entity.ServiceArea;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -11,11 +11,11 @@ import java.util.UUID;
 
 /**
  * Entity cho bảng COLLECTOR
- * Hồ sơ Collector thuộc một Enterprise
- * Sử dụng composition thay vì inheritance
+ * Hồ sơ Collector thuộc một Enterprise (User với role ENTERPRISE)
+ * Sử dụng user_id làm PK (shared PK với User)
  */
 @Entity
-@Table(name = "collector_profiles")
+@Table(name = "collectors")
 @Data
 @Builder
 @NoArgsConstructor
@@ -23,61 +23,54 @@ import java.util.UUID;
 public class CollectorProfile {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "user_id", columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID userId;
 
-    /**
-     * Tham chiếu đến User - Composition pattern
-     * Mỗi CollectorProfile liên kết với một User
-     */
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @MapsId
+    @JoinColumn(name = "user_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private User user;
 
+    /**
+     * FK đến User có role = ENTERPRISE
+     * Doanh nghiệp quản lý collector này
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "enterprise_id")
+    @JoinColumn(name = "enterprise_user_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Enterprise enterprise;
+    private User enterpriseUser;
 
-    @Column(name = "availability_status", length = 20)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "default_area_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private ServiceArea defaultArea;
+
+    @Column(name = "status", length = 20)
     @Builder.Default
-    private String availabilityStatus = "AVAILABLE"; // AVAILABLE, BUSY, OFFLINE
-
-    @Column(name = "vehicle_type", length = 50)
-    private String vehicleType;
-
-    @Column(name = "max_load_kg")
-    private Double maxLoadKg;
-
-    @Column(name = "current_lat")
-    private Double currentLat;
-
-    @Column(name = "current_lng")
-    private Double currentLng;
+    private String status = "ACTIVE"; // ACTIVE, INACTIVE, SUSPENDED
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Helper method to get userId
-    public UUID getUserId() {
-        return user != null ? user.getId() : null;
-    }
-
-    // Helper method to get fullName (delegate to User)
+    // Helper methods
     public String getFullName() {
         return user != null ? user.getFullName() : null;
     }
 
-    // Helper method to get email (delegate to User)
     public String getEmail() {
         return user != null ? user.getEmail() : null;
+    }
+
+    public UUID getEnterpriseUserId() {
+        return enterpriseUser != null ? enterpriseUser.getUserId() : null;
     }
 }

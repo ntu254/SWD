@@ -4,6 +4,8 @@ import com.example.backendservice.features.task.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public interface TaskService {
@@ -11,31 +13,36 @@ public interface TaskService {
     // Task CRUD
     TaskResponse createTask(CreateTaskRequest request);
 
-    TaskResponse getTaskById(UUID id);
-
-    Page<TaskResponse> getTasksByEnterprise(UUID enterpriseId, String status, Pageable pageable);
+    TaskResponse getTaskById(UUID taskId);
 
     Page<TaskResponse> getTasksByArea(UUID areaId, Pageable pageable);
 
-    TaskResponse updateTask(UUID id, CreateTaskRequest request);
+    Page<TaskResponse> getTasksByStatus(String status, Pageable pageable);
 
-    void deleteTask(UUID id);
+    Page<TaskResponse> getTasksByScheduledDate(LocalDate date, Pageable pageable);
 
-    // Task Status Flow
-    TaskResponse startTask(UUID taskId);
+    Page<TaskResponse> getAllTasks(Pageable pageable);
 
-    TaskResponse completeTask(UUID taskId, Double actualWeightKg);
+    // Task status management
+    TaskResponse updateTaskStatus(UUID taskId, String status);
 
-    TaskResponse cancelTask(UUID taskId, String reason);
+    void cancelTask(UUID taskId);
 
-    // Task Assignment
+    // Task assignment
     TaskAssignmentResponse assignTask(AssignTaskRequest request);
 
     TaskAssignmentResponse acceptAssignment(UUID assignmentId);
 
-    TaskAssignmentResponse rejectAssignment(UUID assignmentId, String reason);
+    TaskAssignmentResponse rejectAssignment(UUID assignmentId);
 
-    TaskAssignmentResponse completeAssignment(UUID assignmentId, Double collectedWeightKg, String evidenceImages);
+    TaskAssignmentResponse completeAssignment(UUID assignmentId);
 
-    Page<TaskAssignmentResponse> getAssignmentsByCollector(UUID collectorId, String status, Pageable pageable);
+    // Get assignments
+    TaskAssignmentResponse getAssignmentById(UUID assignmentId);
+
+    List<TaskAssignmentResponse> getAssignmentsByTask(UUID taskId);
+
+    Page<TaskAssignmentResponse> getAssignmentsByCollector(UUID collectorUserId, Pageable pageable);
+
+    Page<TaskAssignmentResponse> getPendingAssignmentsByCollector(UUID collectorUserId, Pageable pageable);
 }

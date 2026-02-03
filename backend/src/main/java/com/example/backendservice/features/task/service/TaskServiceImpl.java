@@ -1,7 +1,6 @@
 package com.example.backendservice.features.task.service;
 
-import com.example.backendservice.features.enterprise.entity.Enterprise;
-import com.example.backendservice.features.enterprise.repository.EnterpriseRepository;
+import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.features.location.entity.ServiceArea;
 import com.example.backendservice.features.location.repository.ServiceAreaRepository;
 import com.example.backendservice.features.task.dto.*;
@@ -9,20 +8,24 @@ import com.example.backendservice.features.task.entity.Task;
 import com.example.backendservice.features.task.entity.TaskAssignment;
 import com.example.backendservice.features.task.repository.TaskAssignmentRepository;
 import com.example.backendservice.features.task.repository.TaskRepository;
-import com.example.backendservice.features.user.entity.CollectorProfile;
-import com.example.backendservice.features.user.repository.CollectorProfileRepository;
-import com.example.backendservice.features.waste.entity.WasteType;
-import com.example.backendservice.features.waste.repository.WasteTypeRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.example.backendservice.features.user.entity.RoleType;
+import com.example.backendservice.features.user.entity.User;
+import com.example.backendservice.features.user.repository.UserRepository;
+import com.example.backendservice.features.waste.entity.WasteReport;
+import com.example.backendservice.features.waste.repository.WasteReportRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,269 +33,287 @@ import java.util.UUID;
 public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
-    private final TaskAssignmentRepository assignmentRepository;
-    private final EnterpriseRepository enterpriseRepository;
+    private final TaskAssignmentRepository taskAssignmentRepository;
+    private final WasteReportRepository wasteReportRepository;
     private final ServiceAreaRepository serviceAreaRepository;
-    private final WasteTypeRepository wasteTypeRepository;
-    private final CollectorProfileRepository collectorProfileRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
     public TaskResponse createTask(CreateTaskRequest request) {
-        log.info("Creating task for enterprise: {}", request.getEnterpriseId());
+        WasteReport report = wasteReportRepository.findByReportId(request.getReportId())
+                .orElseThrow(() -> new ResourceNotFoundException("Waste report not found: " + request.getReportId()));
 
-        Enterprise enterprise = enterpriseRepository.findById(request.getEnterpriseId())
-                .orElseThrow(() -> new EntityNotFoundException("Enterprise not found"));
+        ServiceArea area = serviceAreaRepository.findByAreaId(request.getAreaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Service area not found: " + request.getAreaId()));
+
+        // Get a default enterprise user (first active one, should be configurable)
+        User enterpriseUser = userRepository.findByRole(RoleType.ENTERPRISE).stream().findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("No enterprise user found"));
 
         Task task = Task.builder()
-                .enterprise(enterprise)
-                .estimatedWeightKg(request.getEstimatedWeightKg())
-                .locationText(request.getLocationText())
-                .lat(request.getLat())
-                .lng(request.getLng())
-                .notes(request.getNotes())
-                .priority(request.getPriority() != null ? request.getPriority() : "NORMAL")
-                .scheduledAt(request.getScheduledAt())
+                .wasteReport(report)
+                .area(area)
+                .enterpriseUser(enterpriseUser)
+                .createdByUser(enterpriseUser)
+                .scheduledDate(request.getScheduledDate())
                 .status("PENDING")
+                .priority("NORMAL")
                 .build();
 
-        if (request.getAreaId() != null) {
-            ServiceArea area = serviceAreaRepository.findById(request.getAreaId()).orElse(null);
-            task.setArea(area);
-        }
-
-        if (request.getWasteTypeId() != null) {
-            WasteType wasteType = wasteTypeRepository.findById(request.getWasteTypeId()).orElse(null);
-            task.setWasteType(wasteType);
-        }
-
         task = taskRepository.save(task);
-        return mapToResponse(task);
+
+        // Update report status
+        report.setStatus("ASSIGNED_TO_TASK");
+        wasteReportRepository.save(report);
+
+        log.info("Created task {} for report {}", task.getTaskId(), request.getReportId());
+        return toTaskResponse(task);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public TaskResponse getTaskById(UUID id) {
-        Task task = findTaskById(id);
-        return mapToResponse(task);
+    public TaskResponse getTaskById(UUID taskId) {
+        Task task = taskRepository.findByTaskId(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+        return toTaskResponse(task);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Page<TaskResponse> getTasksByEnterprise(UUID enterpriseId, String status, Pageable pageable) {
-        Page<Task> tasks;
-        if (status != null && !status.isEmpty()) {
-            tasks = taskRepository.findByEnterpriseIdAndStatus(enterpriseId, status, pageable);
-        } else {
-            tasks = taskRepository.findByEnterpriseId(enterpriseId, pageable);
-        }
-        return tasks.map(this::mapToResponse);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Page<TaskResponse> getTasksByArea(UUID areaId, Pageable pageable) {
-        return taskRepository.findByAreaId(areaId, pageable).map(this::mapToResponse);
+        List<Task> tasks = taskRepository.findByAreaId(areaId);
+        List<TaskResponse> responses = tasks.stream().map(this::toTaskResponse).collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
+
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
+    }
+
+    @Override
+    public Page<TaskResponse> getTasksByStatus(String status, Pageable pageable) {
+        List<Task> tasks = taskRepository.findByStatus(status);
+        List<TaskResponse> responses = tasks.stream().map(this::toTaskResponse).collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
+
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
+    }
+
+    @Override
+    public Page<TaskResponse> getTasksByScheduledDate(LocalDate date, Pageable pageable) {
+        List<Task> tasks = taskRepository.findByScheduledDate(date);
+        List<TaskResponse> responses = tasks.stream().map(this::toTaskResponse).collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
+
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
+    }
+
+    @Override
+    public Page<TaskResponse> getAllTasks(Pageable pageable) {
+        return taskRepository.findAll(pageable).map(this::toTaskResponse);
     }
 
     @Override
     @Transactional
-    public TaskResponse updateTask(UUID id, CreateTaskRequest request) {
-        Task task = findTaskById(id);
-        task.setEstimatedWeightKg(request.getEstimatedWeightKg());
-        task.setLocationText(request.getLocationText());
-        task.setLat(request.getLat());
-        task.setLng(request.getLng());
-        task.setNotes(request.getNotes());
-        if (request.getPriority() != null) {
-            task.setPriority(request.getPriority());
-        }
-        task.setScheduledAt(request.getScheduledAt());
+    public TaskResponse updateTaskStatus(UUID taskId, String status) {
+        Task task = taskRepository.findByTaskId(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+
+        task.setStatus(status);
         task = taskRepository.save(task);
-        return mapToResponse(task);
+        log.info("Updated task {} status to {}", taskId, status);
+
+        return toTaskResponse(task);
     }
 
     @Override
     @Transactional
-    public void deleteTask(UUID id) {
-        Task task = findTaskById(id);
+    public void cancelTask(UUID taskId) {
+        Task task = taskRepository.findByTaskId(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+
         task.setStatus("CANCELLED");
         taskRepository.save(task);
-    }
-
-    @Override
-    @Transactional
-    public TaskResponse startTask(UUID taskId) {
-        Task task = findTaskById(taskId);
-        if (!"ASSIGNED".equals(task.getStatus())) {
-            throw new IllegalStateException("Only ASSIGNED tasks can be started");
-        }
-        task.setStatus("IN_PROGRESS");
-        task.setStartedAt(LocalDateTime.now());
-        task = taskRepository.save(task);
-        return mapToResponse(task);
-    }
-
-    @Override
-    @Transactional
-    public TaskResponse completeTask(UUID taskId, Double actualWeightKg) {
-        Task task = findTaskById(taskId);
-        if (!"IN_PROGRESS".equals(task.getStatus())) {
-            throw new IllegalStateException("Only IN_PROGRESS tasks can be completed");
-        }
-        task.setStatus("COMPLETED");
-        task.setActualWeightKg(actualWeightKg);
-        task.setCompletedAt(LocalDateTime.now());
-        task = taskRepository.save(task);
-        return mapToResponse(task);
-    }
-
-    @Override
-    @Transactional
-    public TaskResponse cancelTask(UUID taskId, String reason) {
-        Task task = findTaskById(taskId);
-        task.setStatus("CANCELLED");
-        task.setNotes(task.getNotes() + " | Cancelled: " + reason);
-        task = taskRepository.save(task);
-        return mapToResponse(task);
+        log.info("Cancelled task {}", taskId);
     }
 
     @Override
     @Transactional
     public TaskAssignmentResponse assignTask(AssignTaskRequest request) {
-        log.info("Assigning task {} to collector {}", request.getTaskId(), request.getCollectorId());
+        Task task = taskRepository.findByTaskId(request.getTaskId())
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + request.getTaskId()));
 
-        Task task = findTaskById(request.getTaskId());
-        if (!"PENDING".equals(task.getStatus())) {
-            throw new IllegalStateException("Only PENDING tasks can be assigned");
-        }
-
-        CollectorProfile collector = collectorProfileRepository.findById(request.getCollectorId())
-                .orElseThrow(() -> new EntityNotFoundException("Collector not found"));
+        User collector = userRepository.findByUserId(request.getCollectorUserId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Collector not found: " + request.getCollectorUserId()));
 
         TaskAssignment assignment = TaskAssignment.builder()
                 .task(task)
-                .collector(collector)
+                .collectorUser(collector)
                 .status("ASSIGNED")
-                .notes(request.getNotes())
-                .assignedAt(LocalDateTime.now())
                 .build();
 
-        assignment = assignmentRepository.save(assignment);
+        assignment = taskAssignmentRepository.save(assignment);
 
+        // Update task status
         task.setStatus("ASSIGNED");
         taskRepository.save(task);
 
-        return mapToAssignmentResponse(assignment);
+        log.info("Assigned task {} to collector {}", request.getTaskId(), request.getCollectorUserId());
+        return toAssignmentResponse(assignment);
     }
 
     @Override
     @Transactional
     public TaskAssignmentResponse acceptAssignment(UUID assignmentId) {
-        TaskAssignment assignment = findAssignmentById(assignmentId);
+        TaskAssignment assignment = taskAssignmentRepository.findByAssignmentId(assignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
+
         if (!"ASSIGNED".equals(assignment.getStatus())) {
-            throw new IllegalStateException("Only ASSIGNED assignments can be accepted");
+            throw new IllegalStateException("Assignment is not in ASSIGNED status");
         }
+
         assignment.setStatus("ACCEPTED");
         assignment.setAcceptedAt(LocalDateTime.now());
-        assignment = assignmentRepository.save(assignment);
-        return mapToAssignmentResponse(assignment);
-    }
+        assignment = taskAssignmentRepository.save(assignment);
 
-    @Override
-    @Transactional
-    public TaskAssignmentResponse rejectAssignment(UUID assignmentId, String reason) {
-        TaskAssignment assignment = findAssignmentById(assignmentId);
-        assignment.setStatus("REJECTED");
-        assignment.setRejectionReason(reason);
-        assignment = assignmentRepository.save(assignment);
-
-        // Reset task status to PENDING
+        // Update task status
         Task task = assignment.getTask();
-        task.setStatus("PENDING");
+        task.setStatus("IN_PROGRESS");
         taskRepository.save(task);
 
-        return mapToAssignmentResponse(assignment);
+        log.info("Assignment {} accepted by collector {}", assignmentId, assignment.getCollectorUserId());
+        return toAssignmentResponse(assignment);
     }
 
     @Override
     @Transactional
-    public TaskAssignmentResponse completeAssignment(UUID assignmentId, Double collectedWeightKg,
-            String evidenceImages) {
-        TaskAssignment assignment = findAssignmentById(assignmentId);
-        assignment.setStatus("COMPLETED");
-        assignment.setCollectedWeightKg(collectedWeightKg);
-        assignment.setEvidenceImages(evidenceImages);
-        assignment.setCompletedAt(LocalDateTime.now());
-        assignment = assignmentRepository.save(assignment);
-        return mapToAssignmentResponse(assignment);
+    public TaskAssignmentResponse rejectAssignment(UUID assignmentId) {
+        TaskAssignment assignment = taskAssignmentRepository.findByAssignmentId(assignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
+
+        if (!"ASSIGNED".equals(assignment.getStatus())) {
+            throw new IllegalStateException("Assignment is not in ASSIGNED status");
+        }
+
+        assignment.setStatus("REJECTED");
+        assignment.setUnassignedAt(LocalDateTime.now());
+        assignment = taskAssignmentRepository.save(assignment);
+
+        // Update task status back to PENDING if no other active assignments
+        Task task = assignment.getTask();
+        List<TaskAssignment> activeAssignments = taskAssignmentRepository.findActiveAssignmentsByCollectorUserId(
+                assignment.getCollectorUserId());
+        boolean hasOtherActiveForTask = activeAssignments.stream()
+                .anyMatch(a -> a.getTaskId().equals(task.getTaskId()) && !a.getAssignmentId().equals(assignmentId));
+
+        if (!hasOtherActiveForTask) {
+            task.setStatus("PENDING");
+            taskRepository.save(task);
+        }
+
+        log.info("Assignment {} rejected by collector {}", assignmentId, assignment.getCollectorUserId());
+        return toAssignmentResponse(assignment);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Page<TaskAssignmentResponse> getAssignmentsByCollector(UUID collectorId, String status, Pageable pageable) {
-        Page<TaskAssignment> assignments;
-        if (status != null && !status.isEmpty()) {
-            assignments = assignmentRepository.findByCollectorIdAndStatus(collectorId, status, pageable);
-        } else {
-            assignments = assignmentRepository.findByCollectorId(collectorId, pageable);
+    @Transactional
+    public TaskAssignmentResponse completeAssignment(UUID assignmentId) {
+        TaskAssignment assignment = taskAssignmentRepository.findByAssignmentId(assignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
+
+        if (!"ACCEPTED".equals(assignment.getStatus())) {
+            throw new IllegalStateException("Assignment is not in ACCEPTED status");
         }
-        return assignments.map(this::mapToAssignmentResponse);
+
+        assignment.setStatus("COMPLETED");
+        assignment = taskAssignmentRepository.save(assignment);
+
+        // Update task status
+        Task task = assignment.getTask();
+        task.setStatus("COMPLETED");
+        taskRepository.save(task);
+
+        // Update report status if exists
+        WasteReport report = task.getWasteReport();
+        if (report != null) {
+            report.setStatus("COMPLETED");
+            wasteReportRepository.save(report);
+        }
+
+        log.info("Assignment {} completed by collector {}", assignmentId, assignment.getCollectorUserId());
+        return toAssignmentResponse(assignment);
     }
 
-    private Task findTaskById(UUID id) {
-        return taskRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + id));
+    @Override
+    public TaskAssignmentResponse getAssignmentById(UUID assignmentId) {
+        TaskAssignment assignment = taskAssignmentRepository.findByAssignmentId(assignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
+        return toAssignmentResponse(assignment);
     }
 
-    private TaskAssignment findAssignmentById(UUID id) {
-        return assignmentRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
+    @Override
+    public List<TaskAssignmentResponse> getAssignmentsByTask(UUID taskId) {
+        return taskAssignmentRepository.findByTaskId(taskId).stream()
+                .map(this::toAssignmentResponse)
+                .collect(Collectors.toList());
     }
 
-    private TaskResponse mapToResponse(Task task) {
+    @Override
+    public Page<TaskAssignmentResponse> getAssignmentsByCollector(UUID collectorUserId, Pageable pageable) {
+        List<TaskAssignment> assignments = taskAssignmentRepository.findByCollectorUserId(collectorUserId);
+        List<TaskAssignmentResponse> responses = assignments.stream()
+                .map(this::toAssignmentResponse)
+                .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
+
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
+    }
+
+    @Override
+    public Page<TaskAssignmentResponse> getPendingAssignmentsByCollector(UUID collectorUserId, Pageable pageable) {
+        List<TaskAssignment> assignments = taskAssignmentRepository.findByCollectorUserIdAndStatus(collectorUserId,
+                "ASSIGNED");
+        List<TaskAssignmentResponse> responses = assignments.stream()
+                .map(this::toAssignmentResponse)
+                .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
+
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
+    }
+
+    // Mapping methods
+    private TaskResponse toTaskResponse(Task task) {
         return TaskResponse.builder()
-                .id(task.getId())
-                .wasteReportId(task.getWasteReport() != null ? task.getWasteReport().getId() : null)
-                .enterpriseId(task.getEnterprise().getId())
-                .enterpriseName(task.getEnterprise().getName())
-                .areaId(task.getArea() != null ? task.getArea().getId() : null)
+                .taskId(task.getTaskId())
+                .reportId(task.getReportId())
+                .areaId(task.getArea() != null ? task.getArea().getAreaId() : null)
                 .areaName(task.getArea() != null ? task.getArea().getName() : null)
-                .wasteTypeId(task.getWasteType() != null ? task.getWasteType().getId() : null)
-                .wasteTypeName(task.getWasteType() != null ? task.getWasteType().getName() : null)
-                .estimatedWeightKg(task.getEstimatedWeightKg())
-                .actualWeightKg(task.getActualWeightKg())
-                .locationText(task.getLocationText())
-                .lat(task.getLat())
-                .lng(task.getLng())
-                .notes(task.getNotes())
+                .scheduledDate(task.getScheduledDate())
                 .status(task.getStatus())
-                .priority(task.getPriority())
-                .scheduledAt(task.getScheduledAt())
-                .startedAt(task.getStartedAt())
-                .completedAt(task.getCompletedAt())
-                .pointsAwarded(task.getPointsAwarded())
                 .createdAt(task.getCreatedAt())
+                .updatedAt(task.getUpdatedAt())
                 .build();
     }
 
-    private TaskAssignmentResponse mapToAssignmentResponse(TaskAssignment assignment) {
+    private TaskAssignmentResponse toAssignmentResponse(TaskAssignment assignment) {
         return TaskAssignmentResponse.builder()
-                .id(assignment.getId())
-                .taskId(assignment.getTask().getId())
-                .collectorId(assignment.getCollector().getId())
+                .assignmentId(assignment.getAssignmentId())
+                .taskId(assignment.getTaskId())
+                .collectorUserId(assignment.getCollectorUserId())
                 .collectorName(
-                        assignment.getCollector() != null ? assignment.getCollector().getFullName()
-                                : null)
+                        assignment.getCollectorUser() != null ? assignment.getCollectorUser().getFullName() : null)
                 .status(assignment.getStatus())
-                .rejectionReason(assignment.getRejectionReason())
-                .evidenceImages(assignment.getEvidenceImages())
-                .collectedWeightKg(assignment.getCollectedWeightKg())
-                .notes(assignment.getNotes())
-                .assignedAt(assignment.getAssignedAt())
+                .assignedAt(null)
                 .acceptedAt(assignment.getAcceptedAt())
-                .startedAt(assignment.getStartedAt())
-                .completedAt(assignment.getCompletedAt())
+                .completedAt(null)
                 .build();
     }
 }
