@@ -45,4 +45,20 @@ public interface TaskService {
     Page<TaskAssignmentResponse> getAssignmentsByCollector(UUID collectorUserId, Pageable pageable);
 
     Page<TaskAssignmentResponse> getPendingAssignmentsByCollector(UUID collectorUserId, Pageable pageable);
+
+    // Enterprise approval workflow
+    /**
+     * Lấy danh sách tasks chờ Enterprise phê duyệt
+     */
+    Page<TaskResponse> getPendingApprovalTasksByEnterprise(UUID enterpriseId, Pageable pageable);
+
+    /**
+     * Enterprise chấp nhận task
+     */
+    TaskResponse acceptTaskByEnterprise(UUID taskId, UUID enterpriseUserId);
+
+    /**
+     * Enterprise từ chối task
+     */
+    TaskResponse rejectTaskByEnterprise(UUID taskId, UUID enterpriseUserId, String reason);
 }

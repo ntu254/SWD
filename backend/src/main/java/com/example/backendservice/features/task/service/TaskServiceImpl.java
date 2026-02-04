@@ -289,7 +289,80 @@ public class TaskServiceImpl implements TaskService {
         return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
     }
 
-    // Mapping methods
+    // ===================== Enterprise Approval Workflow =====================
+
+    @Override
+    public Page<TaskResponse> getPendingApprovalTasksByEnterprise(UUID enterpriseId, Pageable pageable) {
+        log.debug("Getting pending approval tasks for enterprise: {}", enterpriseId);
+        List<Task> tasks = taskRepository.findByEnterpriseUserIdAndStatus(enterpriseId, "PENDING_ENTERPRISE_APPROVAL");
+        List<TaskResponse> responses = tasks.stream()
+                .map(this::toTaskResponse)
+                .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
+
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
+    }
+
+    @Override
+    @Transactional
+    public TaskResponse acceptTaskByEnterprise(UUID taskId, UUID enterpriseUserId) {
+        log.info("Enterprise {} accepting task {}", enterpriseUserId, taskId);
+
+        Task task = taskRepository.findByTaskId(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+
+        // Verify enterprise owns this task
+        if (!task.getEnterpriseUserId().equals(enterpriseUserId)) {
+            throw new IllegalStateException("Task does not belong to this enterprise");
+        }
+
+        // Verify task is in correct status
+        if (!"PENDING_ENTERPRISE_APPROVAL".equals(task.getStatus()) && !"PENDING".equals(task.getStatus())) {
+            throw new IllegalStateException("Task is not pending approval. Current status: " + task.getStatus());
+        }
+
+        task.setStatus("PENDING"); // Move to pending for assignment to collector
+        task = taskRepository.save(task);
+
+        log.info("Enterprise {} accepted task {}", enterpriseUserId, taskId);
+        return toTaskResponse(task);
+    }
+
+    @Override
+    @Transactional
+    public TaskResponse rejectTaskByEnterprise(UUID taskId, UUID enterpriseUserId, String reason) {
+        log.info("Enterprise {} rejecting task {} with reason: {}", enterpriseUserId, taskId, reason);
+
+        Task task = taskRepository.findByTaskId(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+
+        // Verify enterprise owns this task
+        if (!task.getEnterpriseUserId().equals(enterpriseUserId)) {
+            throw new IllegalStateException("Task does not belong to this enterprise");
+        }
+
+        // Verify task is in correct status
+        if (!"PENDING_ENTERPRISE_APPROVAL".equals(task.getStatus()) && !"PENDING".equals(task.getStatus())) {
+            throw new IllegalStateException("Task is not pending approval. Current status: " + task.getStatus());
+        }
+
+        task.setStatus("REJECTED");
+        task.setRejectionReason(reason);
+        task = taskRepository.save(task);
+
+        // Update associated waste report if exists
+        WasteReport report = task.getWasteReport();
+        if (report != null) {
+            report.setStatus("REJECTED");
+            wasteReportRepository.save(report);
+        }
+
+        log.info("Enterprise {} rejected task {}", enterpriseUserId, taskId);
+        return toTaskResponse(task);
+    }
+
     private TaskResponse toTaskResponse(Task task) {
         return TaskResponse.builder()
                 .taskId(task.getTaskId())

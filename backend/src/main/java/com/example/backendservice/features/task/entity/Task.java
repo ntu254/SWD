@@ -71,7 +71,15 @@ public class Task {
 
     @Column(length = 30)
     @Builder.Default
-    private String status = "PENDING"; // PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED
+    private String status = "PENDING";
+    // PENDING, PENDING_ENTERPRISE_APPROVAL, ASSIGNED, IN_PROGRESS, COMPLETED,
+    // CANCELLED, REJECTED
+
+    /**
+     * Lý do từ chối (khi Enterprise từ chối task)
+     */
+    @Column(name = "rejection_reason", length = 500)
+    private String rejectionReason;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

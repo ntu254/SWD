@@ -46,6 +46,14 @@ public class EnterpriseCapability {
     @Column(name = "daily_capacity_kg", nullable = false)
     private Double dailyCapacityKg;
 
+    /**
+     * Công suất đã sử dụng trong ngày hiện tại (kg)
+     * Reset về 0 mỗi ngày bởi scheduled job
+     */
+    @Column(name = "used_capacity_kg")
+    @Builder.Default
+    private Double usedCapacityKg = 0.0;
+
     @Column(name = "effective_from")
     private LocalDate effectiveFrom;
 
@@ -71,5 +79,37 @@ public class EnterpriseCapability {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Tính công suất còn lại trong ngày
+     */
+    public Double getAvailableCapacity() {
+        double used = usedCapacityKg != null ? usedCapacityKg : 0.0;
+        double daily = dailyCapacityKg != null ? dailyCapacityKg : 0.0;
+        return Math.max(0, daily - used);
+    }
+
+    /**
+     * Kiểm tra còn đủ công suất không
+     */
+    public boolean hasAvailableCapacity(Double weightKg) {
+        return getAvailableCapacity() >= weightKg;
+    }
+
+    /**
+     * Tăng công suất đã sử dụng
+     */
+    public void incrementUsedCapacity(Double weightKg) {
+        if (weightKg != null && weightKg > 0) {
+            this.usedCapacityKg = (this.usedCapacityKg != null ? this.usedCapacityKg : 0.0) + weightKg;
+        }
+    }
+
+    /**
+     * Reset công suất đã sử dụng về 0 (cho daily reset job)
+     */
+    public void resetUsedCapacity() {
+        this.usedCapacityKg = 0.0;
     }
 }
