@@ -30,20 +30,20 @@ export const ProcessingTable: React.FC<ProcessingTableProps> = ({ data, onView, 
 
     const getStatusLabel = (status: string) => {
         switch (status) {
-            case 'ACTIVE': return '• Hoạt động';
-            case 'PENDING': return '• Chờ duyệt';
-            case 'OVERLOADED': return '• Quá tải';
+            case 'ACTIVE': return '• Active';
+            case 'PENDING': return '• Pending';
+            case 'OVERLOADED': return '• Overloaded';
             default: return status;
         }
     };
 
     const getWasteIcon = (type: string) => {
         switch (type) {
-            case 'organic': return <div className="p-1.5 bg-green-100 text-green-600 rounded-lg" title="Rác hữu cơ"><Leaf size={14} /></div>;
-            case 'recycle': return <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg" title="Rác tái chế"><Recycle size={14} /></div>;
-            case 'hazardous': return <div className="p-1.5 bg-red-100 text-red-600 rounded-lg" title="Rác nguy hại"><Battery size={14} /></div>;
-            case 'bulky': return <div className="p-1.5 bg-purple-100 text-purple-600 rounded-lg" title="Rác cồng kềnh"><Box size={14} /></div>;
-            case 'electronic': return <div className="p-1.5 bg-indigo-100 text-indigo-600 rounded-lg" title="Rác điện tử"><Trash2 size={14} /></div>;
+            case 'organic': return <div className="p-1.5 bg-green-100 text-green-600 rounded-lg" title="Organic Waste"><Leaf size={14} /></div>;
+            case 'recycle': return <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg" title="Recyclable Waste"><Recycle size={14} /></div>;
+            case 'hazardous': return <div className="p-1.5 bg-red-100 text-red-600 rounded-lg" title="Hazardous Waste"><Battery size={14} /></div>;
+            case 'bulky': return <div className="p-1.5 bg-purple-100 text-purple-600 rounded-lg" title="Bulky Waste"><Box size={14} /></div>;
+            case 'electronic': return <div className="p-1.5 bg-indigo-100 text-indigo-600 rounded-lg" title="Electronic Waste"><Trash2 size={14} /></div>;
             default: return null;
         }
     };
@@ -53,12 +53,12 @@ export const ProcessingTable: React.FC<ProcessingTableProps> = ({ data, onView, 
             <table className="w-full">
                 <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tên doanh nghiệp</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Loại rác tiếp nhận</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Công suất xử lý</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Khu vực phục vụ</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Thao tác</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Business Name</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Waste Types</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Capacity</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Service Area</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -81,8 +81,8 @@ export const ProcessingTable: React.FC<ProcessingTableProps> = ({ data, onView, 
                                 <td className="px-6 py-4">
                                     <div className="w-full max-w-[180px]">
                                         <div className="flex justify-between text-sm mb-1">
-                                            <span className="font-medium text-gray-900">{item.currentLoad.toLocaleString()} <span className="text-gray-500 font-normal">kg/ngày</span></span>
-                                            {status === 'OVERLOADED' ? <span className="text-[10px] bg-red-500 text-white px-1.5 rounded">Quá tải</span> : null}
+                                            <span className="font-medium text-gray-900">{item.currentLoad.toLocaleString()} <span className="text-gray-500 font-normal">kg/day</span></span>
+                                            {status === 'OVERLOADED' ? <span className="text-[10px] bg-red-500 text-white px-1.5 rounded">Overloaded</span> : null}
                                         </div>
                                         <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                                             <div className={`h-full ${progressBarColor} rounded-full`} style={{ width: `${Math.min(usagePercent, 100)}%` }}></div>
@@ -109,21 +109,21 @@ export const ProcessingTable: React.FC<ProcessingTableProps> = ({ data, onView, 
                                         <button
                                             onClick={() => onView(item)}
                                             className="p-2 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
-                                            title="Xem chi tiết"
+                                            title="View Details"
                                         >
                                             <Eye size={18} />
                                         </button>
                                         <button
                                             onClick={() => onEdit(item)}
                                             className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                            title="Chỉnh sửa"
+                                            title="Edit"
                                         >
                                             <Edit size={18} />
                                         </button>
                                         <button
                                             onClick={() => onDelete(item.id)}
                                             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                            title="Xóa"
+                                            title="Delete"
                                         >
                                             <Trash2 size={18} />
                                         </button>

@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
 import { Sidebar } from '@shared/components';
-import {
-    Search, Filter, RefreshCw, Layers,
-    MapPin, Archive, Activity, AlertCircle, Clock, CheckCircle,
-    BarChart3
-} from 'lucide-react';
+import { Search, Filter, RefreshCw, FileText, PieChart, Plus } from 'lucide-react';
 import { ProcessingTable, Processor } from '../components/ProcessingTable';
 import { ProcessingModal } from '../components/ProcessingModal';
 import { ViewProcessingModal } from '../components/ViewProcessingModal';
 import { DeleteProcessingModal } from '../components/DeleteProcessingModal';
 import { Toast } from '../components/Toast';
-import { FileText, PieChart, Plus } from 'lucide-react';
+
+import { ProcessingStats } from '../components/ProcessingStats';
 
 // Mock Data
 const MOCK_DATA: Processor[] = [
@@ -20,7 +17,7 @@ const MOCK_DATA: Processor[] = [
         wasteTypes: ['recycle', 'hazardous', 'bulky'],
         capacity: 1200,
         currentLoad: 800,
-        serviceArea: ['Quận 5', 'Quận 6', 'Quận 8'],
+        serviceArea: ['District 5', 'District 6', 'District 8'],
         status: 'ACTIVE'
     },
     {
@@ -29,7 +26,7 @@ const MOCK_DATA: Processor[] = [
         wasteTypes: ['organic', 'recycle'],
         capacity: 2000,
         currentLoad: 1500,
-        serviceArea: ['Quận 1', 'Bình Tân'],
+        serviceArea: ['District 1', 'Binh Tan'],
         status: 'PENDING'
     },
     {
@@ -38,7 +35,7 @@ const MOCK_DATA: Processor[] = [
         wasteTypes: ['electronic'],
         capacity: 310,
         currentLoad: 300,
-        serviceArea: ['Quận 2'],
+        serviceArea: ['District 2'],
         status: 'OVERLOADED'
     },
     {
@@ -47,7 +44,7 @@ const MOCK_DATA: Processor[] = [
         wasteTypes: ['organic', 'bulky'],
         capacity: 4000,
         currentLoad: 2000,
-        serviceArea: ['Nhà Bè', 'Quận 7'],
+        serviceArea: ['Nha Be', 'District 7'],
         status: 'ACTIVE'
     },
     {
@@ -56,7 +53,7 @@ const MOCK_DATA: Processor[] = [
         wasteTypes: ['recycle', 'electronic'],
         capacity: 800,
         currentLoad: 500,
-        serviceArea: ['Thủ Đức', 'Quận 9'],
+        serviceArea: ['Thu Duc', 'District 9'],
         status: 'ACTIVE'
     }
 ];
@@ -101,7 +98,7 @@ export const ProcessingCapacityPage: React.FC = () => {
                     ? { ...item, ...newData }
                     : item
             ));
-            setToastMessage('Cập nhật doanh nghiệp thành công!');
+            setToastMessage('Business updated successfully!');
         } else {
             // Add new
             const business: Processor = {
@@ -110,7 +107,7 @@ export const ProcessingCapacityPage: React.FC = () => {
                 ...newData
             };
             setData([business, ...data]);
-            setToastMessage('Thêm mới doanh nghiệp thành công!');
+            setToastMessage('New business added successfully!');
         }
         setSelectedItem(null);
         setShowToast(true);
@@ -129,7 +126,7 @@ export const ProcessingCapacityPage: React.FC = () => {
             setData(data.filter(item => item.id !== itemToDelete.id));
             setItemToDelete(null);
             setIsDeleteModalOpen(false);
-            setToastMessage('Đã xóa doanh nghiệp thành công!');
+            setToastMessage('Business deleted successfully!');
             setShowToast(true);
         }
     };
@@ -164,14 +161,14 @@ export const ProcessingCapacityPage: React.FC = () => {
                 {/* Header */}
                 <header className="bg-white border-b border-gray-200 py-4 px-8 flex items-center justify-between">
                     <div>
-                        <h1 className="text-xl font-bold text-gray-900">Quản lý Năng lực Xử lý</h1>
-                        <p className="text-sm text-gray-500 mt-1">Theo dõi và quản lý năng lực các doanh nghiệp tái chế</p>
+                        <h1 className="text-xl font-bold text-gray-900">Processing Capacity Management</h1>
+                        <p className="text-sm text-gray-500 mt-1">Monitor and manage capacity of recycling businesses</p>
                     </div>
                     <div className="flex items-center gap-3">
                         {/* User profile dropdown placeholder */}
                         <div className="text-right hidden sm:block">
                             <div className="text-sm font-medium text-gray-900">Admin</div>
-                            <div className="text-xs text-gray-500">Quản trị viên</div>
+                            <div className="text-xs text-gray-500">Administrator</div>
                         </div>
                         <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center text-brand-700 font-bold border-2 border-white shadow-sm">
                             A
@@ -183,55 +180,8 @@ export const ProcessingCapacityPage: React.FC = () => {
                     <div className="max-w-[1600px] mx-auto space-y-6">
 
                         {/* Stats Cards - Keeping data.length to show totals relative to ALL data, or filtered? Usually total is ALL data. */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="bg-blue-500 text-white p-5 rounded-xl shadow-lg shadow-blue-200">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <p className="text-blue-100 font-medium text-sm">Tổng doanh nghiệp</p>
-                                        <h3 className="text-3xl font-bold mt-1">{data.length}</h3>
-                                    </div>
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <Layers size={22} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-green-500 text-white p-5 rounded-xl shadow-lg shadow-green-200">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <p className="text-green-100 font-medium text-sm">Đang hoạt động</p>
-                                        <h3 className="text-3xl font-bold mt-1">{data.filter(i => i.status === 'ACTIVE').length}</h3>
-                                    </div>
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <CheckCircle size={22} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-amber-400 text-white p-5 rounded-xl shadow-lg shadow-amber-200">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <p className="text-amber-50 font-medium text-sm">Chờ phê duyệt</p>
-                                        <h3 className="text-3xl font-bold mt-1">{data.filter(i => i.status === 'PENDING').length}</h3>
-                                    </div>
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <Clock size={22} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-red-500 text-white p-5 rounded-xl shadow-lg shadow-red-200">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <p className="text-red-100 font-medium text-sm">Quá tải</p>
-                                        <h3 className="text-3xl font-bold mt-1">{data.filter(i => i.status === 'OVERLOADED').length}</h3>
-                                    </div>
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <AlertCircle size={22} />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        {/* Stats Cards */}
+                        <ProcessingStats data={data} />
 
                         {/* Filters & Actions */}
                         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col lg:flex-row gap-4 justify-between items-center">
@@ -243,12 +193,12 @@ export const ProcessingCapacityPage: React.FC = () => {
                                         onChange={(e) => setFilterRegion(e.target.value)}
                                         className="appearance-none pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer min-w-[160px]"
                                     >
-                                        <option value="">Tất cả khu vực</option>
-                                        <option value="Quận 1">Quận 1</option>
-                                        <option value="Quận 2">Quận 2</option>
-                                        <option value="Quận 5">Quận 5</option>
-                                        <option value="Quận 7">Quận 7</option>
-                                        <option value="Thủ Đức">Thủ Đức</option>
+                                        <option value="">All Regions</option>
+                                        <option value="Quận 1">District 1</option>
+                                        <option value="Quận 2">District 2</option>
+                                        <option value="Quận 5">District 5</option>
+                                        <option value="Quận 7">District 7</option>
+                                        <option value="Thủ Đức">Thu Duc</option>
                                     </select>
                                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                                 </div>
@@ -259,12 +209,12 @@ export const ProcessingCapacityPage: React.FC = () => {
                                         onChange={(e) => setFilterWasteType(e.target.value)}
                                         className="appearance-none pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer min-w-[160px]"
                                     >
-                                        <option value="">Tất cả loại rác</option>
-                                        <option value="organic">Rác hữu cơ</option>
-                                        <option value="recycle">Rác tái chế</option>
-                                        <option value="hazardous">Rác nguy hại</option>
-                                        <option value="bulky">Rác cồng kềnh</option>
-                                        <option value="electronic">Rác điện tử</option>
+                                        <option value="">All Waste Types</option>
+                                        <option value="organic">Organic</option>
+                                        <option value="recycle">Recyclable</option>
+                                        <option value="hazardous">Hazardous</option>
+                                        <option value="bulky">Bulky</option>
+                                        <option value="electronic">Electronic</option>
                                     </select>
                                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                                 </div>
@@ -275,10 +225,10 @@ export const ProcessingCapacityPage: React.FC = () => {
                                         onChange={(e) => setFilterStatus(e.target.value)}
                                         className="appearance-none pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer min-w-[160px]"
                                     >
-                                        <option value="">Tất cả trạng thái</option>
-                                        <option value="ACTIVE">Hoạt động</option>
-                                        <option value="PENDING">Chờ phê duyệt</option>
-                                        <option value="OVERLOADED">Quá tải</option>
+                                        <option value="">All Statuses</option>
+                                        <option value="ACTIVE">Active</option>
+                                        <option value="PENDING">Pending</option>
+                                        <option value="OVERLOADED">Overloaded</option>
                                     </select>
                                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                                 </div>
@@ -291,19 +241,19 @@ export const ProcessingCapacityPage: React.FC = () => {
                                         type="text"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        placeholder="Tìm doanh nghiệp..."
+                                        placeholder="Search businesses..."
                                         className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all"
                                     />
                                 </div>
                                 <button
                                     onClick={handleResetFilters}
-                                    title="Đặt lại bộ lọc"
+                                    title="Reset filters"
                                     className="p-2.5 text-gray-500 hover:bg-gray-100 rounded-lg border border-gray-200 bg-white transition-colors"
                                 >
                                     <RefreshCw size={18} />
                                 </button>
                                 <button className="flex items-center gap-2 px-5 py-2.5 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 shadow-brand-sm transition-all">
-                                    <Filter size={18} /> Lọc
+                                    <Filter size={18} /> Filter
                                 </button>
                             </div>
                         </div>
@@ -326,26 +276,26 @@ export const ProcessingCapacityPage: React.FC = () => {
                                         onClick={handleOpenCreate}
                                         className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 transition-colors shadow-sm"
                                     >
-                                        <Plus size={18} /> Thêm doanh nghiệp
+                                        <Plus size={18} /> Add Business
                                     </button>
                                     <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                                        <FileText size={18} /> Báo cáo năng lực
+                                        <FileText size={18} /> Capacity Report
                                     </button>
                                     <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                                        <PieChart size={18} /> Thống kê tổng hợp
+                                        <PieChart size={18} /> General Statistics
                                     </button>
                                 </div>
 
                                 {/* Pagination */}
                                 <div className="flex items-center gap-4">
-                                    <span className="text-sm text-gray-500 hidden lg:inline">Hiển thị trang 1 / 4</span>
+                                    <span className="text-sm text-gray-500 hidden lg:inline">Showing page 1 / 4</span>
                                     <div className="flex items-center gap-1">
-                                        <button className="px-3 py-1 text-sm text-gray-500 hover:bg-gray-100 rounded">Trước</button>
+                                        <button className="px-3 py-1 text-sm text-gray-500 hover:bg-gray-100 rounded">Prev</button>
                                         <button className="w-8 h-8 flex items-center justify-center bg-brand-600 text-white rounded text-sm font-medium">1</button>
                                         <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded text-sm">2</button>
                                         <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded text-sm">3</button>
                                         <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded text-sm">4</button>
-                                        <button className="px-3 py-1 text-sm text-gray-500 hover:bg-gray-100 rounded">Sau</button>
+                                        <button className="px-3 py-1 text-sm text-gray-500 hover:bg-gray-100 rounded">Next</button>
                                     </div>
                                 </div>
                             </div>

@@ -42,11 +42,11 @@ export const ViewProcessingModal: React.FC<ViewProcessingModalProps> = ({ isOpen
                     <div className="text-center mb-6">
                         <h2 className="text-2xl font-bold text-gray-900">{data.name}</h2>
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mt-2 border ${data.status === 'ACTIVE' ? 'bg-green-100 text-green-700 border-green-200' :
-                                data.status === 'OVERLOADED' ? 'bg-red-100 text-red-700 border-red-200' :
-                                    'bg-amber-100 text-amber-700 border-amber-200'
+                            data.status === 'OVERLOADED' ? 'bg-red-100 text-red-700 border-red-200' :
+                                'bg-amber-100 text-amber-700 border-amber-200'
                             }`}>
-                            {data.status === 'ACTIVE' ? '• Đang hoạt động' :
-                                data.status === 'OVERLOADED' ? '• Đang quá tải' : '• Chờ phê duyệt'}
+                            {data.status === 'ACTIVE' ? '• Active' :
+                                data.status === 'OVERLOADED' ? '• Overloaded' : '• Pending Approval'}
                         </span>
                     </div>
 
@@ -54,10 +54,10 @@ export const ViewProcessingModal: React.FC<ViewProcessingModalProps> = ({ isOpen
                         <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
                             <Activity className="text-gray-400 mt-1" size={20} />
                             <div className="flex-1">
-                                <div className="text-sm text-gray-500 mb-1">Công suất xử lý hiện tại</div>
+                                <div className="text-sm text-gray-500 mb-1">Current Capacity</div>
                                 <div className="flex items-end justify-between mb-2">
                                     <div className="font-semibold text-gray-900 text-lg">
-                                        {data.currentLoad.toLocaleString()} <span className="text-sm font-normal text-gray-500">/ {data.capacity.toLocaleString()} kg/ngày</span>
+                                        {data.currentLoad.toLocaleString()} <span className="text-sm font-normal text-gray-500">/ {data.capacity.toLocaleString()} kg/day</span>
                                     </div>
                                     <div className="text-sm font-bold text-gray-900">{usagePercent}%</div>
                                 </div>
@@ -73,7 +73,7 @@ export const ViewProcessingModal: React.FC<ViewProcessingModalProps> = ({ isOpen
                         <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
                             <MapPin className="text-gray-400 mt-1" size={20} />
                             <div>
-                                <div className="text-sm text-gray-500 mb-1">Khu vực phục vụ</div>
+                                <div className="text-sm text-gray-500 mb-1">Service Area</div>
                                 <div className="flex flex-wrap gap-2">
                                     {data.serviceArea.map((area, idx) => (
                                         <span key={idx} className="px-2 py-1 bg-white text-gray-700 rounded text-sm font-medium border border-gray-200 shadow-sm">
@@ -90,13 +90,13 @@ export const ViewProcessingModal: React.FC<ViewProcessingModalProps> = ({ isOpen
                             onClick={() => { onDelete(); onClose(); }}
                             className="flex-1 py-2.5 border border-red-200 text-red-600 rounded-xl hover:bg-red-50 font-medium flex items-center justify-center gap-2"
                         >
-                            <Trash2 size={18} /> Xóa doanh nghiệp
+                            <Trash2 size={18} /> Delete Business
                         </button>
                         <button
                             onClick={() => { onEdit(); onClose(); }}
                             className="flex-1 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 font-medium flex items-center justify-center gap-2"
                         >
-                            <Edit size={18} /> Chỉnh sửa
+                            <Edit size={18} /> Edit Business
                         </button>
                     </div>
                 </div>

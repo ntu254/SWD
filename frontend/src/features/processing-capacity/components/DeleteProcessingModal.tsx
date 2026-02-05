@@ -36,9 +36,9 @@ export const DeleteProcessingModal: React.FC<DeleteProcessingModalProps> = ({
                         <AlertTriangle size={32} />
                     </div>
 
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Xóa doanh nghiệp?</h3>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Business?</h3>
                     <p className="text-gray-500 mb-6">
-                        Bạn có chắc chắn muốn xóa doanh nghiệp <span className="font-semibold text-gray-800">"{businessName}"</span> không? Hành động này không thể hoàn tác.
+                        Are you sure you want to delete <span className="font-semibold text-gray-800">"{businessName}"</span>? This action cannot be undone.
                     </p>
 
                     <div className="flex gap-3 w-full">
@@ -46,13 +46,13 @@ export const DeleteProcessingModal: React.FC<DeleteProcessingModalProps> = ({
                             onClick={onClose}
                             className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-colors"
                         >
-                            Hủy bỏ
+                            Cancel
                         </button>
                         <button
                             onClick={onConfirm}
                             className="flex-1 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 font-medium shadow-red-200 shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
                         >
-                            <Trash2 size={18} /> Xóa ngay
+                            <Trash2 size={18} /> Delete Now
                         </button>
                     </div>
                 </div>

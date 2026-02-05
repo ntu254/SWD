@@ -73,10 +73,10 @@ export const ProcessingModal: React.FC<ProcessingModalProps> = ({ isOpen, onClos
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">
-                            {initialData ? 'Cập Nhật Doanh Nghiệp' : 'Thêm Doanh Nghiệp Mới'}
+                            {initialData ? 'Update Business' : 'Add New Business'}
                         </h2>
                         <p className="text-sm text-gray-500 mt-0.5">
-                            {initialData ? 'Chỉnh sửa thông tin doanh nghiệp.' : 'Nhập thông tin doanh nghiệp tái chế vào hệ thống.'}
+                            {initialData ? 'Edit business information.' : 'Enter recycling business details into the system.'}
                         </p>
                     </div>
                     <button
@@ -91,20 +91,20 @@ export const ProcessingModal: React.FC<ProcessingModalProps> = ({ isOpen, onClos
                 <div className="p-6 overflow-y-auto">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Tên doanh nghiệp</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
                             <input
                                 required
                                 type="text"
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-500 outline-none"
-                                placeholder="Ví dụ: GreenCycle Ltd"
+                                placeholder="e.g. GreenCycle Ltd"
                             />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Công suất (kg/ngày)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Capacity (kg/day)</label>
                                 <input
                                     required
                                     type="number"
@@ -114,39 +114,39 @@ export const ProcessingModal: React.FC<ProcessingModalProps> = ({ isOpen, onClos
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                                 <select
                                     value={formData.status}
                                     onChange={e => setFormData({ ...formData, status: e.target.value as any })}
                                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-500 outline-none"
                                 >
-                                    <option value="ACTIVE">Hoạt động</option>
-                                    <option value="PENDING">Chờ duyệt</option>
-                                    <option value="OVERLOADED">Quá tải</option>
+                                    <option value="ACTIVE">Active</option>
+                                    <option value="PENDING">Pending</option>
+                                    <option value="OVERLOADED">Overloaded</option>
                                 </select>
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Khu vực phục vụ (cách nhau bởi dấu phẩy)</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Service Area (separated by comma)</label>
                             <input
                                 type="text"
                                 value={formData.serviceArea}
                                 onChange={e => setFormData({ ...formData, serviceArea: e.target.value })}
                                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-500 outline-none"
-                                placeholder="Ví dụ: Quận 1, Quận 3"
+                                placeholder="e.g. District 1, District 3"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Loại rác tiếp nhận</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Accepted Waste Types</label>
                             <div className="flex flex-wrap gap-2">
                                 {[
-                                    { id: 'organic', label: 'Hữu cơ' },
-                                    { id: 'recycle', label: 'Tái chế' },
-                                    { id: 'hazardous', label: 'Nguy hại' },
-                                    { id: 'bulky', label: 'Cồng kềnh' },
-                                    { id: 'electronic', label: 'Điện tử' },
+                                    { id: 'organic', label: 'Organic' },
+                                    { id: 'recycle', label: 'Recyclable' },
+                                    { id: 'hazardous', label: 'Hazardous' },
+                                    { id: 'bulky', label: 'Bulky' },
+                                    { id: 'electronic', label: 'Electronic' },
                                 ].map(type => (
                                     <button
                                         key={type.id}
@@ -169,13 +169,13 @@ export const ProcessingModal: React.FC<ProcessingModalProps> = ({ isOpen, onClos
                                 onClick={onClose}
                                 className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
                             >
-                                Hủy bỏ
+                                Cancel
                             </button>
                             <button
                                 type="submit"
                                 className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 font-medium flex items-center gap-2"
                             >
-                                <Save size={18} /> {initialData ? 'Lưu thay đổi' : 'Lưu doanh nghiệp'}
+                                <Save size={18} /> {initialData ? 'Save Changes' : 'Save Business'}
                             </button>
                         </div>
                     </form>
