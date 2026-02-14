@@ -7,14 +7,11 @@ import com.example.backendservice.features.waste.entity.WasteReport;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Entity cho bảng COMPLAINT
- * Đơn khiếu nại từ người dùng
- */
 @Entity
 @Table(name = "complaints")
 @Data
@@ -28,54 +25,62 @@ public class Complaint {
     @Column(name = "complaint_id", columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID complaintId;
 
-    /**
-     * Người tạo complaint
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_user_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private User createdByUser;
 
-    /**
-     * Report liên quan (nếu có)
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "report_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private WasteReport wasteReport;
 
-    /**
-     * Visit liên quan (nếu có)
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "visit_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private CollectionVisit visit;
 
+    @Column(length = 255)
+    private String title;
+
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
     @Column(length = 30)
     @Builder.Default
-    private String status = "OPEN"; // OPEN, INVESTIGATING, RESOLVED, REJECTED
+    private String category = "OTHER"; // BUG, FEATURE, POINTS_ERROR, OTHER
+
+    @Column(length = 20)
+    @Builder.Default
+    private String priority = "Normal"; // Low, Normal, High, Urgent
+
+    @Column(length = 30)
+    @Builder.Default
+    private String status = "Pending"; // Pending, In_Progress, Resolved, Rejected
+
+    @Column(name = "admin_response", columnDefinition = "TEXT")
+    private String adminResponse;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    /**
-     * RewardTransaction được tạo khi resolve complaint (bồi thường)
-     */
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "resolved_at")
+    private LocalDateTime resolvedAt;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reward_transaction_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private RewardTransaction rewardTransaction;
 
-    // Helper methods
     public UUID getCreatedByUserId() {
         return createdByUser != null ? createdByUser.getUserId() : null;
     }

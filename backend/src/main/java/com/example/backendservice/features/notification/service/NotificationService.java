@@ -10,21 +10,19 @@ import java.util.UUID;
 
 public interface NotificationService {
 
-    // Admin operations
     NotificationResponse createNotification(UUID adminId, CreateNotificationRequest request);
-
-    NotificationResponse updateNotification(UUID notificationId, UpdateNotificationRequest request);
-
-    void deleteNotification(UUID notificationId);
 
     Page<NotificationResponse> getAllNotifications(String type, String targetAudience, Boolean isActive,
             Pageable pageable);
 
     NotificationResponse getNotificationById(UUID notificationId);
 
+    NotificationResponse updateNotification(UUID notificationId, UpdateNotificationRequest request);
+
     NotificationResponse toggleNotificationStatus(UUID notificationId);
 
-    // User operations
+    void deleteNotification(UUID notificationId);
+
     Page<NotificationResponse> getActiveNotificationsForUser(String userRole, Pageable pageable);
 
     long countActiveNotifications();
