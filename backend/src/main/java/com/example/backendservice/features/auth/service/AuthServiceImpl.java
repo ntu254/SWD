@@ -9,6 +9,7 @@ import com.example.backendservice.features.user.entity.AccountStatus;
 import com.example.backendservice.features.user.entity.RoleType;
 import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.UserRepository;
+import com.example.backendservice.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * Implementation of AuthService
@@ -29,6 +29,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     @Transactional
@@ -212,14 +213,11 @@ public class AuthServiceImpl implements AuthService {
 
     // Helper methods
     private String generateAccessToken(User user) {
-        // TODO: Implement proper JWT token generation
-        // For now, return a placeholder token
-        return "access_" + UUID.randomUUID().toString();
+        return jwtTokenProvider.generateToken(user.getEmail());
     }
 
     private String generateRefreshToken(User user) {
-        // TODO: Implement proper refresh token generation
-        return "refresh_" + UUID.randomUUID().toString();
+        return jwtTokenProvider.generateToken(user.getEmail() + ":refresh");
     }
 
     private UserResponse toUserResponse(User user) {
