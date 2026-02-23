@@ -1,5 +1,6 @@
 package com.example.backendservice.features.user.service;
 
+import com.example.backendservice.common.exception.BadRequestException;
 import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.features.location.entity.ServiceArea;
 import com.example.backendservice.features.location.repository.ServiceAreaRepository;
@@ -35,7 +36,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse createUser(CreateUserRequest request) {
         // Check email uniqueness
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already exists: " + request.getEmail());
+            throw new BadRequestException("Email already exists: " + request.getEmail());
         }
 
         User user = User.builder()
@@ -148,6 +149,9 @@ public class UserServiceImpl implements UserService {
 
         // Apply pagination manually
         int start = (int) pageable.getOffset();
+        if (start >= responses.size()) {
+            return new PageImpl<>(List.of(), pageable, responses.size());
+        }
         int end = Math.min(start + pageable.getPageSize(), responses.size());
         List<UserResponse> pagedList = responses.subList(start, end);
 
@@ -248,13 +252,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public CollectorProfileResponse updateCollectorLocation(UUID userId, Double lat, Double lng) {
-        CollectorProfile profile = collectorProfileRepository.findByUserId(userId)
+        collectorProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Collector profile not found for user: " + userId));
 
-        // Note: CollectorProfile entity doesn't have currentLat/currentLng fields
-        // This is a placeholder - the entity would need to be updated to support this
-        log.debug("Location update requested for collector {}: ({}, {})", userId, lat, lng);
-        return toCollectorProfileResponse(profile);
+        if (lat == null || lng == null || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            throw new BadRequestException("Invalid latitude/longitude values");
+        }
+        throw new BadRequestException(
+                "Collector location persistence is not implemented. Add location fields in CollectorProfile first.");
     }
 
     @Override
@@ -262,6 +267,10 @@ public class UserServiceImpl implements UserService {
     public CollectorProfileResponse setCollectorAvailability(UUID userId, Boolean isAvailable) {
         CollectorProfile profile = collectorProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Collector profile not found for user: " + userId));
+
+        if (isAvailable == null) {
+            throw new BadRequestException("isAvailable is required");
+        }
 
         // Map availability to status
         profile.setStatus(isAvailable ? "ACTIVE" : "INACTIVE");
@@ -277,8 +286,18 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
+        if (oldPassword == null || oldPassword.isBlank()) {
+            throw new BadRequestException("Old password is required");
+        }
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new BadRequestException("New password is required");
+        }
+        if (newPassword.equals(oldPassword)) {
+            throw new BadRequestException("New password must be different from old password");
+        }
+
         if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
-            throw new IllegalArgumentException("Old password is incorrect");
+            throw new BadRequestException("Old password is incorrect");
         }
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));

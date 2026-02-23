@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -24,6 +25,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create a new user")
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         UserResponse response = userService.createUser(request);
@@ -31,6 +33,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
     @Operation(summary = "Get user by ID")
     public ResponseEntity<UserResponse> getUserById(@PathVariable UUID userId) {
         UserResponse response = userService.getUserById(userId);
@@ -38,6 +41,7 @@ public class UserController {
     }
 
     @GetMapping("/email/{email}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get user by email")
     public ResponseEntity<UserResponse> getUserByEmail(@PathVariable String email) {
         UserResponse response = userService.getUserByEmail(email);
@@ -45,6 +49,7 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
     @Operation(summary = "Update user")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable UUID userId,
@@ -54,6 +59,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
     @Operation(summary = "Delete user (soft delete)")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID userId) {
         userService.deleteUser(userId);
@@ -61,6 +67,7 @@ public class UserController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get all users with pagination")
     public ResponseEntity<Page<UserResponse>> getAllUsers(Pageable pageable) {
         Page<UserResponse> response = userService.getAllUsers(pageable);
@@ -68,6 +75,7 @@ public class UserController {
     }
 
     @GetMapping("/role/{role}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get users by role")
     public ResponseEntity<Page<UserResponse>> getUsersByRole(
             @PathVariable RoleType role,
@@ -78,6 +86,7 @@ public class UserController {
 
     // Citizen Profile endpoints
     @GetMapping("/{userId}/citizen-profile")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
     @Operation(summary = "Get citizen profile")
     public ResponseEntity<CitizenProfileResponse> getCitizenProfile(@PathVariable UUID userId) {
         CitizenProfileResponse response = userService.getCitizenProfile(userId);
@@ -85,6 +94,7 @@ public class UserController {
     }
 
     @PutMapping("/{userId}/citizen-profile")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
     @Operation(summary = "Update citizen profile")
     public ResponseEntity<CitizenProfileResponse> updateCitizenProfile(
             @PathVariable UUID userId,
@@ -95,6 +105,7 @@ public class UserController {
 
     // Collector Profile endpoints
     @GetMapping("/{userId}/collector-profile")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
     @Operation(summary = "Get collector profile")
     public ResponseEntity<CollectorProfileResponse> getCollectorProfile(@PathVariable UUID userId) {
         CollectorProfileResponse response = userService.getCollectorProfile(userId);
@@ -102,6 +113,7 @@ public class UserController {
     }
 
     @PutMapping("/{userId}/collector-profile")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
     @Operation(summary = "Update collector profile")
     public ResponseEntity<CollectorProfileResponse> updateCollectorProfile(
             @PathVariable UUID userId,
@@ -111,6 +123,7 @@ public class UserController {
     }
 
     @PatchMapping("/{userId}/collector-profile/location")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
     @Operation(summary = "Update collector location")
     public ResponseEntity<CollectorProfileResponse> updateCollectorLocation(
             @PathVariable UUID userId,
@@ -121,6 +134,7 @@ public class UserController {
     }
 
     @PatchMapping("/{userId}/collector-profile/availability")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
     @Operation(summary = "Set collector availability")
     public ResponseEntity<CollectorProfileResponse> setCollectorAvailability(
             @PathVariable UUID userId,
@@ -131,16 +145,17 @@ public class UserController {
 
     // Password management
     @PostMapping("/{userId}/change-password")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
     @Operation(summary = "Change user password")
     public ResponseEntity<Void> changePassword(
             @PathVariable UUID userId,
-            @RequestParam String oldPassword,
-            @RequestParam String newPassword) {
-        userService.changePassword(userId, oldPassword, newPassword);
+            @Valid @RequestBody ChangePasswordRequest request) {
+        userService.changePassword(userId, request.getOldPassword(), request.getNewPassword());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/reset-password")
+    @PreAuthorize("hasRole('ADMIN') or #email.equalsIgnoreCase(authentication.name)")
     @Operation(summary = "Request password reset")
     public ResponseEntity<Void> resetPassword(@RequestParam String email) {
         userService.resetPassword(email);
