@@ -1,5 +1,6 @@
 package com.example.backendservice.features.task.dto;
 
+import com.example.backendservice.features.task.entity.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,7 +20,7 @@ public class TaskResponse {
     private UUID areaId;
     private String areaName;
     private LocalDate scheduledDate;
-    private String status; // PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED
+    private TaskStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

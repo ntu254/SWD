@@ -45,9 +45,10 @@ public class TaskAssignment {
     @Column(name = "unassigned_at")
     private LocalDateTime unassignedAt;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 30)
     @Builder.Default
-    private String status = "ASSIGNED"; // ASSIGNED, ACCEPTED, REJECTED, COMPLETED, UNASSIGNED
+    private TaskAssignmentStatus status = TaskAssignmentStatus.ASSIGNED; // ASSIGNED, ON_THE_WAY, COLLECTED, FAILED, CANCELLED
 
     @Column(name = "collector_note", columnDefinition = "TEXT")
     private String collectorNote;

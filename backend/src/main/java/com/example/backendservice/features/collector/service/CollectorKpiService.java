@@ -2,6 +2,7 @@ package com.example.backendservice.features.collector.service;
 
 import com.example.backendservice.features.collector.dto.CollectorKpiDailyResponse;
 import com.example.backendservice.features.collector.entity.CollectorKpiDaily;
+import com.example.backendservice.features.collector.entity.CollectorKpiStatus;
 import com.example.backendservice.features.collector.repository.CollectorKpiDailyRepository;
 import com.example.backendservice.features.collection.entity.CollectionVisit;
 import com.example.backendservice.features.collection.repository.CollectionVisitRepository;
@@ -62,7 +63,7 @@ public class CollectorKpiService {
 
         // Check if KPI is met
         if (kpi.isKpiMet()) {
-            kpi.setStatus("MET");
+            kpi.setStatus(CollectorKpiStatus.MET);
         }
 
         kpiRepository.save(kpi);
@@ -82,7 +83,7 @@ public class CollectorKpiService {
                 .minVisits(5) // Default target: 5 visits/day
                 .actualWeightKg(0.0)
                 .actualVisits(0)
-                .status("PENDING")
+                .status(CollectorKpiStatus.PENDING)
                 .build();
     }
 
@@ -105,7 +106,7 @@ public class CollectorKpiService {
                         .kpiDate(kpiDate)
                         .actualWeightKg(0.0)
                         .actualVisits(0)
-                        .status("PENDING")
+                        .status(CollectorKpiStatus.PENDING)
                         .build());
 
         kpi.setMinWeightKg(minWeightKg);
@@ -123,13 +124,13 @@ public class CollectorKpiService {
      */
     @Transactional
     public void finalizeKpisForDate(LocalDate date) {
-        List<CollectorKpiDaily> pendingKpis = kpiRepository.findByStatusAndKpiDate("PENDING", date);
+        List<CollectorKpiDaily> pendingKpis = kpiRepository.findByStatusAndKpiDate(CollectorKpiStatus.PENDING, date);
 
         for (CollectorKpiDaily kpi : pendingKpis) {
             if (kpi.isKpiMet()) {
-                kpi.setStatus("MET");
+                kpi.setStatus(CollectorKpiStatus.MET);
             } else {
-                kpi.setStatus("NOT_MET");
+                kpi.setStatus(CollectorKpiStatus.NOT_MET);
             }
             kpiRepository.save(kpi);
         }

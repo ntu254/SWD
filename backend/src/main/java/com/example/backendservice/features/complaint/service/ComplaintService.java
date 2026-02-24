@@ -4,7 +4,10 @@ import com.example.backendservice.features.collection.entity.CollectionVisit;
 import com.example.backendservice.features.collection.repository.CollectionVisitRepository;
 import com.example.backendservice.features.complaint.dto.*;
 import com.example.backendservice.features.complaint.entity.Complaint;
+import com.example.backendservice.features.complaint.entity.ComplaintCategory;
+import com.example.backendservice.features.complaint.entity.ComplaintPriority;
 import com.example.backendservice.features.complaint.entity.ComplaintResolution;
+import com.example.backendservice.features.complaint.entity.ComplaintStatus;
 import com.example.backendservice.features.complaint.repository.ComplaintRepository;
 import com.example.backendservice.features.complaint.repository.ComplaintResolutionRepository;
 import com.example.backendservice.features.user.entity.User;
@@ -57,9 +60,9 @@ public class ComplaintService {
                                 .createdByUser(citizen)
                                 .title(request.getTitle())
                                 .content(request.getContent())
-                                .category(request.getCategory() != null ? request.getCategory() : "OTHER")
-                                .priority(request.getPriority() != null ? request.getPriority() : "Normal")
-                                .status("Pending")
+                                .category(request.getCategory() != null ? request.getCategory() : ComplaintCategory.OTHER)
+                                .priority(request.getPriority() != null ? request.getPriority() : ComplaintPriority.Normal)
+                                .status(ComplaintStatus.Pending)
                                 .wasteReport(wasteReport)
                                 .visit(visit)
                                 .build();
@@ -83,7 +86,8 @@ public class ComplaintService {
 
         // ========== Admin Operations ==========
 
-        public Page<ComplaintResponse> getAllComplaints(String status, String category, String priority,
+        public Page<ComplaintResponse> getAllComplaints(ComplaintStatus status, ComplaintCategory category,
+                        ComplaintPriority priority,
                         Pageable pageable) {
                 Specification<Complaint> spec = buildFilterSpec(status, category, priority);
                 return complaintRepository.findAll(spec, pageable).map(this::toResponse);
@@ -97,7 +101,8 @@ public class ComplaintService {
                 if (request.getAdminResponse() != null) {
                         complaint.setAdminResponse(request.getAdminResponse());
                 }
-                if ("Resolved".equals(request.getStatus()) || "Rejected".equals(request.getStatus())) {
+                if (request.getStatus() == ComplaintStatus.Resolved
+                                || request.getStatus() == ComplaintStatus.Rejected) {
                         complaint.setResolvedAt(LocalDateTime.now());
                 }
 
@@ -117,18 +122,18 @@ public class ComplaintService {
                 long total = complaintRepository.count();
 
                 Map<String, Long> byStatus = new LinkedHashMap<>();
-                for (String s : new String[] { "Pending", "In_Progress", "Resolved", "Rejected" }) {
-                        byStatus.put(s, complaintRepository.countByStatus(s));
+                for (ComplaintStatus status : ComplaintStatus.values()) {
+                        byStatus.put(status.name(), complaintRepository.countByStatus(status));
                 }
 
                 Map<String, Long> byCategory = new LinkedHashMap<>();
-                for (String c : new String[] { "BUG", "FEATURE", "POINTS_ERROR", "OTHER" }) {
-                        byCategory.put(c, complaintRepository.countByCategory(c));
+                for (ComplaintCategory category : ComplaintCategory.values()) {
+                        byCategory.put(category.name(), complaintRepository.countByCategory(category));
                 }
 
                 Map<String, Long> byPriority = new LinkedHashMap<>();
-                for (String p : new String[] { "Low", "Normal", "High", "Urgent" }) {
-                        byPriority.put(p, complaintRepository.countByPriority(p));
+                for (ComplaintPriority priority : ComplaintPriority.values()) {
+                        byPriority.put(priority.name(), complaintRepository.countByPriority(priority));
                 }
 
                 return ComplaintStatisticsResponse.builder()
@@ -141,16 +146,17 @@ public class ComplaintService {
 
         // ========== Private Helpers ==========
 
-        private Specification<Complaint> buildFilterSpec(String status, String category, String priority) {
+        private Specification<Complaint> buildFilterSpec(ComplaintStatus status, ComplaintCategory category,
+                        ComplaintPriority priority) {
                 return (root, query, cb) -> {
                         var predicates = new ArrayList<Predicate>();
-                        if (status != null && !status.isBlank()) {
+                        if (status != null) {
                                 predicates.add(cb.equal(root.get("status"), status));
                         }
-                        if (category != null && !category.isBlank()) {
+                        if (category != null) {
                                 predicates.add(cb.equal(root.get("category"), category));
                         }
-                        if (priority != null && !priority.isBlank()) {
+                        if (priority != null) {
                                 predicates.add(cb.equal(root.get("priority"), priority));
                         }
                         return cb.and(predicates.toArray(new Predicate[0]));

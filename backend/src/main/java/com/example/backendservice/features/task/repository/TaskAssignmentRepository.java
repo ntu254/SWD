@@ -1,6 +1,7 @@
 package com.example.backendservice.features.task.repository;
 
 import com.example.backendservice.features.task.entity.TaskAssignment;
+import com.example.backendservice.features.task.entity.TaskAssignmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,20 +23,22 @@ public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, 
         List<TaskAssignment> findByCollectorUserId(@Param("collectorUserId") UUID collectorUserId);
 
         @Query("SELECT ta FROM TaskAssignment ta WHERE ta.status = :status")
-        List<TaskAssignment> findByStatus(@Param("status") String status);
+        List<TaskAssignment> findByStatus(@Param("status") TaskAssignmentStatus status);
 
         @Query("SELECT ta FROM TaskAssignment ta WHERE ta.collectorUser.userId = :collectorUserId AND ta.status = :status")
         List<TaskAssignment> findByCollectorUserIdAndStatus(
                         @Param("collectorUserId") UUID collectorUserId,
-                        @Param("status") String status);
+                        @Param("status") TaskAssignmentStatus status);
 
-        @Query("SELECT ta FROM TaskAssignment ta WHERE ta.task.taskId = :taskId AND ta.status = 'ASSIGNED'")
-        Optional<TaskAssignment> findActiveByTaskId(@Param("taskId") UUID taskId);
+        @Query("SELECT ta FROM TaskAssignment ta WHERE ta.task.taskId = :taskId AND ta.status = :status")
+        Optional<TaskAssignment> findActiveByTaskId(
+                        @Param("taskId") UUID taskId,
+                        @Param("status") TaskAssignmentStatus status);
 
         @Query("SELECT COUNT(ta) FROM TaskAssignment ta WHERE ta.collectorUser.userId = :collectorUserId AND ta.status = :status")
         Long countByCollectorUserIdAndStatus(
                         @Param("collectorUserId") UUID collectorUserId,
-                        @Param("status") String status);
+                        @Param("status") TaskAssignmentStatus status);
 
         @Query("SELECT ta FROM TaskAssignment ta WHERE ta.collectorUser.userId = :collectorUserId AND ta.unassignedAt IS NULL")
         List<TaskAssignment> findActiveAssignmentsByCollectorUserId(@Param("collectorUserId") UUID collectorUserId);

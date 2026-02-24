@@ -1,5 +1,7 @@
 package com.example.backendservice.features.complaint.dto;
 
+import com.example.backendservice.features.complaint.entity.ComplaintCategory;
+import com.example.backendservice.features.complaint.entity.ComplaintPriority;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -20,9 +22,9 @@ public class CreateComplaintRequest {
     @Size(max = 5000, message = "Content must be less than 5000 characters")
     private String content;
 
-    private String category; // BUG, FEATURE, POINTS_ERROR, OTHER
+    private ComplaintCategory category;
 
-    private String priority; // Low, Normal, High, Urgent
+    private ComplaintPriority priority;
 
     private UUID reportId;
 

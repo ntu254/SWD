@@ -1,6 +1,7 @@
 package com.example.backendservice.features.notification.repository;
 
 import com.example.backendservice.features.notification.entity.Notification;
+import com.example.backendservice.features.notification.entity.NotificationTargetAudience;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,12 +23,14 @@ public interface NotificationRepository
     @Query("""
             SELECT n FROM Notification n
             WHERE n.isActive = true
-              AND (n.targetAudience = 'All' OR n.targetAudience = :role)
+              AND (n.targetAudience = :allAudience OR n.targetAudience = :role)
               AND (n.startDate IS NULL OR n.startDate <= :now)
               AND (n.endDate IS NULL OR n.endDate >= :now)
             ORDER BY n.createdAt DESC
             """)
-    Page<Notification> findActiveForRole(@Param("role") String role, @Param("now") LocalDateTime now,
+    Page<Notification> findActiveForRole(@Param("role") NotificationTargetAudience role,
+            @Param("allAudience") NotificationTargetAudience allAudience,
+            @Param("now") LocalDateTime now,
             Pageable pageable);
 
     @Query("""

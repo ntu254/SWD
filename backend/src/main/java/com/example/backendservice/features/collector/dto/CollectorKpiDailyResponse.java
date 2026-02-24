@@ -1,5 +1,6 @@
 package com.example.backendservice.features.collector.dto;
 
+import com.example.backendservice.features.collector.entity.CollectorKpiStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,6 +34,6 @@ public class CollectorKpiDailyResponse {
     private Double weightProgress; // percentage
     private Double visitsProgress; // percentage
 
-    private String status;
+    private CollectorKpiStatus status;
     private LocalDateTime updatedAt;
 }

@@ -69,9 +69,10 @@ public class Task {
     @Builder.Default
     private String priority = "NORMAL"; // LOW, NORMAL, HIGH, URGENT
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 30)
     @Builder.Default
-    private String status = "PENDING"; // PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED
+    private TaskStatus status = TaskStatus.PENDING; // PENDING, ASSIGNED, IN_PROGRESS, COLLECTED, FAILED, CANCELLED
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

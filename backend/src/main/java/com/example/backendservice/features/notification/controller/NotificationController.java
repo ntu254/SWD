@@ -5,6 +5,8 @@ import com.example.backendservice.common.dto.PageResponse;
 import com.example.backendservice.features.notification.dto.CreateNotificationRequest;
 import com.example.backendservice.features.notification.dto.NotificationResponse;
 import com.example.backendservice.features.notification.dto.UpdateNotificationRequest;
+import com.example.backendservice.features.notification.entity.NotificationTargetAudience;
+import com.example.backendservice.features.notification.entity.NotificationType;
 import com.example.backendservice.features.notification.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -45,8 +47,8 @@ public class NotificationController {
     @Operation(summary = "Get all notifications with filters (Admin)")
     @GetMapping("/admin")
     public ResponseEntity<ApiResponse<PageResponse<NotificationResponse>>> getAllNotifications(
-            @Parameter(description = "Filter by type") @RequestParam(required = false) String type,
-            @Parameter(description = "Filter by target audience") @RequestParam(required = false) String targetAudience,
+            @Parameter(description = "Filter by type") @RequestParam(required = false) NotificationType type,
+            @Parameter(description = "Filter by target audience") @RequestParam(required = false) NotificationTargetAudience targetAudience,
             @Parameter(description = "Filter by active status") @RequestParam(required = false) Boolean isActive,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -102,7 +104,7 @@ public class NotificationController {
     @Operation(summary = "Get active notifications for user role")
     @GetMapping("/user/{role}")
     public ResponseEntity<ApiResponse<PageResponse<NotificationResponse>>> getActiveNotificationsForUser(
-            @Parameter(description = "User role (Citizen, Collector, Enterprise)") @PathVariable String role,
+            @Parameter(description = "User role (Citizen, Collector, Enterprise)") @PathVariable NotificationTargetAudience role,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,

@@ -1,6 +1,7 @@
 package com.example.backendservice.features.complaint.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.example.backendservice.features.complaint.entity.ComplaintStatus;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 @Data
@@ -9,8 +10,8 @@ import lombok.*;
 @AllArgsConstructor
 public class UpdateComplaintStatusRequest {
 
-    @NotBlank(message = "Status is required")
-    private String status; // Pending, In_Progress, Resolved, Rejected
+    @NotNull(message = "Status is required")
+    private ComplaintStatus status;
 
     private String adminResponse;
 }

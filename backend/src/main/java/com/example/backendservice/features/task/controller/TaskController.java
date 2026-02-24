@@ -1,6 +1,7 @@
 package com.example.backendservice.features.task.controller;
 
 import com.example.backendservice.features.task.dto.*;
+import com.example.backendservice.features.task.entity.TaskStatus;
 import com.example.backendservice.features.task.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,7 +52,7 @@ public class TaskController {
     @GetMapping("/status/{status}")
     @Operation(summary = "Get tasks by status")
     public ResponseEntity<Page<TaskResponse>> getTasksByStatus(
-            @PathVariable String status,
+            @PathVariable TaskStatus status,
             Pageable pageable) {
         Page<TaskResponse> response = taskService.getTasksByStatus(status, pageable);
         return ResponseEntity.ok(response);
@@ -77,7 +78,7 @@ public class TaskController {
     @Operation(summary = "Update task status")
     public ResponseEntity<TaskResponse> updateTaskStatus(
             @PathVariable UUID taskId,
-            @RequestParam String status) {
+            @RequestParam TaskStatus status) {
         TaskResponse response = taskService.updateTaskStatus(taskId, status);
         return ResponseEntity.ok(response);
     }

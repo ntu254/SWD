@@ -28,17 +28,20 @@ public class Notification {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 30)
     @Builder.Default
-    private String type = "General"; // General, Maintenance, Update, Promotion, Alert
+    private NotificationType type = NotificationType.General; // General, Maintenance, Update, Promotion, Alert
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "target_audience", length = 30)
     @Builder.Default
-    private String targetAudience = "All"; // All, Citizen, Collector, Enterprise
+    private NotificationTargetAudience targetAudience = NotificationTargetAudience.All; // All, Citizen, Collector, Enterprise
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
     @Builder.Default
-    private String priority = "Normal"; // Low, Normal, High, Urgent
+    private NotificationPriority priority = NotificationPriority.Normal; // Low, Normal, High, Urgent
 
     @Column(name = "is_active")
     @Builder.Default

@@ -1,6 +1,7 @@
 package com.example.backendservice.features.task.service;
 
 import com.example.backendservice.features.task.dto.*;
+import com.example.backendservice.features.task.entity.TaskStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -17,14 +18,14 @@ public interface TaskService {
 
     Page<TaskResponse> getTasksByArea(UUID areaId, Pageable pageable);
 
-    Page<TaskResponse> getTasksByStatus(String status, Pageable pageable);
+    Page<TaskResponse> getTasksByStatus(TaskStatus status, Pageable pageable);
 
     Page<TaskResponse> getTasksByScheduledDate(LocalDate date, Pageable pageable);
 
     Page<TaskResponse> getAllTasks(Pageable pageable);
 
     // Task status management
-    TaskResponse updateTaskStatus(UUID taskId, String status);
+    TaskResponse updateTaskStatus(UUID taskId, TaskStatus status);
 
     void cancelTask(UUID taskId);
 

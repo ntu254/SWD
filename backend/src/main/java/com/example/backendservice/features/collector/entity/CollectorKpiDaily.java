@@ -81,9 +81,10 @@ public class CollectorKpiDaily {
      * MET: Đạt mục tiêu
      * NOT_MET: Không đạt mục tiêu
      */
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
     @Builder.Default
-    private String status = "PENDING"; // PENDING, MET, NOT_MET
+    private CollectorKpiStatus status = CollectorKpiStatus.PENDING; // PENDING, MET, NOT_MET
 
     @UpdateTimestamp
     @Column(name = "updated_at")
