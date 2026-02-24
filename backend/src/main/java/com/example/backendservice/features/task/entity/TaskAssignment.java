@@ -39,6 +39,9 @@ public class TaskAssignment {
     @EqualsAndHashCode.Exclude
     private User collectorUser;
 
+    @Column(name = "assigned_at")
+    private LocalDateTime assignedAt;
+
     @Column(name = "accepted_at")
     private LocalDateTime acceptedAt;
 
@@ -60,5 +63,12 @@ public class TaskAssignment {
 
     public UUID getTaskId() {
         return task != null ? task.getTaskId() : null;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.assignedAt == null) {
+            this.assignedAt = LocalDateTime.now();
+        }
     }
 }
