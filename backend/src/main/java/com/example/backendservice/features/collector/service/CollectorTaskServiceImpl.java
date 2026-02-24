@@ -4,6 +4,8 @@ import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.features.collector.dto.*;
 import com.example.backendservice.features.task.entity.Task;
 import com.example.backendservice.features.task.entity.TaskAssignment;
+import com.example.backendservice.features.task.entity.TaskAssignmentStatus;
+import com.example.backendservice.features.task.entity.TaskStatus;
 import com.example.backendservice.features.task.repository.TaskAssignmentRepository;
 import com.example.backendservice.features.task.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +41,8 @@ public class CollectorTaskServiceImpl implements CollectorTaskService {
         List<TaskAssignment> assignments = taskAssignmentRepository.findByCollectorUserId(collectorId);
 
         List<CollectorTaskResponse> responses = assignments.stream()
-                .filter(a -> "ASSIGNED".equals(a.getStatus()) || "ON_THE_WAY".equals(a.getStatus()))
+                .filter(a -> a.getStatus() == TaskAssignmentStatus.ASSIGNED
+                        || a.getStatus() == TaskAssignmentStatus.ON_THE_WAY)
                 .map(this::toTaskResponse)
                 .collect(Collectors.toList());
 
@@ -65,19 +68,19 @@ public class CollectorTaskServiceImpl implements CollectorTaskService {
         TaskAssignment assignment = taskAssignmentRepository.findByTaskIdAndCollectorUserId(taskId, collectorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task assignment not found"));
 
-        if (!"ASSIGNED".equals(assignment.getStatus())) {
+        if (assignment.getStatus() != TaskAssignmentStatus.ASSIGNED) {
             throw new IllegalStateException("Task is not in ASSIGNED status");
         }
 
         LocalDateTime now = LocalDateTime.now();
-        assignment.setStatus("ON_THE_WAY");
+        assignment.setStatus(TaskAssignmentStatus.ON_THE_WAY);
         assignment.setAcceptedAt(now);
         taskAssignmentRepository.save(assignment);
 
         // Update task status
         Task task = assignment.getTask();
         if (task != null) {
-            task.setStatus("IN_PROGRESS");
+            task.setStatus(TaskStatus.IN_PROGRESS);
             taskRepository.save(task);
         }
 
@@ -85,7 +88,7 @@ public class CollectorTaskServiceImpl implements CollectorTaskService {
 
         return AcceptTaskResponse.builder()
                 .taskId(taskId)
-                .status("ON_THE_WAY")
+                .status(TaskAssignmentStatus.ON_THE_WAY)
                 .acceptedAt(toInstant(now))
                 .onWayAt(toInstant(now))
                 .message("Task accepted successfully")
@@ -100,12 +103,15 @@ public class CollectorTaskServiceImpl implements CollectorTaskService {
         TaskAssignment assignment = taskAssignmentRepository.findByTaskIdAndCollectorUserId(taskId, collectorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task assignment not found"));
 
-        String newStatus = request.getStatus();
-        String currentStatus = assignment.getStatus();
+        TaskAssignmentStatus newStatus = request.getStatus();
+        TaskAssignmentStatus currentStatus = assignment.getStatus();
 
         // Validate transitions
-        if ("ON_THE_WAY".equals(currentStatus)) {
-            if (!List.of("COLLECTED", "FAILED", "CANCELLED").contains(newStatus)) {
+        if (currentStatus == TaskAssignmentStatus.ON_THE_WAY) {
+            if (!List.of(
+                    TaskAssignmentStatus.COLLECTED,
+                    TaskAssignmentStatus.FAILED,
+                    TaskAssignmentStatus.CANCELLED).contains(newStatus)) {
                 throw new IllegalStateException("Invalid status transition from ON_THE_WAY to " + newStatus);
             }
         } else {
@@ -121,7 +127,7 @@ public class CollectorTaskServiceImpl implements CollectorTaskService {
         // Update task status
         Task task = assignment.getTask();
         if (task != null) {
-            task.setStatus(newStatus);
+            task.setStatus(mapAssignmentStatusToTaskStatus(newStatus));
             taskRepository.save(task);
         }
 
@@ -138,7 +144,7 @@ public class CollectorTaskServiceImpl implements CollectorTaskService {
         TaskAssignment assignment = taskAssignmentRepository.findByTaskIdAndCollectorUserId(taskId, collectorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task assignment not found"));
 
-        if (!"COLLECTED".equals(assignment.getStatus())) {
+        if (assignment.getStatus() != TaskAssignmentStatus.COLLECTED) {
             throw new IllegalStateException("Can only upload proof for COLLECTED tasks");
         }
 
@@ -156,7 +162,10 @@ public class CollectorTaskServiceImpl implements CollectorTaskService {
         List<TaskAssignment> assignments = taskAssignmentRepository.findByCollectorUserId(collectorId);
 
         List<JobHistoryResponse> responses = assignments.stream()
-                .filter(a -> List.of("COLLECTED", "FAILED", "CANCELLED").contains(a.getStatus()))
+                .filter(a -> List.of(
+                        TaskAssignmentStatus.COLLECTED,
+                        TaskAssignmentStatus.FAILED,
+                        TaskAssignmentStatus.CANCELLED).contains(a.getStatus()))
                 .map(this::toJobHistoryResponse)
                 .collect(Collectors.toList());
 
@@ -181,9 +190,9 @@ public class CollectorTaskServiceImpl implements CollectorTaskService {
         List<TaskAssignment> assignments = taskAssignmentRepository.findByCollectorUserId(collectorId);
 
         long totalAssigned = assignments.size();
-        long totalCompleted = assignments.stream().filter(a -> "COLLECTED".equals(a.getStatus())).count();
-        long totalFailed = assignments.stream().filter(a -> "FAILED".equals(a.getStatus())).count();
-        long totalCancelled = assignments.stream().filter(a -> "CANCELLED".equals(a.getStatus())).count();
+        long totalCompleted = assignments.stream().filter(a -> a.getStatus() == TaskAssignmentStatus.COLLECTED).count();
+        long totalFailed = assignments.stream().filter(a -> a.getStatus() == TaskAssignmentStatus.FAILED).count();
+        long totalCancelled = assignments.stream().filter(a -> a.getStatus() == TaskAssignmentStatus.CANCELLED).count();
 
         double completionRate = totalAssigned > 0 ? (double) totalCompleted / totalAssigned * 100 : 0;
 
@@ -234,5 +243,16 @@ public class CollectorTaskServiceImpl implements CollectorTaskService {
 
     private Instant toInstant(LocalDateTime ldt) {
         return ldt != null ? ldt.atZone(ZoneId.systemDefault()).toInstant() : null;
+    }
+
+    private TaskStatus mapAssignmentStatusToTaskStatus(TaskAssignmentStatus status) {
+        return switch (status) {
+            case COLLECTED -> TaskStatus.COLLECTED;
+            case FAILED -> TaskStatus.FAILED;
+            case CANCELLED -> TaskStatus.CANCELLED;
+            case ON_THE_WAY -> TaskStatus.IN_PROGRESS;
+            case ASSIGNED -> TaskStatus.ASSIGNED;
+            default -> TaskStatus.IN_PROGRESS;
+        };
     }
 }

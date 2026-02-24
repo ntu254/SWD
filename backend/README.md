@@ -19,7 +19,7 @@ Built with **Spring Boot 3.5.0**, **Java 21**, and **PostgreSQL**.
 ## ⚙️ Configuration & Setup
 
 ### 1. Prerequisites
-- **JDK 17+**
+- **JDK 21+**
 - **Maven 3.8+**
 - **PostgreSQL** (Active database server)
 
@@ -37,6 +37,7 @@ The application uses `application.properties` as the base, extending into profil
 ```bash
 # Run with 'dev' profile
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+ ./mvnw spring-boot:run -Dspring-boot.run.profiles=local 2>&1
 ```
 
 **Option 2: Using IDE**

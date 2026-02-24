@@ -3,6 +3,8 @@ package com.example.backendservice.features.notification.service;
 import com.example.backendservice.features.notification.dto.CreateNotificationRequest;
 import com.example.backendservice.features.notification.dto.NotificationResponse;
 import com.example.backendservice.features.notification.dto.UpdateNotificationRequest;
+import com.example.backendservice.features.notification.entity.NotificationTargetAudience;
+import com.example.backendservice.features.notification.entity.NotificationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -12,7 +14,8 @@ public interface NotificationService {
 
     NotificationResponse createNotification(UUID adminId, CreateNotificationRequest request);
 
-    Page<NotificationResponse> getAllNotifications(String type, String targetAudience, Boolean isActive,
+    Page<NotificationResponse> getAllNotifications(NotificationType type, NotificationTargetAudience targetAudience,
+            Boolean isActive,
             Pageable pageable);
 
     NotificationResponse getNotificationById(UUID notificationId);
@@ -23,7 +26,7 @@ public interface NotificationService {
 
     void deleteNotification(UUID notificationId);
 
-    Page<NotificationResponse> getActiveNotificationsForUser(String userRole, Pageable pageable);
+    Page<NotificationResponse> getActiveNotificationsForUser(NotificationTargetAudience userRole, Pageable pageable);
 
     long countActiveNotifications();
 }

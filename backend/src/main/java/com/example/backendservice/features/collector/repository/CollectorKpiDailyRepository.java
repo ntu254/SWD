@@ -1,6 +1,7 @@
 package com.example.backendservice.features.collector.repository;
 
 import com.example.backendservice.features.collector.entity.CollectorKpiDaily;
+import com.example.backendservice.features.collector.entity.CollectorKpiStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -41,7 +42,7 @@ public interface CollectorKpiDailyRepository extends JpaRepository<CollectorKpiD
 
     @Query("SELECT ckd FROM CollectorKpiDaily ckd WHERE ckd.status = :status AND ckd.kpiDate = :kpiDate")
     List<CollectorKpiDaily> findByStatusAndKpiDate(
-            @Param("status") String status,
+            @Param("status") CollectorKpiStatus status,
             @Param("kpiDate") LocalDate kpiDate);
 
     @Query("SELECT ckd FROM CollectorKpiDaily ckd WHERE ckd.area.areaId = :areaId AND ckd.kpiDate = :kpiDate")

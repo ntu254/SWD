@@ -1,6 +1,7 @@
 package com.example.backendservice.features.task.repository;
 
 import com.example.backendservice.features.task.entity.Task;
+import com.example.backendservice.features.task.entity.TaskStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -29,7 +30,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
         Optional<Task> findByReportId(@Param("reportId") UUID reportId);
 
         @Query("SELECT t FROM Task t WHERE t.status = :status ORDER BY t.priority DESC, t.createdAt ASC")
-        List<Task> findByStatus(@Param("status") String status);
+        List<Task> findByStatus(@Param("status") TaskStatus status);
 
         @Query("SELECT t FROM Task t WHERE t.scheduledDate = :scheduledDate ORDER BY t.priority DESC")
         List<Task> findByScheduledDate(@Param("scheduledDate") LocalDate scheduledDate);
@@ -37,7 +38,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
         @Query("SELECT t FROM Task t WHERE t.enterpriseUser.userId = :enterpriseUserId AND t.status = :status")
         List<Task> findByEnterpriseUserIdAndStatus(
                         @Param("enterpriseUserId") UUID enterpriseUserId,
-                        @Param("status") String status);
+                        @Param("status") TaskStatus status);
 
         @Query("SELECT t FROM Task t WHERE t.enterpriseUser.userId = :enterpriseUserId AND t.scheduledDate BETWEEN :startDate AND :endDate")
         List<Task> findByEnterpriseUserIdAndScheduledDateBetween(
@@ -48,5 +49,5 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
         @Query("SELECT COUNT(t) FROM Task t WHERE t.enterpriseUser.userId = :enterpriseUserId AND t.status = :status")
         Long countByEnterpriseUserIdAndStatus(
                         @Param("enterpriseUserId") UUID enterpriseUserId,
-                        @Param("status") String status);
+                        @Param("status") TaskStatus status);
 }

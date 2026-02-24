@@ -5,7 +5,9 @@ import com.example.backendservice.features.location.entity.ServiceArea;
 import com.example.backendservice.features.location.repository.ServiceAreaRepository;
 import com.example.backendservice.features.task.dto.*;
 import com.example.backendservice.features.task.entity.Task;
+import com.example.backendservice.features.task.entity.TaskAssignmentStatus;
 import com.example.backendservice.features.task.entity.TaskAssignment;
+import com.example.backendservice.features.task.entity.TaskStatus;
 import com.example.backendservice.features.task.repository.TaskAssignmentRepository;
 import com.example.backendservice.features.task.repository.TaskRepository;
 import com.example.backendservice.features.user.entity.RoleType;
@@ -57,7 +59,7 @@ public class TaskServiceImpl implements TaskService {
                 .enterpriseUser(enterpriseUser)
                 .createdByUser(enterpriseUser)
                 .scheduledDate(request.getScheduledDate())
-                .status("PENDING")
+                .status(TaskStatus.PENDING)
                 .priority("NORMAL")
                 .build();
 
@@ -90,7 +92,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public Page<TaskResponse> getTasksByStatus(String status, Pageable pageable) {
+    public Page<TaskResponse> getTasksByStatus(TaskStatus status, Pageable pageable) {
         List<Task> tasks = taskRepository.findByStatus(status);
         List<TaskResponse> responses = tasks.stream().map(this::toTaskResponse).collect(Collectors.toList());
 
@@ -118,7 +120,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public TaskResponse updateTaskStatus(UUID taskId, String status) {
+    public TaskResponse updateTaskStatus(UUID taskId, TaskStatus status) {
         Task task = taskRepository.findByTaskId(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
 
@@ -135,7 +137,7 @@ public class TaskServiceImpl implements TaskService {
         Task task = taskRepository.findByTaskId(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
 
-        task.setStatus("CANCELLED");
+        task.setStatus(TaskStatus.CANCELLED);
         taskRepository.save(task);
         log.info("Cancelled task {}", taskId);
     }
@@ -153,13 +155,13 @@ public class TaskServiceImpl implements TaskService {
         TaskAssignment assignment = TaskAssignment.builder()
                 .task(task)
                 .collectorUser(collector)
-                .status("ASSIGNED")
+                .status(TaskAssignmentStatus.ASSIGNED)
                 .build();
 
         assignment = taskAssignmentRepository.save(assignment);
 
         // Update task status
-        task.setStatus("ASSIGNED");
+        task.setStatus(TaskStatus.ASSIGNED);
         taskRepository.save(task);
 
         log.info("Assigned task {} to collector {}", request.getTaskId(), request.getCollectorUserId());
@@ -172,17 +174,17 @@ public class TaskServiceImpl implements TaskService {
         TaskAssignment assignment = taskAssignmentRepository.findByAssignmentId(assignmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
 
-        if (!"ASSIGNED".equals(assignment.getStatus())) {
+        if (assignment.getStatus() != TaskAssignmentStatus.ASSIGNED) {
             throw new IllegalStateException("Assignment is not in ASSIGNED status");
         }
 
-        assignment.setStatus("ACCEPTED");
+        assignment.setStatus(TaskAssignmentStatus.ON_THE_WAY);
         assignment.setAcceptedAt(LocalDateTime.now());
         assignment = taskAssignmentRepository.save(assignment);
 
         // Update task status
         Task task = assignment.getTask();
-        task.setStatus("IN_PROGRESS");
+        task.setStatus(TaskStatus.IN_PROGRESS);
         taskRepository.save(task);
 
         log.info("Assignment {} accepted by collector {}", assignmentId, assignment.getCollectorUserId());
@@ -195,11 +197,11 @@ public class TaskServiceImpl implements TaskService {
         TaskAssignment assignment = taskAssignmentRepository.findByAssignmentId(assignmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
 
-        if (!"ASSIGNED".equals(assignment.getStatus())) {
+        if (assignment.getStatus() != TaskAssignmentStatus.ASSIGNED) {
             throw new IllegalStateException("Assignment is not in ASSIGNED status");
         }
 
-        assignment.setStatus("REJECTED");
+        assignment.setStatus(TaskAssignmentStatus.CANCELLED);
         assignment.setUnassignedAt(LocalDateTime.now());
         assignment = taskAssignmentRepository.save(assignment);
 
@@ -211,7 +213,7 @@ public class TaskServiceImpl implements TaskService {
                 .anyMatch(a -> a.getTaskId().equals(task.getTaskId()) && !a.getAssignmentId().equals(assignmentId));
 
         if (!hasOtherActiveForTask) {
-            task.setStatus("PENDING");
+            task.setStatus(TaskStatus.PENDING);
             taskRepository.save(task);
         }
 
@@ -225,16 +227,16 @@ public class TaskServiceImpl implements TaskService {
         TaskAssignment assignment = taskAssignmentRepository.findByAssignmentId(assignmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
 
-        if (!"ACCEPTED".equals(assignment.getStatus())) {
-            throw new IllegalStateException("Assignment is not in ACCEPTED status");
+        if (assignment.getStatus() != TaskAssignmentStatus.ON_THE_WAY) {
+            throw new IllegalStateException("Assignment is not in ON_THE_WAY status");
         }
 
-        assignment.setStatus("COMPLETED");
+        assignment.setStatus(TaskAssignmentStatus.COLLECTED);
         assignment = taskAssignmentRepository.save(assignment);
 
         // Update task status
         Task task = assignment.getTask();
-        task.setStatus("COMPLETED");
+        task.setStatus(TaskStatus.COLLECTED);
         taskRepository.save(task);
 
         // Update report status if exists
@@ -278,7 +280,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public Page<TaskAssignmentResponse> getPendingAssignmentsByCollector(UUID collectorUserId, Pageable pageable) {
         List<TaskAssignment> assignments = taskAssignmentRepository.findByCollectorUserIdAndStatus(collectorUserId,
-                "ASSIGNED");
+                TaskAssignmentStatus.ASSIGNED);
         List<TaskAssignmentResponse> responses = assignments.stream()
                 .map(this::toAssignmentResponse)
                 .collect(Collectors.toList());

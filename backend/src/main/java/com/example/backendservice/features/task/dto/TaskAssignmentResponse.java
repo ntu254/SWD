@@ -1,5 +1,6 @@
 package com.example.backendservice.features.task.dto;
 
+import com.example.backendservice.features.task.entity.TaskAssignmentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,7 +18,7 @@ public class TaskAssignmentResponse {
     private UUID taskId;
     private UUID collectorUserId;
     private String collectorName;
-    private String status; // PENDING, ACCEPTED, REJECTED, COMPLETED
+    private TaskAssignmentStatus status;
     private LocalDateTime assignedAt;
     private LocalDateTime acceptedAt;
     private LocalDateTime completedAt;

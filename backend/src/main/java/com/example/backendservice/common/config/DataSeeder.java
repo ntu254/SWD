@@ -1,9 +1,14 @@
 package com.example.backendservice.common.config;
 
 import com.example.backendservice.features.complaint.entity.Complaint;
+import com.example.backendservice.features.complaint.entity.ComplaintCategory;
+import com.example.backendservice.features.complaint.entity.ComplaintPriority;
+import com.example.backendservice.features.complaint.entity.ComplaintStatus;
 import com.example.backendservice.features.complaint.repository.ComplaintRepository;
 import com.example.backendservice.features.task.entity.Task;
 import com.example.backendservice.features.task.entity.TaskAssignment;
+import com.example.backendservice.features.task.entity.TaskAssignmentStatus;
+import com.example.backendservice.features.task.entity.TaskStatus;
 import com.example.backendservice.features.task.repository.TaskAssignmentRepository;
 import com.example.backendservice.features.task.repository.TaskRepository;
 import com.example.backendservice.features.user.entity.AccountStatus;
@@ -14,6 +19,14 @@ import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.CitizenProfileRepository;
 import com.example.backendservice.features.user.repository.CollectorProfileRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
+import com.example.backendservice.features.collection.entity.CollectionVisit;
+import com.example.backendservice.features.collection.repository.CollectionVisitRepository;
+import com.example.backendservice.features.collector.entity.CollectorKpiDaily;
+import com.example.backendservice.features.collector.entity.CollectorKpiStatus;
+import com.example.backendservice.features.collector.repository.CollectorKpiDailyRepository;
+import com.example.backendservice.features.location.entity.ServiceArea;
+import com.example.backendservice.features.location.repository.ServiceAreaRepository;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -40,6 +53,9 @@ public class DataSeeder {
     private final TaskRepository taskRepository;
     private final TaskAssignmentRepository taskAssignmentRepository;
     private final ComplaintRepository complaintRepository;
+    private final ServiceAreaRepository serviceAreaRepository;
+    private final CollectionVisitRepository collectionVisitRepository;
+    private final CollectorKpiDailyRepository collectorKpiDailyRepository;
     private final PasswordEncoder passwordEncoder;
     private final TransactionTemplate transactionTemplate;
 
@@ -56,6 +72,8 @@ public class DataSeeder {
                     seedCitizens();
                     seedEnterprise();
                     seedCollectors();
+                    seedCollectors();
+                    seedServiceAreas();
                     seedTasksAndAssignments();
                     seedComplaints();
                     log.info("=== Sample data seeded successfully! ===");
@@ -63,6 +81,7 @@ public class DataSeeder {
                     log.info("Data already exists. Checking for missing data...");
                     ensureCollectorsExist();
                     ensureEnterpriseExists();
+                    seedServiceAreas();
                     ensureTasksExist();
                     log.info("Data check complete.");
                 }
@@ -159,62 +178,87 @@ public class DataSeeder {
 
     // ========== Tasks & Assignments Seeding ==========
 
+    // ========== Service Areas Seeding ==========
+
+    private void seedServiceAreas() {
+        if (serviceAreaRepository.count() == 0) {
+            createServiceArea("District 1");
+            createServiceArea("District 2");
+            log.info("Created service areas");
+        }
+    }
+
+    private ServiceArea createServiceArea(String name) {
+        return serviceAreaRepository.findByName(name)
+                .orElseGet(() -> serviceAreaRepository.saveAndFlush(ServiceArea.builder()
+                        .name(name)
+                        .isActive(true)
+                        .build()));
+    }
+
+    // ========== Tasks & Assignments Seeding ==========
+
     private void seedTasksAndAssignments() {
         User enterprise = userRepository.findByEmail("enterprise@example.com").orElse(null);
         User admin = userRepository.findByEmail("admin@example.com").orElse(null);
         User collector1 = userRepository.findByEmail("collector1@example.com").orElse(null);
         User collector2 = userRepository.findByEmail("collector2@example.com").orElse(null);
 
-        if (enterprise == null || admin == null || collector1 == null) {
-            log.warn("Required users not found, skipping task seeding");
+        ServiceArea district1 = serviceAreaRepository.findByName("District 1").orElse(null);
+        ServiceArea district2 = serviceAreaRepository.findByName("District 2").orElse(null);
+
+        if (enterprise == null || admin == null || collector1 == null || district1 == null) {
+            log.warn("Required users or areas not found, skipping task seeding");
             return;
         }
 
-        // Task 1: ASSIGNED → waiting to be accepted
-        createTaskWithAssignment(enterprise, admin, collector1,
-                LocalDate.now(), "NORMAL", "ASSIGNED",
-                "ASSIGNED", "Pickup at 123 Main Street - 5kg recyclables");
+        // Task 1: ASSIGNED
+        createTaskWithAssignment(enterprise, admin, collector1, district1,
+                LocalDate.now(), "NORMAL", TaskStatus.ASSIGNED,
+                TaskAssignmentStatus.ASSIGNED, "Pickup at 123 Main Street - 5kg recyclables");
 
-        // Task 2: ASSIGNED → high priority
-        createTaskWithAssignment(enterprise, admin, collector1,
-                LocalDate.now(), "HIGH", "ASSIGNED",
-                "ASSIGNED", "Pickup at 456 Oak Ave - Electronic waste");
+        // Task 2: ASSIGNED -> High priority
+        createTaskWithAssignment(enterprise, admin, collector1, district2,
+                LocalDate.now(), "HIGH", TaskStatus.ASSIGNED,
+                TaskAssignmentStatus.ASSIGNED, "Pickup at 456 Oak Ave - Electronic waste");
 
-        // Task 3: IN_PROGRESS → accepted by collector
-        createTaskWithAssignment(enterprise, admin, collector1,
-                LocalDate.now().minusDays(1), "NORMAL", "IN_PROGRESS",
-                "ACCEPTED", "Pickup at 789 Pine Road - Plastic bottles");
+        // Task 3: IN_PROGRESS
+        createTaskWithAssignment(enterprise, admin, collector1, district1,
+                LocalDate.now().minusDays(1), "NORMAL", TaskStatus.IN_PROGRESS,
+                TaskAssignmentStatus.ON_THE_WAY, "Pickup at 789 Pine Road - Plastic bottles");
 
-        // Task 4: COMPLETED
-        createTaskWithAssignment(enterprise, admin, collector1,
-                LocalDate.now().minusDays(2), "NORMAL", "COMPLETED",
-                "COMPLETED", "Pickup at 321 Elm Street - Paper waste");
+        // Task 4: COMPLETED with VISIT & KPI
+        createTaskWithAssignment(enterprise, admin, collector1, district1,
+                LocalDate.now().minusDays(2), "NORMAL", TaskStatus.COLLECTED,
+                TaskAssignmentStatus.COLLECTED, "Pickup at 321 Elm Street - Paper waste");
 
         // Task 5: CANCELLED
-        createTaskWithAssignment(enterprise, admin, collector1,
-                LocalDate.now().minusDays(3), "LOW", "CANCELLED",
-                "UNASSIGNED", "Cancelled by citizen request");
+        createTaskWithAssignment(enterprise, admin, collector1, district2,
+                LocalDate.now().minusDays(3), "LOW", TaskStatus.CANCELLED,
+                TaskAssignmentStatus.UNASSIGNED, "Cancelled by citizen request");
 
         // Tasks for collector 2
         if (collector2 != null) {
-            createTaskWithAssignment(enterprise, admin, collector2,
-                    LocalDate.now(), "NORMAL", "ASSIGNED",
-                    "ASSIGNED", "Large pickup - Industrial area");
+            createTaskWithAssignment(enterprise, admin, collector2, district2,
+                    LocalDate.now(), "NORMAL", TaskStatus.ASSIGNED,
+                    TaskAssignmentStatus.ASSIGNED, "Large pickup - Industrial area");
 
-            createTaskWithAssignment(enterprise, admin, collector2,
-                    LocalDate.now().minusDays(1), "NORMAL", "COMPLETED",
-                    "COMPLETED", "Completed - Restaurant waste");
+            createTaskWithAssignment(enterprise, admin, collector2, district2,
+                    LocalDate.now().minusDays(1), "NORMAL", TaskStatus.COLLECTED,
+                    TaskAssignmentStatus.COLLECTED, "Completed - Restaurant waste");
         }
 
-        log.info("Created tasks and assignments for testing");
+        log.info("Created tasks, assignments, visits and KPIs for testing");
     }
 
     private void createTaskWithAssignment(User enterprise, User creator, User collector,
-            LocalDate scheduledDate, String priority, String taskStatus,
-            String assignmentStatus, String note) {
+            ServiceArea area,
+            LocalDate scheduledDate, String priority, TaskStatus taskStatus,
+            TaskAssignmentStatus assignmentStatus, String note) {
         Task task = Task.builder()
                 .enterpriseUser(enterprise)
                 .createdByUser(creator)
+                .area(area) // Set area
                 .scheduledDate(scheduledDate)
                 .priority(priority)
                 .status(taskStatus)
@@ -227,7 +271,48 @@ public class DataSeeder {
                 .status(assignmentStatus)
                 .collectorNote(note)
                 .build();
+
+        if (assignmentStatus == TaskAssignmentStatus.ON_THE_WAY
+                || assignmentStatus == TaskAssignmentStatus.COLLECTED) {
+            assignment.setAcceptedAt(scheduledDate.atStartOfDay().plusHours(8));
+        }
+
         taskAssignmentRepository.saveAndFlush(assignment);
+
+        // If COMPLETED, create CollectionVisit and update KPI
+        if (taskStatus == TaskStatus.COLLECTED) {
+            CollectionVisit visit = CollectionVisit.builder()
+                    .task(task)
+                    .collectorUser(collector)
+                    .visitedAt(scheduledDate.atStartOfDay().plusHours(10))
+                    .visitStatus("VISITED")
+                    .collectorNote("Completed successfully found recyclables")
+                    .build();
+            collectionVisitRepository.saveAndFlush(visit);
+
+            // Seed KPI
+            seedKpi(collector, area, scheduledDate, 10.0);
+        }
+    }
+
+    private void seedKpi(User collector, ServiceArea area, LocalDate date, Double weight) {
+        CollectorKpiDaily kpi = collectorKpiDailyRepository
+                .findByCollectorUserIdAndAreaIdAndKpiDate(collector.getUserId(), area.getAreaId(), date)
+                .orElse(CollectorKpiDaily.builder()
+                        .collectorUser(collector)
+                        .area(area)
+                        .kpiDate(date)
+                        .minWeightKg(50.0)
+                        .minVisits(5)
+                        .actualWeightKg(0.0)
+                        .actualVisits(0)
+                        .status(CollectorKpiStatus.PENDING)
+                        .build());
+
+        kpi.incrementVisit(weight);
+        if (kpi.isKpiMet())
+            kpi.setStatus(CollectorKpiStatus.MET);
+        collectorKpiDailyRepository.saveAndFlush(kpi);
     }
 
     // ========== Complaints Seeding ==========
@@ -247,9 +332,9 @@ public class DataSeeder {
                 .title("Points not credited correctly")
                 .content("I collected 5kg of recyclables on January 15, but only received 2 points instead of 5. "
                         + "Please check and correct my point balance.")
-                .category("POINTS_ERROR")
-                .priority("High")
-                .status("Pending")
+                .category(ComplaintCategory.POINTS_ERROR)
+                .priority(ComplaintPriority.High)
+                .status(ComplaintStatus.Pending)
                 .build());
 
         complaintRepository.saveAndFlush(Complaint.builder()
@@ -257,9 +342,9 @@ public class DataSeeder {
                 .title("App crashes on report submission")
                 .content("The mobile app crashes every time I try to submit a new waste collection report. "
                         + "This happens on both Android and iOS. App version 2.3.1.")
-                .category("BUG")
-                .priority("Urgent")
-                .status("Pending")
+                .category(ComplaintCategory.BUG)
+                .priority(ComplaintPriority.Urgent)
+                .status(ComplaintStatus.Pending)
                 .build());
 
         complaintRepository.saveAndFlush(Complaint.builder()
@@ -267,18 +352,18 @@ public class DataSeeder {
                 .title("Wrong collection schedule times")
                 .content("The collection schedule shows wrong times for my area. "
                         + "It says 8:00 AM but collectors come at 6:00 AM.")
-                .category("OTHER")
-                .priority("Normal")
-                .status("In_Progress")
+                .category(ComplaintCategory.OTHER)
+                .priority(ComplaintPriority.Normal)
+                .status(ComplaintStatus.In_Progress)
                 .build());
 
         complaintRepository.saveAndFlush(Complaint.builder()
                 .createdByUser(citizen3)
                 .title("Cannot redeem rewards")
                 .content("I have 500 points but cannot redeem any rewards. The button doesn't work.")
-                .category("BUG")
-                .priority("Normal")
-                .status("Resolved")
+                .category(ComplaintCategory.BUG)
+                .priority(ComplaintPriority.Normal)
+                .status(ComplaintStatus.Resolved)
                 .adminResponse("Fixed in app version 2.4.0. Please update your app.")
                 .build());
 
@@ -286,9 +371,9 @@ public class DataSeeder {
                 .createdByUser(citizen2)
                 .title("Request for extra points")
                 .content("I think I deserve more points for recycling. Please give me extra points.")
-                .category("FEATURE")
-                .priority("Low")
-                .status("Rejected")
+                .category(ComplaintCategory.FEATURE)
+                .priority(ComplaintPriority.Low)
+                .status(ComplaintStatus.Rejected)
                 .adminResponse("Points are awarded based on the system rules. Your request does not qualify.")
                 .build());
 

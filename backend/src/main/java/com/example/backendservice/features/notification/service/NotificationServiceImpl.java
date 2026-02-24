@@ -6,6 +6,9 @@ import com.example.backendservice.features.notification.dto.CreateNotificationRe
 import com.example.backendservice.features.notification.dto.NotificationResponse;
 import com.example.backendservice.features.notification.dto.UpdateNotificationRequest;
 import com.example.backendservice.features.notification.entity.Notification;
+import com.example.backendservice.features.notification.entity.NotificationPriority;
+import com.example.backendservice.features.notification.entity.NotificationTargetAudience;
+import com.example.backendservice.features.notification.entity.NotificationType;
 import com.example.backendservice.features.notification.repository.NotificationRepository;
 import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.UserRepository;
@@ -40,9 +43,9 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = Notification.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
-                .type(request.getType() != null ? request.getType() : "General")
-                .targetAudience(request.getTargetAudience() != null ? request.getTargetAudience() : "All")
-                .priority(request.getPriority() != null ? request.getPriority() : "Normal")
+                .type(request.getType() != null ? request.getType() : NotificationType.General)
+                .targetAudience(request.getTargetAudience() != null ? request.getTargetAudience() : NotificationTargetAudience.All)
+                .priority(request.getPriority() != null ? request.getPriority() : NotificationPriority.Normal)
                 .isActive(true)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
@@ -54,13 +57,15 @@ public class NotificationServiceImpl implements NotificationService {
 
         // Broadcast via SSE
         NotificationResponse response = toResponse(notification);
-        sseService.sendEvent(SseEventData.notification(response, notification.getTargetAudience()));
+        sseService.sendEvent(SseEventData.notification(response, notification.getTargetAudience().name()));
 
         return response;
     }
 
     @Override
-    public Page<NotificationResponse> getAllNotifications(String type, String targetAudience, Boolean isActive,
+    public Page<NotificationResponse> getAllNotifications(NotificationType type,
+            NotificationTargetAudience targetAudience,
+            Boolean isActive,
             Pageable pageable) {
         Specification<Notification> spec = buildFilterSpec(type, targetAudience, isActive);
         return notificationRepository.findAll(spec, pageable).map(this::toResponse);
@@ -117,8 +122,10 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public Page<NotificationResponse> getActiveNotificationsForUser(String userRole, Pageable pageable) {
-        return notificationRepository.findActiveForRole(userRole, LocalDateTime.now(), pageable)
+    public Page<NotificationResponse> getActiveNotificationsForUser(NotificationTargetAudience userRole,
+            Pageable pageable) {
+        return notificationRepository.findActiveForRole(userRole, NotificationTargetAudience.All, LocalDateTime.now(),
+                        pageable)
                 .map(this::toResponse);
     }
 
@@ -134,13 +141,14 @@ public class NotificationServiceImpl implements NotificationService {
                 .orElseThrow(() -> new IllegalArgumentException("Notification not found: " + id));
     }
 
-    private Specification<Notification> buildFilterSpec(String type, String targetAudience, Boolean isActive) {
+    private Specification<Notification> buildFilterSpec(NotificationType type, NotificationTargetAudience targetAudience,
+            Boolean isActive) {
         return (root, query, cb) -> {
             var predicates = new ArrayList<Predicate>();
-            if (type != null && !type.isBlank()) {
+            if (type != null) {
                 predicates.add(cb.equal(root.get("type"), type));
             }
-            if (targetAudience != null && !targetAudience.isBlank()) {
+            if (targetAudience != null) {
                 predicates.add(cb.equal(root.get("targetAudience"), targetAudience));
             }
             if (isActive != null) {

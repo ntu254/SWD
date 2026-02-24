@@ -1,5 +1,8 @@
 package com.example.backendservice.features.complaint.dto;
 
+import com.example.backendservice.features.complaint.entity.ComplaintCategory;
+import com.example.backendservice.features.complaint.entity.ComplaintPriority;
+import com.example.backendservice.features.complaint.entity.ComplaintStatus;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -15,9 +18,9 @@ public class ComplaintResponse {
     private String createdByUserName;
     private String title;
     private String content;
-    private String category;
-    private String priority;
-    private String status;
+    private ComplaintCategory category;
+    private ComplaintPriority priority;
+    private ComplaintStatus status;
     private String adminResponse;
     private UUID reportId;
     private UUID visitId;

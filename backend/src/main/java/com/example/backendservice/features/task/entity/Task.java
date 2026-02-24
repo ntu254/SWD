@@ -69,17 +69,10 @@ public class Task {
     @Builder.Default
     private String priority = "NORMAL"; // LOW, NORMAL, HIGH, URGENT
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 30)
     @Builder.Default
-    private String status = "PENDING";
-    // PENDING, PENDING_ENTERPRISE_APPROVAL, ASSIGNED, IN_PROGRESS, COMPLETED,
-    // CANCELLED, REJECTED
-
-    /**
-     * Lý do từ chối (khi Enterprise từ chối task)
-     */
-    @Column(name = "rejection_reason", length = 500)
-    private String rejectionReason;
+    private TaskStatus status = TaskStatus.PENDING; // PENDING, ASSIGNED, IN_PROGRESS, COLLECTED, FAILED, CANCELLED
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

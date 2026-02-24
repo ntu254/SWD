@@ -1,5 +1,6 @@
 package com.example.backendservice.features.user.service;
 
+import com.example.backendservice.common.exception.BadRequestException;
 import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.features.user.dto.admin.*;
 import com.example.backendservice.features.user.entity.AccountStatus;
@@ -36,7 +37,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 
         // Check if email already exists
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email already exists: " + request.getEmail());
+            throw new BadRequestException("Email already exists: " + request.getEmail());
         }
 
         User user = User.builder()
@@ -45,7 +46,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
-                .role(RoleType.valueOf(request.getRole()))
+                .role(parseRole(request.getRole()))
                 .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
@@ -139,7 +140,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             // Check if new email already exists
             if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-                throw new IllegalArgumentException("Email already exists: " + request.getEmail());
+                throw new BadRequestException("Email already exists: " + request.getEmail());
             }
             user.setEmail(request.getEmail());
         }
@@ -161,7 +162,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         User user = userRepository.findByUserId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
 
-        user.setRole(RoleType.valueOf(request.getRole()));
+        user.setRole(parseRole(request.getRole()));
         user = userRepository.save(user);
 
         log.info("User role updated: {}", id);
@@ -176,7 +177,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         User user = userRepository.findByUserId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
 
-        user.setAccountStatus(AccountStatus.valueOf(request.getAccountStatus()));
+        user.setAccountStatus(parseAccountStatus(request.getAccountStatus()));
         user = userRepository.save(user);
 
         log.info("User status updated: {}", id);
@@ -233,5 +234,21 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .deleteScheduledAt(null) // Not in current entity
                 .banReason(null) // Not in current entity
                 .build();
+    }
+
+    private RoleType parseRole(String roleValue) {
+        try {
+            return RoleType.valueOf(roleValue.trim().toUpperCase());
+        } catch (Exception ex) {
+            throw new BadRequestException("Invalid role: " + roleValue);
+        }
+    }
+
+    private AccountStatus parseAccountStatus(String statusValue) {
+        try {
+            return AccountStatus.valueOf(statusValue.trim().toUpperCase());
+        } catch (Exception ex) {
+            throw new BadRequestException("Invalid account status: " + statusValue);
+        }
     }
 }

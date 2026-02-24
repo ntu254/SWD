@@ -49,17 +49,20 @@ public class Complaint {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 30)
     @Builder.Default
-    private String category = "OTHER"; // BUG, FEATURE, POINTS_ERROR, OTHER
+    private ComplaintCategory category = ComplaintCategory.OTHER; // BUG, FEATURE, POINTS_ERROR, OTHER
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
     @Builder.Default
-    private String priority = "Normal"; // Low, Normal, High, Urgent
+    private ComplaintPriority priority = ComplaintPriority.Normal; // Low, Normal, High, Urgent
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 30)
     @Builder.Default
-    private String status = "Pending"; // Pending, In_Progress, Resolved, Rejected
+    private ComplaintStatus status = ComplaintStatus.Pending; // Pending, In_Progress, Resolved, Rejected
 
     @Column(name = "admin_response", columnDefinition = "TEXT")
     private String adminResponse;

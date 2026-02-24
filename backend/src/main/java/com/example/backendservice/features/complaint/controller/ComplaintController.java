@@ -3,6 +3,9 @@ package com.example.backendservice.features.complaint.controller;
 import com.example.backendservice.common.dto.ApiResponse;
 import com.example.backendservice.common.dto.PageResponse;
 import com.example.backendservice.features.complaint.dto.*;
+import com.example.backendservice.features.complaint.entity.ComplaintCategory;
+import com.example.backendservice.features.complaint.entity.ComplaintPriority;
+import com.example.backendservice.features.complaint.entity.ComplaintStatus;
 import com.example.backendservice.features.complaint.service.ComplaintService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -71,9 +74,9 @@ public class ComplaintController {
     @Operation(summary = "Get all complaints with filters", description = "Admin retrieves paginated complaints with optional filters")
     @GetMapping("/admin")
     public ResponseEntity<ApiResponse<PageResponse<ComplaintResponse>>> getAllComplaints(
-            @Parameter(description = "Filter by status") @RequestParam(required = false) String status,
-            @Parameter(description = "Filter by category") @RequestParam(required = false) String category,
-            @Parameter(description = "Filter by priority") @RequestParam(required = false) String priority,
+            @Parameter(description = "Filter by status") @RequestParam(required = false) ComplaintStatus status,
+            @Parameter(description = "Filter by category") @RequestParam(required = false) ComplaintCategory category,
+            @Parameter(description = "Filter by priority") @RequestParam(required = false) ComplaintPriority priority,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
