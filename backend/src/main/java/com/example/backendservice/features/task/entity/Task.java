@@ -82,6 +82,9 @@ public class Task {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "rejection_reason", length = 500)
+    private String rejectionReason;
+
     // Helper methods
     public UUID getEnterpriseUserId() {
         return enterpriseUser != null ? enterpriseUser.getUserId() : null;

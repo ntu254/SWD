@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -13,15 +12,14 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RewardRuleResponse {
-    private UUID ruleId;
-    private UUID wasteTypeId;
-    private String wasteTypeName;
-    private String sortingLevel;
-    private Integer pointsFixed;
-    private Double pointsPerKg;
+public class RewardItemResponse {
+    private UUID itemId;
+    private String name;
+    private String description;
+    private Integer pointsCost;
+    private Integer stock;
+    private String imageUrl;
     private Boolean isActive;
-    private LocalDate effectiveFrom;
-    private LocalDate effectiveTo;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

@@ -18,6 +18,9 @@ public interface VisitWasteItemRepository extends JpaRepository<VisitWasteItem, 
     @Query("SELECT vwi FROM VisitWasteItem vwi WHERE vwi.visit.visitId = :visitId")
     List<VisitWasteItem> findByVisitId(@Param("visitId") UUID visitId);
 
+    @Query("SELECT vwi FROM VisitWasteItem vwi WHERE vwi.visit.task.taskId = :taskId")
+    List<VisitWasteItem> findByTaskId(@Param("taskId") UUID taskId);
+
     @Query("SELECT vwi FROM VisitWasteItem vwi WHERE vwi.wasteType.wasteTypeId = :wasteTypeId")
     List<VisitWasteItem> findByWasteTypeId(@Param("wasteTypeId") UUID wasteTypeId);
 

@@ -5,6 +5,8 @@ import com.example.backendservice.features.reward.dto.CreateRewardRuleRequest;
 import com.example.backendservice.features.reward.dto.RewardRuleResponse;
 import com.example.backendservice.features.reward.entity.CitizenRewardRule;
 import com.example.backendservice.features.reward.repository.CitizenRewardRuleRepository;
+import com.example.backendservice.features.waste.entity.WasteType;
+import com.example.backendservice.features.waste.repository.WasteTypeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 
 /**
  * Implementation of RewardRuleService
+ * Quản lý quy tắc tính điểm thưởng cho Citizen theo loại rác
  */
 @Service
 @RequiredArgsConstructor
@@ -24,23 +27,30 @@ import java.util.stream.Collectors;
 public class RewardRuleServiceImpl implements RewardRuleService {
 
     private final CitizenRewardRuleRepository ruleRepository;
+    private final WasteTypeRepository wasteTypeRepository;
 
     @Override
     @Transactional
     public RewardRuleResponse createRule(CreateRewardRuleRequest request) {
-        log.info("Creating reward rule with sorting level: {}", request.getSortingLevel());
+        log.info("Creating reward rule for waste type: {}", request.getWasteTypeId());
+
+        // Lookup WasteType từ DB
+        WasteType wasteType = wasteTypeRepository.findByWasteTypeId(request.getWasteTypeId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Waste type not found: " + request.getWasteTypeId()));
 
         CitizenRewardRule rule = CitizenRewardRule.builder()
+                .wasteType(wasteType)
                 .sortingLevel(request.getSortingLevel())
                 .pointsFixed(request.getPointsFixed() != null ? request.getPointsFixed().doubleValue() : null)
-                .pointsPerKg(request.getMultiplier())
+                .pointsPerKg(request.getPointsPerKg())
                 .effectiveFrom(request.getEffectiveFrom())
                 .effectiveTo(request.getEffectiveTo())
                 .isActive(true)
                 .build();
 
         rule = ruleRepository.save(rule);
-        log.info("Reward rule created: {}", rule.getRuleId());
+        log.info("Reward rule created: {} for waste type: {}", rule.getRuleId(), wasteType.getName());
 
         return toResponse(rule);
     }
@@ -83,14 +93,21 @@ public class RewardRuleServiceImpl implements RewardRuleService {
         CitizenRewardRule rule = ruleRepository.findByRuleId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reward rule not found: " + id));
 
+        // Update WasteType nếu có
+        if (request.getWasteTypeId() != null) {
+            WasteType wasteType = wasteTypeRepository.findByWasteTypeId(request.getWasteTypeId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Waste type not found: " + request.getWasteTypeId()));
+            rule.setWasteType(wasteType);
+        }
         if (request.getSortingLevel() != null) {
             rule.setSortingLevel(request.getSortingLevel());
         }
         if (request.getPointsFixed() != null) {
             rule.setPointsFixed(request.getPointsFixed().doubleValue());
         }
-        if (request.getMultiplier() != null) {
-            rule.setPointsPerKg(request.getMultiplier());
+        if (request.getPointsPerKg() != null) {
+            rule.setPointsPerKg(request.getPointsPerKg());
         }
         if (request.getEffectiveFrom() != null) {
             rule.setEffectiveFrom(request.getEffectiveFrom());
@@ -109,10 +126,8 @@ public class RewardRuleServiceImpl implements RewardRuleService {
     @Transactional
     public void activateRule(UUID id) {
         log.info("Activating reward rule: {}", id);
-
         CitizenRewardRule rule = ruleRepository.findByRuleId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reward rule not found: " + id));
-
         rule.setIsActive(true);
         ruleRepository.save(rule);
     }
@@ -121,10 +136,8 @@ public class RewardRuleServiceImpl implements RewardRuleService {
     @Transactional
     public void deactivateRule(UUID id) {
         log.info("Deactivating reward rule: {}", id);
-
         CitizenRewardRule rule = ruleRepository.findByRuleId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reward rule not found: " + id));
-
         rule.setIsActive(false);
         ruleRepository.save(rule);
     }
@@ -133,10 +146,8 @@ public class RewardRuleServiceImpl implements RewardRuleService {
     @Transactional
     public void deleteRule(UUID id) {
         log.info("Deleting reward rule: {}", id);
-
         CitizenRewardRule rule = ruleRepository.findByRuleId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reward rule not found: " + id));
-
         ruleRepository.delete(rule);
     }
 
@@ -150,7 +161,7 @@ public class RewardRuleServiceImpl implements RewardRuleService {
             return 0;
         }
 
-        // Use the first effective rule
+        // Lấy rule đầu tiên đang có hiệu lực
         CitizenRewardRule rule = rules.stream()
                 .filter(r -> r.isEffective(LocalDate.now()))
                 .findFirst()
@@ -163,12 +174,15 @@ public class RewardRuleServiceImpl implements RewardRuleService {
     private RewardRuleResponse toResponse(CitizenRewardRule rule) {
         return RewardRuleResponse.builder()
                 .ruleId(rule.getRuleId())
+                .wasteTypeId(rule.getWasteType() != null ? rule.getWasteType().getWasteTypeId() : null)
+                .wasteTypeName(rule.getWasteType() != null ? rule.getWasteType().getName() : null)
                 .sortingLevel(rule.getSortingLevel())
                 .pointsFixed(rule.getPointsFixed() != null ? rule.getPointsFixed().intValue() : null)
-                .multiplier(rule.getPointsPerKg())
+                .pointsPerKg(rule.getPointsPerKg())
+                .isActive(rule.getIsActive())
                 .effectiveFrom(rule.getEffectiveFrom())
                 .effectiveTo(rule.getEffectiveTo())
-                .createdAt(null) // Not tracked in entity
+                .createdAt(null)
                 .build();
     }
 }

@@ -12,6 +12,10 @@ import com.example.backendservice.features.task.repository.TaskAssignmentReposit
 import com.example.backendservice.features.task.repository.TaskRepository;
 import com.example.backendservice.features.user.entity.RoleType;
 import com.example.backendservice.features.user.entity.User;
+import com.example.backendservice.features.collection.entity.VisitWasteItem;
+import com.example.backendservice.features.collection.repository.VisitWasteItemRepository;
+import com.example.backendservice.features.reward.service.RewardRuleService;
+import com.example.backendservice.features.reward.service.RewardService;
 import com.example.backendservice.features.user.repository.UserRepository;
 import com.example.backendservice.features.waste.entity.WasteReport;
 import com.example.backendservice.features.waste.repository.WasteReportRepository;
@@ -39,6 +43,9 @@ public class TaskServiceImpl implements TaskService {
     private final WasteReportRepository wasteReportRepository;
     private final ServiceAreaRepository serviceAreaRepository;
     private final UserRepository userRepository;
+    private final VisitWasteItemRepository visitWasteItemRepository;
+    private final RewardService rewardService;
+    private final RewardRuleService rewardRuleService;
 
     @Override
     @Transactional
@@ -244,6 +251,23 @@ public class TaskServiceImpl implements TaskService {
         if (report != null) {
             report.setStatus("COMPLETED");
             wasteReportRepository.save(report);
+
+            // Tự động cộng điểm cho Citizen dựa trên khối lượng rác thu gom
+            UUID citizenId = report.getReporterUserId();
+            if (citizenId != null) {
+                List<VisitWasteItem> items = visitWasteItemRepository.findByTaskId(task.getTaskId());
+                for (VisitWasteItem item : items) {
+                    if (item.getWeightKg() != null && item.getWeightKg() > 0) {
+                        Integer points = rewardRuleService.calculatePoints(
+                                item.getWasteTypeId(), item.getWeightKg());
+                        if (points != null && points > 0) {
+                            String description = "Thu gom "
+                                    + (item.getWasteType() != null ? item.getWasteType().getName() : "rác");
+                            rewardService.earnPoints(citizenId, points, description, task.getTaskId());
+                        }
+                    }
+                }
+            }
         }
 
         log.info("Assignment {} completed by collector {}", assignmentId, assignment.getCollectorUserId());
@@ -296,7 +320,8 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public Page<TaskResponse> getPendingApprovalTasksByEnterprise(UUID enterpriseId, Pageable pageable) {
         log.debug("Getting pending approval tasks for enterprise: {}", enterpriseId);
-        List<Task> tasks = taskRepository.findByEnterpriseUserIdAndStatus(enterpriseId, "PENDING_ENTERPRISE_APPROVAL");
+        List<Task> tasks = taskRepository.findByEnterpriseUserIdAndStatus(enterpriseId,
+                TaskStatus.PENDING_ENTERPRISE_APPROVAL);
         List<TaskResponse> responses = tasks.stream()
                 .map(this::toTaskResponse)
                 .collect(Collectors.toList());
@@ -321,11 +346,11 @@ public class TaskServiceImpl implements TaskService {
         }
 
         // Verify task is in correct status
-        if (!"PENDING_ENTERPRISE_APPROVAL".equals(task.getStatus()) && !"PENDING".equals(task.getStatus())) {
+        if (task.getStatus() != TaskStatus.PENDING_ENTERPRISE_APPROVAL && task.getStatus() != TaskStatus.PENDING) {
             throw new IllegalStateException("Task is not pending approval. Current status: " + task.getStatus());
         }
 
-        task.setStatus("PENDING"); // Move to pending for assignment to collector
+        task.setStatus(TaskStatus.PENDING); // Move to pending for assignment to collector
         task = taskRepository.save(task);
 
         log.info("Enterprise {} accepted task {}", enterpriseUserId, taskId);
@@ -346,11 +371,11 @@ public class TaskServiceImpl implements TaskService {
         }
 
         // Verify task is in correct status
-        if (!"PENDING_ENTERPRISE_APPROVAL".equals(task.getStatus()) && !"PENDING".equals(task.getStatus())) {
+        if (task.getStatus() != TaskStatus.PENDING_ENTERPRISE_APPROVAL && task.getStatus() != TaskStatus.PENDING) {
             throw new IllegalStateException("Task is not pending approval. Current status: " + task.getStatus());
         }
 
-        task.setStatus("REJECTED");
+        task.setStatus(TaskStatus.REJECTED);
         task.setRejectionReason(reason);
         task = taskRepository.save(task);
 

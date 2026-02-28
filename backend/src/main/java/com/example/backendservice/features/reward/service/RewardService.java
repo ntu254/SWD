@@ -4,9 +4,12 @@ import com.example.backendservice.features.reward.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 import java.util.UUID;
 
+/**
+ * Service cho giao dịch điểm thưởng (Transactions & Points)
+ * Quản lý việc cộng/trừ điểm và truy vấn số dư
+ */
 public interface RewardService {
 
     // Transactions
@@ -22,23 +25,6 @@ public interface RewardService {
 
     Page<RewardTransactionResponse> getAllTransactions(Pageable pageable);
 
+    // Points
     Integer getCitizenPoints(UUID citizenUserId);
-
-    // Rules
-    RewardRuleResponse createRewardRule(CreateRewardRuleRequest request);
-
-    RewardRuleResponse getRewardRuleById(UUID ruleId);
-
-    List<RewardRuleResponse> getActiveRewardRules();
-
-    RewardRuleResponse getRewardRuleBySortingLevel(String sortingLevel);
-
-    Page<RewardRuleResponse> getAllRewardRules(Pageable pageable);
-
-    RewardRuleResponse updateRewardRule(UUID ruleId, CreateRewardRuleRequest request);
-
-    void deleteRewardRule(UUID ruleId);
-
-    // Calculate points
-    Integer calculatePoints(String sortingLevel, Double quantityKg, Double basePointsPerKg);
 }

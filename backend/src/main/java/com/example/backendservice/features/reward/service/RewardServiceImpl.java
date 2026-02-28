@@ -2,14 +2,10 @@ package com.example.backendservice.features.reward.service;
 
 import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.features.reward.dto.*;
-import com.example.backendservice.features.reward.entity.CitizenRewardRule;
 import com.example.backendservice.features.reward.entity.RewardTransaction;
-import com.example.backendservice.features.reward.repository.CitizenRewardRuleRepository;
 import com.example.backendservice.features.reward.repository.RewardTransactionRepository;
 import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.UserRepository;
-import com.example.backendservice.features.waste.entity.WasteType;
-import com.example.backendservice.features.waste.repository.WasteTypeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -18,20 +14,21 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of RewardService
+ * Quản lý giao dịch điểm thưởng và số dư điểm
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class RewardServiceImpl implements RewardService {
 
     private final RewardTransactionRepository transactionRepository;
-    private final CitizenRewardRuleRepository rewardRuleRepository;
     private final UserRepository userRepository;
-    private final WasteTypeRepository wasteTypeRepository;
 
     @Override
     @Transactional
@@ -74,6 +71,13 @@ public class RewardServiceImpl implements RewardService {
     @Override
     @Transactional
     public RewardTransactionResponse redeemPoints(UUID citizenUserId, Integer points, String description) {
+        // Kiểm tra citizen có đủ điểm không
+        Integer currentPoints = getCitizenPoints(citizenUserId);
+        if (currentPoints < points) {
+            throw new IllegalStateException(
+                    "Insufficient points. Current: " + currentPoints + ", Required: " + points);
+        }
+
         CreateRewardTransactionRequest request = CreateRewardTransactionRequest.builder()
                 .citizenUserId(citizenUserId)
                 .transactionType("REDEEM")
@@ -100,6 +104,10 @@ public class RewardServiceImpl implements RewardService {
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), responses.size());
 
+        if (start > responses.size()) {
+            return new PageImpl<>(List.of(), pageable, responses.size());
+        }
+
         return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
     }
 
@@ -114,95 +122,6 @@ public class RewardServiceImpl implements RewardService {
         return totalPoints != null ? totalPoints.intValue() : 0;
     }
 
-    // Reward Rules
-    @Override
-    @Transactional
-    public RewardRuleResponse createRewardRule(CreateRewardRuleRequest request) {
-        // Get default waste type (first active one)
-        WasteType wasteType = wasteTypeRepository.findAll().stream().findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("No waste type found"));
-
-        CitizenRewardRule rule = CitizenRewardRule.builder()
-                .wasteType(wasteType)
-                .sortingLevel(request.getSortingLevel())
-                .pointsFixed(request.getPointsFixed() != null ? request.getPointsFixed().doubleValue() : null)
-                .pointsPerKg(request.getMultiplier())
-                .effectiveFrom(request.getEffectiveFrom())
-                .effectiveTo(request.getEffectiveTo())
-                .isActive(true)
-                .build();
-
-        rule = rewardRuleRepository.save(rule);
-        log.info("Created reward rule for sorting level: {}", request.getSortingLevel());
-
-        return toRuleResponse(rule);
-    }
-
-    @Override
-    public RewardRuleResponse getRewardRuleById(UUID ruleId) {
-        CitizenRewardRule rule = rewardRuleRepository.findByRuleId(ruleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reward rule not found: " + ruleId));
-        return toRuleResponse(rule);
-    }
-
-    @Override
-    public List<RewardRuleResponse> getActiveRewardRules() {
-        LocalDate today = LocalDate.now();
-        return rewardRuleRepository.findEffectiveRules(today).stream()
-                .map(this::toRuleResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public RewardRuleResponse getRewardRuleBySortingLevel(String sortingLevel) {
-        // Find first active rule with sorting level
-        return rewardRuleRepository.findAllActive().stream()
-                .filter(r -> sortingLevel.equals(r.getSortingLevel()))
-                .findFirst()
-                .map(this::toRuleResponse)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Active reward rule not found for sorting level: " + sortingLevel));
-    }
-
-    @Override
-    public Page<RewardRuleResponse> getAllRewardRules(Pageable pageable) {
-        return rewardRuleRepository.findAll(pageable).map(this::toRuleResponse);
-    }
-
-    @Override
-    @Transactional
-    public RewardRuleResponse updateRewardRule(UUID ruleId, CreateRewardRuleRequest request) {
-        CitizenRewardRule rule = rewardRuleRepository.findByRuleId(ruleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reward rule not found: " + ruleId));
-
-        rule.setSortingLevel(request.getSortingLevel());
-        rule.setPointsFixed(request.getPointsFixed() != null ? request.getPointsFixed().doubleValue() : null);
-        rule.setPointsPerKg(request.getMultiplier());
-        rule.setEffectiveFrom(request.getEffectiveFrom());
-        rule.setEffectiveTo(request.getEffectiveTo());
-
-        rule = rewardRuleRepository.save(rule);
-        log.info("Updated reward rule: {}", ruleId);
-
-        return toRuleResponse(rule);
-    }
-
-    @Override
-    @Transactional
-    public void deleteRewardRule(UUID ruleId) {
-        CitizenRewardRule rule = rewardRuleRepository.findByRuleId(ruleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reward rule not found: " + ruleId));
-        rewardRuleRepository.delete(rule);
-        log.info("Deleted reward rule: {}", ruleId);
-    }
-
-    @Override
-    public Integer calculatePoints(String sortingLevel, Double quantityKg, Double basePointsPerKg) {
-        int basePoints = (int) (quantityKg * basePointsPerKg);
-        return basePoints;
-    }
-
-    // Mapping methods
     private RewardTransactionResponse toTransactionResponse(RewardTransaction transaction) {
         User citizen = transaction.getCitizenUser();
         return RewardTransactionResponse.builder()
@@ -214,18 +133,6 @@ public class RewardServiceImpl implements RewardService {
                 .description(transaction.getReasonCode())
                 .referenceId(null)
                 .createdAt(transaction.getCreatedAt())
-                .build();
-    }
-
-    private RewardRuleResponse toRuleResponse(CitizenRewardRule rule) {
-        return RewardRuleResponse.builder()
-                .ruleId(rule.getRuleId())
-                .sortingLevel(rule.getSortingLevel())
-                .pointsFixed(rule.getPointsFixed() != null ? rule.getPointsFixed().intValue() : null)
-                .multiplier(rule.getPointsPerKg())
-                .effectiveFrom(rule.getEffectiveFrom())
-                .effectiveTo(rule.getEffectiveTo())
-                .createdAt(null)
                 .build();
     }
 }
