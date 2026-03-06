@@ -32,6 +32,8 @@ public class CollectorKpiService {
     private final VisitWasteItemRepository wasteItemRepository;
     private final UserRepository userRepository;
     private final ServiceAreaRepository serviceAreaRepository;
+    private final com.example.backendservice.features.reward.service.RewardService rewardService;
+    private final com.example.backendservice.features.settings.service.SystemSettingService systemSettingService;
 
     /**
      * Update KPI for a collector after a visit
@@ -129,6 +131,13 @@ public class CollectorKpiService {
         for (CollectorKpiDaily kpi : pendingKpis) {
             if (kpi.isKpiMet()) {
                 kpi.setStatus(CollectorKpiStatus.MET);
+                // Award bonus points for meeting KPI
+                int bonusPoints = Integer.parseInt(systemSettingService.getSettingValue("COLLECTOR_BONUS_POINTS", "100"));
+                rewardService.earnPoints(
+                        kpi.getCollectorUserId(),
+                        bonusPoints,
+                        "COLLECTOR_KPI_BONUS",
+                        kpi.getKpiId());
             } else {
                 kpi.setStatus(CollectorKpiStatus.NOT_MET);
             }

@@ -26,13 +26,24 @@ import { GlassCard } from '../../../shared/ui/GlassCard';
 import { Button } from '../../../shared/ui/Button';
 import { FormInput } from '../../../shared/ui/FormInput';
 import { citizenService } from '../../../features/citizen/citizenService';
+import { analyzeImage } from '../../../shared/services/geminiService';
+import { WASTE_TYPE_CONFIG } from '../../../shared/constants/ai';
+import { WasteType } from '../../../shared/types/ai';
 
-const WASTE_TYPES = [
-    { id: 'ORGANIC', label: 'Hữu cơ', color: '#16a34a', emoji: '🌿' },
-    { id: 'RECYCLABLE', label: 'Tái chế', color: '#2563eb', emoji: '♻️' },
-    { id: 'HAZARDOUS', label: 'Nguy hại', color: '#dc2626', emoji: '⚠️' },
-    { id: 'GENERAL', label: 'Rác thường', color: '#9333ea', emoji: '🗑️' },
-];
+// Local fallback colors for waste types if needed
+const TYPE_COLORS: Record<string, string> = {
+    'ORGANIC': '#16a34a',
+    'RECYCLABLE': '#2563eb',
+    'HAZARDOUS': '#dc2626',
+    'GENERAL': '#9333ea'
+};
+
+const TYPE_EMOJIS: Record<string, string> = {
+    'ORGANIC': '🌿',
+    'RECYCLABLE': '♻️',
+    'HAZARDOUS': '⚠️',
+    'GENERAL': '🗑️'
+};
 
 export default function ReportScreen() {
     const queryClient = useQueryClient();
@@ -43,10 +54,23 @@ export default function ReportScreen() {
     const [locationLoading, setLocationLoading] = useState(false);
     const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
     const [showAreas, setShowAreas] = useState(false);
+    const [aiSuggestion, setAiSuggestion] = useState<{
+        wasteTypeId: string;
+        wasteTypeName: string;
+        confidence: string;
+        explanation: string;
+        recyclingSteps?: string[];
+    } | null>(null);
+    const [aiLoading, setAiLoading] = useState(false);
 
     const { data: serviceAreas = [], isLoading: areaLoading } = useQuery({
         queryKey: ['active-service-areas'],
         queryFn: citizenService.getActiveServiceAreas,
+    });
+
+    const { data: wasteTypes = [], isLoading: typesLoading } = useQuery({
+        queryKey: ['active-waste-types'],
+        queryFn: citizenService.getActiveWasteTypes,
     });
 
     const selectedArea = useMemo(
@@ -77,23 +101,64 @@ export default function ReportScreen() {
         setLocation(null);
         setSelectedAreaId(null);
         setShowAreas(false);
+        setAiSuggestion(null);
     };
 
     const pickImage = async (source: 'camera' | 'library') => {
         let result;
+        const options: ImagePicker.ImagePickerOptions = {
+            quality: 0.75,
+            base64: true, // Enable base64 capture for AI
+        };
+
         if (source === 'camera') {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== 'granted') {
                 Alert.alert('Cần quyền camera', 'Vui lòng cấp quyền camera trong Cài đặt');
                 return;
             }
-            result = await ImagePicker.launchCameraAsync({ quality: 0.75 });
+            result = await ImagePicker.launchCameraAsync(options);
         } else {
-            result = await ImagePicker.launchImageLibraryAsync({ quality: 0.75 });
+            result = await ImagePicker.launchImageLibraryAsync(options);
         }
 
         if (!result.canceled) {
-            setImageUri(result.assets[0].uri);
+            const asset = result.assets[0];
+            setImageUri(asset.uri);
+
+            // Auto-classify using AI directly from Frontend
+            if (asset.base64) {
+                setAiLoading(true);
+                try {
+                    const suggestion = await analyzeImage(asset.base64);
+
+                    // Map AI waste type to Backend WasteType ID
+                    const matchedType = wasteTypes.find(t => {
+                        const name = t.name.toLowerCase();
+                        if (suggestion.wasteType === WasteType.ORGANIC && name.includes('hữu cơ')) return true;
+                        if (suggestion.wasteType === WasteType.RECYCLABLE && (name.includes('nhựa') || name.includes('tái chế'))) return true;
+                        if (suggestion.wasteType === WasteType.HAZARDOUS && name.includes('nguy hại')) return true;
+                        return false;
+                    });
+
+                    setAiSuggestion({
+                        wasteTypeId: matchedType?.wasteTypeId || '',
+                        wasteTypeName: suggestion.itemName,
+                        confidence: suggestion.confidence.toString(),
+                        explanation: suggestion.advice,
+                        recyclingSteps: suggestion.recyclingSteps
+                    });
+
+                    // Auto-select if confidence is high
+                    if (suggestion.confidence > 80 && matchedType) {
+                        setSelectedType(matchedType.wasteTypeId);
+                    }
+                } catch (err) {
+                    console.error("AI Classification failed", err);
+                } finally {
+                    setAiLoading(false);
+                }
+            }
         }
     };
 
@@ -128,15 +193,14 @@ export default function ReportScreen() {
             return;
         }
 
-        const noteText = `[${selectedType}] ${description || 'Báo cáo từ mobile app'}`;
-
         submitMutation.mutate({
             areaId: selectedAreaId,
             latitude: location.lat,
             longitude: location.lng,
             addressText: location.address,
-            noteText,
+            noteText: description || 'Báo cáo từ mobile app',
             photoUrl: imageUri ?? undefined,
+            wasteTypeId: selectedType,
         });
     };
 
@@ -186,6 +250,39 @@ export default function ReportScreen() {
                     )}
                 </GlassCard>
 
+                {aiLoading && (
+                    <View style={styles.aiLoadingContainer}>
+                        <ActivityIndicator color="#059669" size="small" />
+                        <Text style={styles.aiLoadingText}>AI đang phân tích ảnh...</Text>
+                    </View>
+                )}
+
+                {aiSuggestion && !aiLoading && (
+                    <GlassCard style={styles.aiSuggestionCard}>
+                        <View style={styles.aiHeader}>
+                            <RefreshCw size={14} color="#059669" />
+                            <Text style={styles.aiTitle}>AI Gợi ý: {aiSuggestion.wasteTypeName}</Text>
+                        </View>
+                        <Text style={styles.aiExplanation}>{aiSuggestion.explanation}</Text>
+
+                        {aiSuggestion.recyclingSteps && aiSuggestion.recyclingSteps.length > 0 && (
+                            <View style={styles.stepsContainer}>
+                                <Text style={styles.stepsTitle}>Các bước xử lý gợi ý:</Text>
+                                {aiSuggestion.recyclingSteps.map((step, idx) => (
+                                    <Text key={idx} style={styles.stepText}>• {step}</Text>
+                                ))}
+                            </View>
+                        )}
+
+                        <TouchableOpacity
+                            style={styles.aiApplyBtn}
+                            onPress={() => setSelectedType(aiSuggestion.wasteTypeId)}
+                        >
+                            <Text style={styles.aiApplyBtnText}>Áp dụng phân loại này</Text>
+                        </TouchableOpacity>
+                    </GlassCard>
+                )}
+
                 <Text style={styles.sectionLabel}>Khu vực *</Text>
                 <TouchableOpacity
                     style={styles.areaPicker}
@@ -226,27 +323,27 @@ export default function ReportScreen() {
 
                 <Text style={styles.sectionLabel}>Loại rác *</Text>
                 <View style={styles.typeGrid}>
-                    {WASTE_TYPES.map((wt) => (
+                    {wasteTypes.map((wt) => (
                         <TouchableOpacity
-                            key={wt.id}
+                            key={wt.wasteTypeId}
                             style={[
                                 styles.typeChip,
-                                selectedType === wt.id && {
-                                    borderColor: wt.color,
-                                    backgroundColor: `${wt.color}18`,
+                                selectedType === wt.wasteTypeId && {
+                                    borderColor: TYPE_COLORS[wt.name.toUpperCase()] ?? '#10b981',
+                                    backgroundColor: `${TYPE_COLORS[wt.name.toUpperCase()] ?? '#10b981'}18`,
                                 },
                             ]}
-                            onPress={() => setSelectedType(wt.id)}
+                            onPress={() => setSelectedType(wt.wasteTypeId)}
                             activeOpacity={0.75}
                         >
-                            <Text style={styles.typeEmoji}>{wt.emoji}</Text>
+                            <Text style={styles.typeEmoji}>{TYPE_EMOJIS[wt.name.toUpperCase()] ?? '📦'}</Text>
                             <Text
                                 style={[
                                     styles.typeLabel,
-                                    selectedType === wt.id && { color: wt.color, fontWeight: '700' },
+                                    selectedType === wt.wasteTypeId && { color: TYPE_COLORS[wt.name.toUpperCase()] ?? '#059669', fontWeight: '700' },
                                 ]}
                             >
-                                {wt.label}
+                                {wt.name}
                             </Text>
                         </TouchableOpacity>
                     ))}
@@ -364,5 +461,15 @@ const styles = StyleSheet.create({
     locationRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
     locationText: { flex: 1, fontSize: 14, color: '#1e293b', lineHeight: 20 },
     submitBtn: { marginTop: 8 },
+    aiLoadingContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 12, gap: 8 },
+    aiLoadingText: { color: '#64748b', fontSize: 13 },
+    aiSuggestionCard: { padding: 12, marginBottom: 12, backgroundColor: '#ecfdf5', borderColor: '#10b981' },
+    aiHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+    aiTitle: { fontSize: 14, fontWeight: '700', color: '#065f46' },
+    aiExplanation: { fontSize: 12, color: '#047857', marginBottom: 8 },
+    aiApplyBtn: { backgroundColor: '#ffffff', borderRadius: 8, paddingVertical: 6, alignItems: 'center', borderWidth: 1, borderColor: '#10b981' },
+    aiApplyBtnText: { color: '#059669', fontSize: 12, fontWeight: '600' },
+    stepsContainer: { marginVertical: 8, paddingLeft: 4, borderLeftWidth: 2, borderLeftColor: '#10b981' },
+    stepsTitle: { fontSize: 13, fontWeight: '700', color: '#065f46', marginBottom: 4 },
+    stepText: { fontSize: 12, color: '#047857', marginBottom: 2 },
 });
-

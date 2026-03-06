@@ -7,6 +7,7 @@ import {
     JobHistory,
     PerformanceSummary,
     WasteReport,
+    WasteType,
 } from '../../shared/types/domain';
 
 interface EnvelopePage<T> {
@@ -139,5 +140,9 @@ export const collectorService = {
     getWasteReportById: async (reportId: string): Promise<WasteReport> => {
         const { data } = await apiClient.get<WasteReport>(`/waste-reports/${reportId}`);
         return data;
+    },
+    getActiveWasteTypes: async (): Promise<WasteType[]> => {
+        const { data } = await apiClient.get<WasteType[]>('/waste-types/active');
+        return data ?? [];
     },
 };

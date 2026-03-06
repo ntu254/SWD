@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Home, Camera, Star, User } from 'lucide-react-native';
+import { Home, Camera, Star, User, MessageSquare } from 'lucide-react-native';
 
 export default function CitizenTabsLayout() {
     return (
@@ -35,6 +35,10 @@ export default function CitizenTabsLayout() {
             <Tabs.Screen
                 name="rewards"
                 options={{ title: 'Phần thưởng', tabBarIcon: ({ color }) => <Star size={22} color={color} /> }}
+            />
+            <Tabs.Screen
+                name="support"
+                options={{ title: 'Hỗ trợ AI', tabBarIcon: ({ color }) => <MessageSquare size={22} color={color} /> }}
             />
             <Tabs.Screen
                 name="profile"

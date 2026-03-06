@@ -144,4 +144,61 @@ public interface AnalyticsRepository extends JpaRepository<Task, UUID> {
             @Param("enterpriseId") UUID enterpriseId,
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime);
+
+    // ===================== GLOBAL ANALYTICS (ADMIN) =====================
+
+    @Query("SELECT COUNT(t) FROM Task t " +
+            "WHERE t.createdAt >= :startDateTime AND t.createdAt < :endDateTime")
+    Long countGlobalTotalTasks(
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.status = :status " +
+            "AND t.createdAt >= :startDateTime AND t.createdAt < :endDateTime")
+    Long countGlobalTasksByStatus(
+            @Param("status") String status,
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime);
+
+    @Query("SELECT COALESCE(SUM(vwi.weightKg), 0) FROM VisitWasteItem vwi " +
+            "JOIN vwi.visit cv " +
+            "WHERE cv.visitedAt >= :startDateTime AND cv.visitedAt < :endDateTime " +
+            "AND cv.visitStatus = 'VISITED'")
+    Double sumGlobalTotalWeightCollected(
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime);
+
+    @Query("SELECT COUNT(DISTINCT u.userId) FROM User u WHERE u.role = 'COLLECTOR' AND u.isActive = true")
+    Long countGlobalActiveCollectors();
+
+    @Query("SELECT COUNT(u.userId) FROM User u")
+    Long countGlobalTotalUsers();
+
+    @Query("SELECT COUNT(u.userId) FROM User u WHERE u.role = 'CITIZEN'")
+    Long countGlobalTotalCitizens();
+
+    @Query("SELECT COUNT(u.userId) FROM User u WHERE u.role = 'ENTERPRISE'")
+    Long countGlobalTotalEnterprises();
+
+    @Query("SELECT vwi.wasteType.wasteTypeId, vwi.wasteType.name, " +
+            "COUNT(DISTINCT cv.task.taskId), COALESCE(SUM(vwi.weightKg), 0) " +
+            "FROM VisitWasteItem vwi " +
+            "JOIN vwi.visit cv " +
+            "WHERE cv.visitedAt >= :startDateTime AND cv.visitedAt < :endDateTime " +
+            "AND cv.visitStatus = 'VISITED' " +
+            "GROUP BY vwi.wasteType.wasteTypeId, vwi.wasteType.name")
+    List<Object[]> getGlobalWasteTypeBreakdown(
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime);
+
+    @Query("SELECT t.area.areaId, t.area.name, " +
+            "COUNT(t.taskId), " +
+            "SUM(CASE WHEN t.status = 'COMPLETED' THEN 1 ELSE 0 END) " +
+            "FROM Task t " +
+            "WHERE t.createdAt >= :startDateTime AND t.createdAt < :endDateTime " +
+            "AND t.area IS NOT NULL " +
+            "GROUP BY t.area.areaId, t.area.name")
+    List<Object[]> getGlobalAreaBreakdown(
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime);
 }

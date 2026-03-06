@@ -206,15 +206,10 @@ export default function CollectorTasksScreen() {
             Alert.alert('Lỗi', err?.response?.data?.message ?? 'Không thể cập nhật trạng thái.'),
     });
 
-    // We need to fetch the system waste types to show them in the dropdown
-    const wasteTypes = [
-        { id: '11111111-1111-1111-1111-111111111111', label: 'Hữu cơ', color: '#16a34a' },
-        { id: '22222222-2222-2222-2222-222222222222', label: 'Tái chế', color: '#2563eb' },
-        { id: '33333333-3333-3333-3333-333333333333', label: 'Nguy hại', color: '#dc2626' },
-        { id: '44444444-4444-4444-4444-444444444444', label: 'Rác thường', color: '#9333ea' },
-    ];
-    // In reality, this should be fetched from the backend (e.g. GET /api/v1/waste-types), 
-    // but we can mock it here for the UI structure based on the known defaults or hardcode some IDs until fetched
+    const { data: wasteTypes = [], isLoading: typesLoading } = useQuery({
+        queryKey: ['active-waste-types'],
+        queryFn: collectorService.getActiveWasteTypes,
+    });
 
     const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
     const [weightKg, setWeightKg] = useState<string>('');
@@ -370,18 +365,18 @@ export default function CollectorTasksScreen() {
                         <View style={styles.typeGrid}>
                             {wasteTypes.map((type) => (
                                 <TouchableOpacity
-                                    key={type.id}
+                                    key={type.wasteTypeId}
                                     style={[
                                         styles.typeBtn,
-                                        wasteTypeId === type.id && styles.typeBtnSelected
+                                        wasteTypeId === type.wasteTypeId && styles.typeBtnSelected
                                     ]}
-                                    onPress={() => setWasteTypeId(type.id)}
+                                    onPress={() => setWasteTypeId(type.wasteTypeId)}
                                 >
                                     <Text style={[
                                         styles.typeBtnText,
-                                        wasteTypeId === type.id && styles.typeBtnTextSelected
+                                        wasteTypeId === type.wasteTypeId && styles.typeBtnTextSelected
                                     ]}>
-                                        {type.label}
+                                        {type.name}
                                     </Text>
                                 </TouchableOpacity>
                             ))}

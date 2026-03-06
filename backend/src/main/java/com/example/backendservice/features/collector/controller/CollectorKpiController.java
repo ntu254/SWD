@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -54,6 +55,7 @@ public class CollectorKpiController {
 
     @Operation(summary = "Set KPI targets", description = "Admin sets KPI targets (min weight, min visits) for a collector in a specific area and date")
     @PostMapping("/{collectorId}/kpi/targets")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENTERPRISE')")
     public ResponseEntity<ApiResponse<CollectorKpiDailyResponse>> setKpiTargets(
             @Parameter(description = "Collector user ID") @PathVariable UUID collectorId,
             @Parameter(description = "Service area ID") @RequestParam UUID areaId,
@@ -68,6 +70,7 @@ public class CollectorKpiController {
 
     @Operation(summary = "Get area KPI summary", description = "Admin views KPI data for all collectors in a specific area on a given date")
     @GetMapping("/kpi/area/{areaId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENTERPRISE')")
     public ResponseEntity<ApiResponse<List<CollectorKpiDailyResponse>>> getKpisByArea(
             @Parameter(description = "Service area ID") @PathVariable UUID areaId,
             @Parameter(description = "KPI date (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
@@ -78,6 +81,7 @@ public class CollectorKpiController {
 
     @Operation(summary = "Finalize daily KPIs", description = "Admin finalizes all pending KPIs for a specific date, marking them as MET or NOT_MET")
     @PostMapping("/kpi/finalize")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENTERPRISE')")
     public ResponseEntity<ApiResponse<Void>> finalizeKpis(
             @Parameter(description = "Date to finalize (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 

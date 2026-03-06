@@ -27,4 +27,5 @@ public class CreateWasteReportRequest {
 
     private String noteText;
     private String photoUrl;
+    private UUID wasteTypeId;
 }

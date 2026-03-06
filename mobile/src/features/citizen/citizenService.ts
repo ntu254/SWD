@@ -1,6 +1,6 @@
 import { apiClient } from '../../shared/utils/apiClient';
 import { ApiResponse, PageResponse } from '../../shared/types/api';
-import { CitizenProfile, ServiceArea, UserResponse, WasteReport } from '../../shared/types/domain';
+import { CitizenProfile, ServiceArea, UserResponse, WasteReport, WasteType } from '../../shared/types/domain';
 
 interface SpringPage<T> {
     content: T[];
@@ -29,6 +29,7 @@ export interface CreateWasteReportPayload {
     addressText?: string;
     noteText?: string;
     photoUrl?: string;
+    wasteTypeId?: string;
 }
 
 export interface UpdateCitizenProfilePayload {
@@ -69,6 +70,11 @@ export const citizenService = {
 
     getActiveServiceAreas: async (): Promise<ServiceArea[]> => {
         const { data } = await apiClient.get<ServiceArea[]>('/service-areas/active');
+        return data ?? [];
+    },
+
+    getActiveWasteTypes: async (): Promise<WasteType[]> => {
+        const { data } = await apiClient.get<WasteType[]>('/waste-types/active');
         return data ?? [];
     },
 

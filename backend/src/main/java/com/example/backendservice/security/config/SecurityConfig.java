@@ -63,7 +63,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/sse/stats").hasRole("ADMIN")
                         .requestMatchers("/api/v1/sse/test-broadcast").hasRole("ADMIN")
 
-                        // Collector endpoints
+                        // Collector & KPI endpoints
+                        .requestMatchers("/api/v1/collector/{collectorId}/kpi/daily", "/api/v1/collector/{collectorId}/kpi/history")
+                        .hasAnyRole("COLLECTOR", "ADMIN", "ENTERPRISE")
+                        .requestMatchers("/api/v1/collector/kpi/**").hasAnyRole("ADMIN", "ENTERPRISE")
+                        .requestMatchers("/api/v1/collector/{collectorId}/kpi/targets").hasAnyRole("ADMIN", "ENTERPRISE")
                         .requestMatchers("/api/v1/collector/**").hasRole("COLLECTOR")
 
                         .anyRequest().authenticated())

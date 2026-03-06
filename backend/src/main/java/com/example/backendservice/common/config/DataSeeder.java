@@ -1,5 +1,7 @@
 package com.example.backendservice.common.config;
 
+import com.example.backendservice.features.settings.entity.SystemSetting;
+import com.example.backendservice.features.settings.repository.SystemSettingRepository;
 import com.example.backendservice.features.complaint.entity.Complaint;
 import com.example.backendservice.features.complaint.entity.ComplaintCategory;
 import com.example.backendservice.features.complaint.entity.ComplaintPriority;
@@ -26,7 +28,16 @@ import com.example.backendservice.features.collector.entity.CollectorKpiStatus;
 import com.example.backendservice.features.collector.repository.CollectorKpiDailyRepository;
 import com.example.backendservice.features.location.entity.ServiceArea;
 import com.example.backendservice.features.location.repository.ServiceAreaRepository;
+import com.example.backendservice.features.waste.entity.WasteType;
+import com.example.backendservice.features.waste.repository.WasteTypeRepository;
+import com.example.backendservice.features.reward.entity.RewardRule;
+import com.example.backendservice.features.reward.repository.RewardRuleRepository;
+
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -35,9 +46,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import java.time.LocalDate;
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -56,6 +64,9 @@ public class DataSeeder {
     private final ServiceAreaRepository serviceAreaRepository;
     private final CollectionVisitRepository collectionVisitRepository;
     private final CollectorKpiDailyRepository collectorKpiDailyRepository;
+    private final WasteTypeRepository wasteTypeRepository;
+    private final CitizenRewardRuleRepository citizenRewardRuleRepository;
+    private final SystemSettingRepository systemSettingRepository;
     private final PasswordEncoder passwordEncoder;
     private final TransactionTemplate transactionTemplate;
 
@@ -68,14 +79,17 @@ public class DataSeeder {
             try {
                 if (userRepository.count() == 0) {
                     log.info("=== Seeding all sample data ===");
+                    seedRoles();
                     seedAdmin();
                     seedCitizens();
                     seedEnterprise();
                     seedCollectors();
-                    seedCollectors();
+                    seedWasteTypes();
+                    seedRewardRules();
                     seedServiceAreas();
                     seedTasksAndAssignments();
                     seedComplaints();
+                    seedSystemSettings();
                     log.info("=== Sample data seeded successfully! ===");
                 } else {
                     log.info("Data already exists. Checking for missing data...");
@@ -83,6 +97,7 @@ public class DataSeeder {
                     ensureEnterpriseExists();
                     seedServiceAreas();
                     ensureTasksExist();
+                    seedSystemSettings();
                     log.info("Data check complete.");
                 }
             } catch (Exception e) {
@@ -92,7 +107,9 @@ public class DataSeeder {
         });
     }
 
-    // ========== User Seeding ==========
+    private void seedRoles() {
+        // Roles are enums in current implementation
+    }
 
     private User seedAdmin() {
         User admin = User.builder()
@@ -176,9 +193,36 @@ public class DataSeeder {
         return user;
     }
 
-    // ========== Tasks & Assignments Seeding ==========
+    private void seedWasteTypes() {
+        if (wasteTypeRepository.count() == 0) {
+            wasteTypeRepository.save(WasteType.builder().name("Nhựa").description("Chai lọ nhựa, túi nilon").isRecyclable(true).build());
+            wasteTypeRepository.save(WasteType.builder().name("Giấy").description("Báo chí, bìa carton").isRecyclable(true).build());
+            wasteTypeRepository.save(WasteType.builder().name("Kim loại").description("Lon nước, sắt thép").isRecyclable(true).build());
+            wasteTypeRepository.save(WasteType.builder().name("Thủy tinh").description("Chai lọ thủy tinh").isRecyclable(true).build());
+            wasteTypeRepository.save(WasteType.builder().name("Hữu cơ").description("Thức ăn thừa, lá cây").isRecyclable(false).build());
+            wasteTypeRepository.save(WasteType.builder().name("Nguy hại").description("Pin, bóng đèn, hóa chất").isRecyclable(false).isActive(true).build());
+            wasteTypeRepository.flush();
+            log.info("Seeded waste types");
+        }
+    }
 
-    // ========== Service Areas Seeding ==========
+    private void seedRewardRules() {
+        if (citizenRewardRuleRepository.count() == 0) {
+            WasteType nhua = wasteTypeRepository.findByName("Nhựa").orElse(null);
+            WasteType huuCo = wasteTypeRepository.findByName("Hữu cơ").orElse(null);
+            
+            if (nhua != null) {
+                citizenRewardRuleRepository.save(CitizenRewardRule.builder()
+                    .wasteType(nhua).sortingLevel("GOOD").pointsPerKg(10.0).isActive(true).build());
+            }
+            if (huuCo != null) {
+                citizenRewardRuleRepository.save(CitizenRewardRule.builder()
+                    .wasteType(huuCo).sortingLevel("GOOD").pointsPerKg(5.0).isActive(true).build());
+            }
+            citizenRewardRuleRepository.flush();
+            log.info("Seeded reward rules");
+        }
+    }
 
     private void seedServiceAreas() {
         if (serviceAreaRepository.count() == 0) {
@@ -196,69 +240,26 @@ public class DataSeeder {
                         .build()));
     }
 
-    // ========== Tasks & Assignments Seeding ==========
-
     private void seedTasksAndAssignments() {
         User enterprise = userRepository.findByEmail("enterprise@example.com").orElse(null);
         User admin = userRepository.findByEmail("admin@example.com").orElse(null);
         User collector1 = userRepository.findByEmail("collector1@example.com").orElse(null);
-        User collector2 = userRepository.findByEmail("collector2@example.com").orElse(null);
-
         ServiceArea district1 = serviceAreaRepository.findByName("District 1").orElse(null);
-        ServiceArea district2 = serviceAreaRepository.findByName("District 2").orElse(null);
 
-        if (enterprise == null || admin == null || collector1 == null || district1 == null) {
-            log.warn("Required users or areas not found, skipping task seeding");
-            return;
-        }
-
-        // Task 1: ASSIGNED
-        createTaskWithAssignment(enterprise, admin, collector1, district1,
-                LocalDate.now(), "NORMAL", TaskStatus.ASSIGNED,
-                TaskAssignmentStatus.ASSIGNED, "Pickup at 123 Main Street - 5kg recyclables");
-
-        // Task 2: ASSIGNED -> High priority
-        createTaskWithAssignment(enterprise, admin, collector1, district2,
-                LocalDate.now(), "HIGH", TaskStatus.ASSIGNED,
-                TaskAssignmentStatus.ASSIGNED, "Pickup at 456 Oak Ave - Electronic waste");
-
-        // Task 3: IN_PROGRESS
-        createTaskWithAssignment(enterprise, admin, collector1, district1,
-                LocalDate.now().minusDays(1), "NORMAL", TaskStatus.IN_PROGRESS,
-                TaskAssignmentStatus.ON_THE_WAY, "Pickup at 789 Pine Road - Plastic bottles");
-
-        // Task 4: COMPLETED with VISIT & KPI
-        createTaskWithAssignment(enterprise, admin, collector1, district1,
-                LocalDate.now().minusDays(2), "NORMAL", TaskStatus.COLLECTED,
-                TaskAssignmentStatus.COLLECTED, "Pickup at 321 Elm Street - Paper waste");
-
-        // Task 5: CANCELLED
-        createTaskWithAssignment(enterprise, admin, collector1, district2,
-                LocalDate.now().minusDays(3), "LOW", TaskStatus.CANCELLED,
-                TaskAssignmentStatus.UNASSIGNED, "Cancelled by citizen request");
-
-        // Tasks for collector 2
-        if (collector2 != null) {
-            createTaskWithAssignment(enterprise, admin, collector2, district2,
+        if (enterprise != null && admin != null && collector1 != null && district1 != null) {
+            createTaskWithAssignment(enterprise, admin, collector1, district1,
                     LocalDate.now(), "NORMAL", TaskStatus.ASSIGNED,
-                    TaskAssignmentStatus.ASSIGNED, "Large pickup - Industrial area");
-
-            createTaskWithAssignment(enterprise, admin, collector2, district2,
-                    LocalDate.now().minusDays(1), "NORMAL", TaskStatus.COLLECTED,
-                    TaskAssignmentStatus.COLLECTED, "Completed - Restaurant waste");
+                    TaskAssignmentStatus.ASSIGNED, "Pickup at 123 Main Street");
         }
-
-        log.info("Created tasks, assignments, visits and KPIs for testing");
     }
 
     private void createTaskWithAssignment(User enterprise, User creator, User collector,
-            ServiceArea area,
-            LocalDate scheduledDate, String priority, TaskStatus taskStatus,
+            ServiceArea area, LocalDate scheduledDate, String priority, TaskStatus taskStatus,
             TaskAssignmentStatus assignmentStatus, String note) {
         Task task = Task.builder()
                 .enterpriseUser(enterprise)
                 .createdByUser(creator)
-                .area(area) // Set area
+                .area(area)
                 .scheduledDate(scheduledDate)
                 .priority(priority)
                 .status(taskStatus)
@@ -271,28 +272,7 @@ public class DataSeeder {
                 .status(assignmentStatus)
                 .collectorNote(note)
                 .build();
-
-        if (assignmentStatus == TaskAssignmentStatus.ON_THE_WAY
-                || assignmentStatus == TaskAssignmentStatus.COLLECTED) {
-            assignment.setAcceptedAt(scheduledDate.atStartOfDay().plusHours(8));
-        }
-
         taskAssignmentRepository.saveAndFlush(assignment);
-
-        // If COMPLETED, create CollectionVisit and update KPI
-        if (taskStatus == TaskStatus.COLLECTED) {
-            CollectionVisit visit = CollectionVisit.builder()
-                    .task(task)
-                    .collectorUser(collector)
-                    .visitedAt(scheduledDate.atStartOfDay().plusHours(10))
-                    .visitStatus("VISITED")
-                    .collectorNote("Completed successfully found recyclables")
-                    .build();
-            collectionVisitRepository.saveAndFlush(visit);
-
-            // Seed KPI
-            seedKpi(collector, area, scheduledDate, 10.0);
-        }
     }
 
     private void seedKpi(User collector, ServiceArea area, LocalDate date, Double weight) {
@@ -315,82 +295,27 @@ public class DataSeeder {
         collectorKpiDailyRepository.saveAndFlush(kpi);
     }
 
-    // ========== Complaints Seeding ==========
-
     private void seedComplaints() {
         User citizen1 = userRepository.findByEmail("john@example.com").orElse(null);
-        User citizen2 = userRepository.findByEmail("jane@example.com").orElse(null);
-        User citizen3 = userRepository.findByEmail("bob@example.com").orElse(null);
-
-        if (citizen1 == null || citizen2 == null || citizen3 == null) {
-            log.warn("Citizens not found, skipping complaint seeding");
-            return;
+        if (citizen1 != null) {
+            complaintRepository.saveAndFlush(Complaint.builder()
+                    .createdByUser(citizen1)
+                    .title("Points not credited")
+                    .content("I collected 5kg but no points.")
+                    .category(ComplaintCategory.POINTS_ERROR)
+                    .priority(ComplaintPriority.High)
+                    .status(ComplaintStatus.Pending)
+                    .build());
         }
-
-        complaintRepository.saveAndFlush(Complaint.builder()
-                .createdByUser(citizen1)
-                .title("Points not credited correctly")
-                .content("I collected 5kg of recyclables on January 15, but only received 2 points instead of 5. "
-                        + "Please check and correct my point balance.")
-                .category(ComplaintCategory.POINTS_ERROR)
-                .priority(ComplaintPriority.High)
-                .status(ComplaintStatus.Pending)
-                .build());
-
-        complaintRepository.saveAndFlush(Complaint.builder()
-                .createdByUser(citizen2)
-                .title("App crashes on report submission")
-                .content("The mobile app crashes every time I try to submit a new waste collection report. "
-                        + "This happens on both Android and iOS. App version 2.3.1.")
-                .category(ComplaintCategory.BUG)
-                .priority(ComplaintPriority.Urgent)
-                .status(ComplaintStatus.Pending)
-                .build());
-
-        complaintRepository.saveAndFlush(Complaint.builder()
-                .createdByUser(citizen1)
-                .title("Wrong collection schedule times")
-                .content("The collection schedule shows wrong times for my area. "
-                        + "It says 8:00 AM but collectors come at 6:00 AM.")
-                .category(ComplaintCategory.OTHER)
-                .priority(ComplaintPriority.Normal)
-                .status(ComplaintStatus.In_Progress)
-                .build());
-
-        complaintRepository.saveAndFlush(Complaint.builder()
-                .createdByUser(citizen3)
-                .title("Cannot redeem rewards")
-                .content("I have 500 points but cannot redeem any rewards. The button doesn't work.")
-                .category(ComplaintCategory.BUG)
-                .priority(ComplaintPriority.Normal)
-                .status(ComplaintStatus.Resolved)
-                .adminResponse("Fixed in app version 2.4.0. Please update your app.")
-                .build());
-
-        complaintRepository.saveAndFlush(Complaint.builder()
-                .createdByUser(citizen2)
-                .title("Request for extra points")
-                .content("I think I deserve more points for recycling. Please give me extra points.")
-                .category(ComplaintCategory.FEATURE)
-                .priority(ComplaintPriority.Low)
-                .status(ComplaintStatus.Rejected)
-                .adminResponse("Points are awarded based on the system rules. Your request does not qualify.")
-                .build());
-
-        log.info("Created 5 sample complaints");
     }
-
-    // ========== Ensure Missing Data Exists ==========
 
     private void ensureCollectorsExist() {
         ensureSingleCollectorExists("collector1@example.com", "Mike", "Collector");
         ensureSingleCollectorExists("collector2@example.com", "Sarah", "Driver");
-        ensureSingleCollectorExists("collector3@example.com", "Tom", "Hauler");
     }
 
     private void ensureSingleCollectorExists(String email, String firstName, String lastName) {
         User user = userRepository.findByEmail(email).orElse(null);
-
         if (user == null) {
             user = User.builder()
                     .firstName(firstName)
@@ -401,18 +326,13 @@ public class DataSeeder {
                     .accountStatus(AccountStatus.ACTIVE)
                     .build();
             user = userRepository.saveAndFlush(user);
-            log.info("Created missing collector user: {}", email);
         }
-
         if (!collectorProfileRepository.existsByUserId(user.getUserId())) {
-            User managedUser = entityManager.merge(user);
             CollectorProfile profile = CollectorProfile.builder()
-                    .user(managedUser)
+                    .user(user)
                     .status("ACTIVE")
                     .build();
-            entityManager.persist(profile);
-            entityManager.flush();
-            log.info("Created missing collector profile for: {}", email);
+            collectorProfileRepository.saveAndFlush(profile);
         }
     }
 
@@ -424,8 +344,20 @@ public class DataSeeder {
 
     private void ensureTasksExist() {
         if (taskRepository.count() == 0) {
-            log.info("No tasks found, seeding tasks...");
             seedTasksAndAssignments();
+        }
+    }
+
+    private void seedSystemSettings() {
+        if (systemSettingRepository.count() == 0) {
+            log.info("Seeding default system settings...");
+            List<SystemSetting> settings = List.of(
+                SystemSetting.builder().key("COLLECTOR_BONUS_POINTS").value("100").description("Bonus points for collectors meeting daily KPI").dataType("NUMBER").build(),
+                SystemSetting.builder().key("MIN_WEIGHT_FOR_POINTS").value("1.0").description("Minimum weight in KG to award points to citizen").dataType("NUMBER").build(),
+                SystemSetting.builder().key("AI_CLASSIFICATION_ENABLED").value("true").description("Enable/Disable AI waste classification").dataType("BOOLEAN").build(),
+                SystemSetting.builder().key("GEMINI_MODEL_NAME").value("gemini-3-flash-preview").description("Gemini model to use for AI features").dataType("STRING").build()
+            );
+            systemSettingRepository.saveAllAndFlush(settings);
         }
     }
 }

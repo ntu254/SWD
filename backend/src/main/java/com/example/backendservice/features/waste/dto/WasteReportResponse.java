@@ -18,6 +18,8 @@ public class WasteReportResponse {
     private String citizenName;
     private UUID areaId;
     private String areaName;
+    private UUID wasteTypeId;
+    private String wasteTypeName;
 
     private String addressText;
     private Double latitude;

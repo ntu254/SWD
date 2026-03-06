@@ -31,4 +31,9 @@ public interface AnalyticsService {
             UUID enterpriseId,
             LocalDate startDate,
             LocalDate endDate);
+
+    // Global Analytics (Admin)
+    GlobalAnalyticsResponse getGlobalAnalytics(LocalDate startDate, LocalDate endDate);
+
+    GlobalSummaryDTO getGlobalSummary(LocalDate startDate, LocalDate endDate);
 }

@@ -12,6 +12,15 @@ export interface UserResponse {
     role: UserRole;
 }
 
+export interface WasteType {
+    wasteTypeId: string;
+    name: string;
+    description?: string | null;
+    pointsPerKg: number;
+    isRecyclable: boolean;
+    isActive: boolean;
+}
+
 export interface ServiceArea {
     areaId: string;
     name: string;
@@ -33,6 +42,8 @@ export interface WasteReport {
     longitude?: number | null;
     noteText?: string | null;
     photoUrl?: string | null;
+    wasteTypeId?: string | null;
+    wasteTypeName?: string | null;
     status: string;
     createdAt?: string;
     updatedAt?: string;

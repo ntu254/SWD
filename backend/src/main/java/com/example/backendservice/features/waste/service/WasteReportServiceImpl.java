@@ -28,19 +28,27 @@ public class WasteReportServiceImpl implements WasteReportService {
     private final WasteReportRepository wasteReportRepository;
     private final UserRepository userRepository;
     private final ServiceAreaRepository serviceAreaRepository;
+    private final com.example.backendservice.features.waste.repository.WasteTypeRepository wasteTypeRepository;
 
     @Override
     @Transactional
     public WasteReportResponse createReport(UUID reporterUserId, CreateWasteReportRequest request) {
         User reporterUser = userRepository.findByUserId(reporterUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + reporterUserId));
+                .orElseThrow(() -> new com.example.backendservice.common.exception.ResourceNotFoundException("User not found: " + reporterUserId));
 
         ServiceArea area = serviceAreaRepository.findByAreaId(request.getAreaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Service area not found: " + request.getAreaId()));
+                .orElseThrow(() -> new com.example.backendservice.common.exception.ResourceNotFoundException("Service area not found: " + request.getAreaId()));
+
+        com.example.backendservice.features.waste.entity.WasteType wasteType = null;
+        if (request.getWasteTypeId() != null) {
+            wasteType = wasteTypeRepository.findByWasteTypeId(request.getWasteTypeId())
+                    .orElseThrow(() -> new com.example.backendservice.common.exception.ResourceNotFoundException("Waste type not found: " + request.getWasteTypeId()));
+        }
 
         WasteReport report = WasteReport.builder()
                 .reporterUser(reporterUser)
                 .area(area)
+                .wasteType(wasteType)
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
                 .description(request.getNoteText())
@@ -234,6 +242,8 @@ public class WasteReportServiceImpl implements WasteReportService {
                 .citizenName(report.getReporterUser() != null ? report.getReporterUser().getFullName() : null)
                 .areaId(report.getArea() != null ? report.getArea().getAreaId() : null)
                 .areaName(report.getArea() != null ? report.getArea().getName() : null)
+                .wasteTypeId(report.getWasteType() != null ? report.getWasteType().getWasteTypeId() : null)
+                .wasteTypeName(report.getWasteType() != null ? report.getWasteType().getName() : null)
                 .latitude(report.getLatitude())
                 .longitude(report.getLongitude())
                 .noteText(report.getDescription())
