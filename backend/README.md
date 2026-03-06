@@ -3,7 +3,7 @@
 ## 📋 Overview
 
 This is the backend service for the **GreenLoop (SWD)** project, a core component connecting Citizens, Collectors, and Enterprises for smart waste management.
-Built with **Spring Boot 3.5.0**, **Java 17**, and **PostgreSQL**.
+Built with **Spring Boot 3.5.0**, **Java 21**, and **PostgreSQL**.
 
 ## 🚀 Tech Stack
 
@@ -19,7 +19,7 @@ Built with **Spring Boot 3.5.0**, **Java 17**, and **PostgreSQL**.
 ## ⚙️ Configuration & Setup
 
 ### 1. Prerequisites
-- **JDK 17+**
+- **JDK 21+**
 - **Maven 3.8+**
 - **PostgreSQL** (Active database server)
 
@@ -36,7 +36,8 @@ The application uses `application.properties` as the base, extending into profil
 **Option 1: Using Maven Wrapper (Recommended)**
 ```bash
 # Run with 'dev' profile
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+ ./mvnw spring-boot:run -Dspring-boot.run.profiles=local 2>&1
 ```
 
 **Option 2: Using IDE**

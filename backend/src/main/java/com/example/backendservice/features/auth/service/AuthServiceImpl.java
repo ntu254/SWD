@@ -1,236 +1,237 @@
 package com.example.backendservice.features.auth.service;
 
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.example.backendservice.common.exception.BadRequestException;
+import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.features.auth.dto.AuthResponse;
 import com.example.backendservice.features.auth.dto.LoginRequest;
 import com.example.backendservice.features.auth.dto.RegisterRequest;
 import com.example.backendservice.features.user.dto.UserResponse;
-import com.example.backendservice.features.user.entity.CitizenProfile;
-import com.example.backendservice.features.user.entity.CollectorProfile;
+import com.example.backendservice.features.user.entity.AccountStatus;
 import com.example.backendservice.features.user.entity.RoleType;
 import com.example.backendservice.features.user.entity.User;
-import com.example.backendservice.features.user.repository.CitizenProfileRepository;
-import com.example.backendservice.features.user.repository.CollectorProfileRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
 import com.example.backendservice.security.jwt.JwtTokenProvider;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+/**
+ * Implementation of AuthService
+ * Handles authentication operations
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuthServiceImpl implements AuthService {
 
-        private final UserRepository userRepository;
-        private final CitizenProfileRepository citizenProfileRepository;
-        private final CollectorProfileRepository collectorProfileRepository;
-        private final PasswordEncoder passwordEncoder;
-        private final JwtTokenProvider jwtTokenProvider;
-        private final AuthenticationManager authenticationManager;
-        private final com.example.backendservice.common.service.EmailService emailService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
-        @Override
-        @Transactional
-        public AuthResponse register(RegisterRequest request) {
-                log.info("[AUTH_REGISTER] Registering new user: {}", request.getEmail());
+    @Override
+    @Transactional
+    public AuthResponse register(RegisterRequest request) {
+        log.info("Registering new user with email: {}", request.getEmail());
 
-                if (userRepository.existsByEmail(request.getEmail())) {
-                        throw new BadRequestException("Email is already registered");
-                }
-
-                // Determine role - default to CITIZEN
-                String roleStr = request.getRole() != null ? request.getRole().toUpperCase() : "CITIZEN";
-                RoleType roleType;
-                try {
-                        roleType = RoleType.valueOf(roleStr);
-                } catch (IllegalArgumentException e) {
-                        roleType = RoleType.CITIZEN;
-                        roleStr = "CITIZEN";
-                }
-
-                User user = User.builder()
-                                .firstName(request.getFirstName())
-                                .lastName(request.getLastName())
-                                .email(request.getEmail())
-                                .password(passwordEncoder.encode(request.getPassword()))
-                                .role(roleStr) // Legacy field
-                                .phone(request.getPhone())
-                                .avatarUrl(request.getAvatarUrl())
-                                .enabled(true)
-                                .build();
-
-                // Add role to roles collection
-                user.addRole(roleType);
-
-                User savedUser = userRepository.save(user);
-                log.info("[AUTH_REGISTERED] User registered with id: {}, role: {}", savedUser.getId(), roleType);
-
-                // Create profile based on role
-                createProfileBasedOnRole(savedUser, roleType);
-
-                return generateTokensAndCreateResponse(savedUser);
+        // Check if email already exists
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Email already in use: " + request.getEmail());
         }
 
-        @Override
-        @Transactional
-        public AuthResponse login(LoginRequest request) {
-                log.info("[AUTH_LOGIN] Login attempt for: {}", request.getEmail());
-
-                Authentication authentication = authenticationManager.authenticate(
-                                new UsernamePasswordAuthenticationToken(
-                                                request.getEmail(),
-                                                request.getPassword()));
-
-                User user = userRepository.findByEmail(request.getEmail())
-                                .orElseThrow(() -> new BadRequestException("User not found"));
-
-                // Update lastLoginAt
-                user.setLastLoginAt(LocalDateTime.now());
-                userRepository.save(user);
-                
-                return generateTokensAndCreateResponse(user);
+        // Determine role
+        RoleType role = RoleType.CITIZEN;
+        if (request.getRole() != null && !request.getRole().isEmpty()) {
+            try {
+                role = RoleType.valueOf(request.getRole().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid role provided: {}, defaulting to CITIZEN", request.getRole());
+            }
         }
 
+        // Create user
+        User user = User.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .role(role)
+                .accountStatus(AccountStatus.ACTIVE)
+                .phone(request.getPhone())
+                .avatarUrl(request.getAvatarUrl())
+                .build();
 
+        user = userRepository.save(user);
+        log.info("User registered successfully: {}", user.getUserId());
 
-        /**
-         * Tạo profile tương ứng dựa trên role
-         */
-        private void createProfileBasedOnRole(User user, RoleType roleType) {
-                switch (roleType) {
-                        case CITIZEN -> {
-                                CitizenProfile citizen = CitizenProfile.builder()
-                                                .user(user)
-                                                .currentPoints(0)
-                                                .membershipTier("Bronze")
-                                                .build();
-                                citizenProfileRepository.save(citizen);
-                                log.info("[PROFILE_CREATED] Created CitizenProfile for user: {}", user.getId());
-                        }
-                        case COLLECTOR -> {
-                                CollectorProfile profile = CollectorProfile.builder()
-                                                .user(user)
-                                                .availabilityStatus("available")
-                                                .build();
-                                collectorProfileRepository.save(profile);
-                                log.info("[PROFILE_CREATED] Created CollectorProfile for user: {}", user.getId());
-                        }
-                        case ADMIN, ENTERPRISE -> {
-                                // Admin và Enterprise không cần profile riêng
-                                log.info("[PROFILE_SKIPPED] No additional profile for role: {}", roleType);
-                        }
-                }
+        // Generate tokens (placeholder for now)
+        String accessToken = generateAccessToken(user);
+        String refreshToken = generateRefreshToken(user);
+
+        // Update refresh token in user
+        user.setRefreshToken(refreshToken);
+        user.setRefreshTokenExpiry(LocalDateTime.now().plusDays(7));
+        userRepository.save(user);
+
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .user(toUserResponse(user))
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse login(LoginRequest request) {
+        log.info("Login attempt for email: {}", request.getEmail());
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.getEmail()));
+
+        // Verify password
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Invalid password");
         }
 
-        private UserResponse mapToUserResponse(User user) {
-                return UserResponse.builder()
-                                .id(user.getId())
-                                .firstName(user.getFirstName())
-                                .lastName(user.getLastName())
-                                .email(user.getEmail())
-                                .role(user.getRole())
-                                .phone(user.getPhone())
-                                .avatarUrl(user.getAvatarUrl())
-                                .enabled(user.isEnabled())
-                                .createdAt(user.getCreatedAt())
-                                .updatedAt(user.getUpdatedAt())
-                                .build();
+        // Check account status
+        if (user.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new IllegalStateException("Account is not active: " + user.getAccountStatus());
         }
 
+        // Generate tokens
+        String accessToken = generateAccessToken(user);
+        String refreshToken = generateRefreshToken(user);
 
-        @Override
-        @Transactional
-        public void forgotPassword(String email) {
-                User user = userRepository.findByEmail(email)
-                                .orElseThrow(() -> new BadRequestException("User not found with email: " + email));
+        // Update refresh token
+        user.setRefreshToken(refreshToken);
+        user.setRefreshTokenExpiry(LocalDateTime.now().plusDays(7));
+        userRepository.save(user);
 
-                String otp = String.format("%06d", new java.util.Random().nextInt(999999));
-                user.setOtpCode(otp);
-                user.setOtpExpiry(LocalDateTime.now().plusMinutes(15));
-                userRepository.save(user);
+        log.info("User logged in successfully: {}", user.getUserId());
 
-                emailService.sendOtpEmail(email, otp);
-                log.info("[AUTH_FORGOT_PASS] OTP sent to: {}", email);
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .user(toUserResponse(user))
+                .build();
+    }
+
+    @Override
+    public void forgotPassword(String email) {
+        log.info("Forgot password request for email: {}", email);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        // TODO: Implement OTP generation and email sending
+        log.info("Password reset OTP would be sent to: {}", email);
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse resetPassword(String email, String otp, String newPassword) {
+        log.info("Reset password for email: {}", email);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        // TODO: Verify OTP (placeholder - accept any OTP for now)
+
+        // Update password
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Generate new tokens
+        String accessToken = generateAccessToken(user);
+        String refreshToken = generateRefreshToken(user);
+
+        user.setRefreshToken(refreshToken);
+        user.setRefreshTokenExpiry(LocalDateTime.now().plusDays(7));
+        userRepository.save(user);
+
+        log.info("Password reset successfully for user: {}", user.getUserId());
+
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .user(toUserResponse(user))
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse refreshToken(String refreshToken) {
+        log.info("Refresh token request");
+
+        User user = userRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
+
+        // Check if refresh token is expired
+        if (user.getRefreshTokenExpiry() == null ||
+                user.getRefreshTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Refresh token has expired");
         }
 
-        @Override
-        @Transactional
-        public AuthResponse resetPassword(String email, String otp, String newPassword) {
-                User user = userRepository.findByEmail(email)
-                                .orElseThrow(() -> new BadRequestException("User not found"));
+        // Generate new tokens
+        String newAccessToken = generateAccessToken(user);
+        String newRefreshToken = generateRefreshToken(user);
 
-                if (user.getOtpCode() == null || !user.getOtpCode().equals(otp)) {
-                        throw new BadRequestException("Invalid OTP");
-                }
+        user.setRefreshToken(newRefreshToken);
+        user.setRefreshTokenExpiry(LocalDateTime.now().plusDays(7));
+        userRepository.save(user);
 
-                if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
-                        throw new BadRequestException("OTP has expired");
-                }
+        log.info("Token refreshed for user: {}", user.getUserId());
 
-                user.setPassword(passwordEncoder.encode(newPassword));
-                user.setOtpCode(null);
-                user.setOtpExpiry(null);
-                
-                // Clear old refresh token on password reset for security
-                user.setRefreshToken(null); 
-                user.setRefreshTokenExpiry(null);
-                
-                User savedUser = userRepository.save(user);
+        return AuthResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .tokenType("Bearer")
+                .user(toUserResponse(user))
+                .build();
+    }
 
-                log.info("[AUTH_RESET_PASS] Password reset successfully for: {}", email);
-                return generateTokensAndCreateResponse(savedUser);
-        }
+    @Override
+    @Transactional
+    public void logout(String email) {
+        log.info("Logout request for email: {}", email);
 
-        @Override
-        @Transactional
-        public AuthResponse refreshToken(String refreshToken) {
-                User user = userRepository.findByRefreshToken(refreshToken)
-                                .orElseThrow(() -> new BadRequestException("Invalid or expired refresh token"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
-                if (user.getRefreshTokenExpiry().isBefore(LocalDateTime.now())) {
-                        throw new BadRequestException("Refresh token has expired");
-                }
+        // Clear refresh token
+        user.setRefreshToken(null);
+        user.setRefreshTokenExpiry(null);
+        userRepository.save(user);
 
-                return generateTokensAndCreateResponse(user);
-        }
+        log.info("User logged out successfully: {}", user.getUserId());
+    }
 
-        @Override
-        @Transactional
-        public void logout(String email) {
-                User user = userRepository.findByEmail(email)
-                                .orElseThrow(() -> new BadRequestException("User not found"));
-                
-                user.setRefreshToken(null);
-                user.setRefreshTokenExpiry(null);
-                userRepository.save(user);
-                log.info("[AUTH_LOGOUT] User logged out: {}", email);
-        }
+    // Helper methods
+    private String generateAccessToken(User user) {
+        return jwtTokenProvider.generateToken(user.getEmail());
+    }
 
-        private AuthResponse generateTokensAndCreateResponse(User user) {
-                String accessToken = jwtTokenProvider.generateToken(user.getEmail());
-                String refreshToken = java.util.UUID.randomUUID().toString();
+    private String generateRefreshToken(User user) {
+        return jwtTokenProvider.generateToken(user.getEmail() + ":refresh");
+    }
 
-                user.setRefreshToken(refreshToken);
-                user.setRefreshTokenExpiry(LocalDateTime.now().plusDays(30)); // Refresh Token valid for 30 days
-                user.setLastLoginAt(LocalDateTime.now());
-                
-                userRepository.save(user);
-
-                return AuthResponse.builder()
-                                .accessToken(accessToken)
-                                .refreshToken(refreshToken)
-                                .tokenType("Bearer")
-                                .user(mapToUserResponse(user))
-                                .build();
-        }
+    private UserResponse toUserResponse(User user) {
+        return UserResponse.builder()
+                .userId(user.getUserId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .displayName(user.getDisplayName())
+                .phone(user.getPhone())
+                .avatarUrl(user.getAvatarUrl())
+                .role(user.getRole())
+                .accountStatus(user.getAccountStatus())
+                .createdAt(user.getCreatedAt())
+                .build();
+    }
 }

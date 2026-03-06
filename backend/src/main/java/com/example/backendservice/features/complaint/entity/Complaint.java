@@ -1,10 +1,9 @@
 package com.example.backendservice.features.complaint.entity;
 
-import com.example.backendservice.features.task.entity.TaskAssignment;
-import com.example.backendservice.features.user.entity.CollectorProfile;
-import com.example.backendservice.features.user.entity.CitizenProfile;
-
+import com.example.backendservice.features.collection.entity.CollectionVisit;
+import com.example.backendservice.features.reward.entity.RewardTransaction;
 import com.example.backendservice.features.user.entity.User;
+import com.example.backendservice.features.waste.entity.WasteReport;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -13,9 +12,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Đơn khiếu nại từ Citizen về Collector hoặc dịch vụ
- */
 @Entity
 @Table(name = "complaints")
 @Data
@@ -26,60 +22,69 @@ public class Complaint {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "complaint_id", columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID complaintId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "citizen_id", nullable = false)
-    private CitizenProfile citizen;
+    @JoinColumn(name = "created_by_user_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User createdByUser;
 
-    // Optional: Collector being complained about
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "collector_id")
-    private CollectorProfile collector;
+    @JoinColumn(name = "report_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private WasteReport wasteReport;
 
-    // Optional: Related task assignment
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_assignment_id")
-    private TaskAssignment taskAssignment;
+    @JoinColumn(name = "visit_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private CollectionVisit visit;
 
-    @Column(name = "title", nullable = false)
+    @Column(length = 255)
     private String title;
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String content;
 
-    @Column(name = "category")
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
     @Builder.Default
-    private String category = "OTHER";
-    // LATE_ARRIVAL, RUDE_BEHAVIOR, INCOMPLETE_COLLECTION, DAMAGE, POINTS_ERROR,
-    // BUG, SERVICE_ISSUE, OTHER
+    private ComplaintCategory category = ComplaintCategory.OTHER; // BUG, FEATURE, POINTS_ERROR, OTHER
 
-    @Column(name = "evidence_images", columnDefinition = "TEXT")
-    private String evidenceImages; // JSON array of image URLs
-
-    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     @Builder.Default
-    private String status = "PENDING"; // PENDING, INVESTIGATING, RESOLVED, REJECTED
+    private ComplaintPriority priority = ComplaintPriority.Normal; // Low, Normal, High, Urgent
 
-    @Column(name = "priority")
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
     @Builder.Default
-    private String priority = "NORMAL"; // LOW, NORMAL, HIGH, URGENT
+    private ComplaintStatus status = ComplaintStatus.Pending; // Pending, In_Progress, Resolved, Rejected
 
     @Column(name = "admin_response", columnDefinition = "TEXT")
     private String adminResponse;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resolved_by")
-    private User resolvedBy;
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @Column(name = "resolved_at")
     private LocalDateTime resolvedAt;
 
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reward_transaction_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private RewardTransaction rewardTransaction;
 
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    public UUID getCreatedByUserId() {
+        return createdByUser != null ? createdByUser.getUserId() : null;
+    }
 }

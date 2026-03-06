@@ -1,8 +1,8 @@
 package com.example.backendservice.features.reward.dto;
 
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,17 +14,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateRewardItemRequest {
 
-    @NotBlank(message = "Name is required")
+    @NotBlank(message = "Item name is required")
     private String name;
 
     private String description;
 
     @NotNull(message = "Points cost is required")
-    @Min(value = 1, message = "Points cost must be greater than 0")
+    @PositiveOrZero(message = "Points cost must be 0 or greater")
     private Integer pointsCost;
 
     @NotNull(message = "Stock is required")
-    @Min(value = 0, message = "Stock cannot be negative")
+    @PositiveOrZero(message = "Stock must be 0 or greater")
     private Integer stock;
 
     private String imageUrl;

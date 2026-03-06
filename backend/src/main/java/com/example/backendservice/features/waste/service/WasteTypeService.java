@@ -1,7 +1,8 @@
 package com.example.backendservice.features.waste.service;
 
-import com.example.backendservice.features.waste.dto.CreateWasteTypeRequest;
-import com.example.backendservice.features.waste.dto.WasteTypeResponse;
+import com.example.backendservice.features.waste.dto.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.UUID;
@@ -10,11 +11,17 @@ public interface WasteTypeService {
 
     WasteTypeResponse createWasteType(CreateWasteTypeRequest request);
 
-    WasteTypeResponse getWasteTypeById(UUID id);
+    WasteTypeResponse getWasteTypeById(UUID typeId);
 
-    List<WasteTypeResponse> getAllWasteTypes(String status);
+    WasteTypeResponse getWasteTypeByCode(String code);
 
-    WasteTypeResponse updateWasteType(UUID id, CreateWasteTypeRequest request);
+    List<WasteTypeResponse> getAllActiveWasteTypes();
 
-    void deleteWasteType(UUID id);
+    Page<WasteTypeResponse> getAllWasteTypes(Pageable pageable);
+
+    WasteTypeResponse updateWasteType(UUID typeId, CreateWasteTypeRequest request);
+
+    void deactivateWasteType(UUID typeId);
+
+    void activateWasteType(UUID typeId);
 }

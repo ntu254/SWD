@@ -1,10 +1,14 @@
 package com.example.backendservice.features.reward.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
@@ -13,17 +17,20 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CreateRewardRuleRequest {
 
-    @NotNull(message = "Waste Type ID is required")
+    @NotNull(message = "Waste type ID is required")
     private UUID wasteTypeId;
+
+    @NotBlank(message = "Sorting level is required")
+    private String sortingLevel; // GOOD, FAIR, POOR
+
+    private Integer pointsFixed;
 
     @NotNull(message = "Points per kg is required")
     @Positive(message = "Points per kg must be positive")
     private Double pointsPerKg;
 
-    private Double bonusPercentage;
-    private Double minWeightKg;
-    private Integer maxPointsPerDay;
-    private String description;
-    private LocalDateTime validFrom;
-    private LocalDateTime validUntil;
+    @NotNull(message = "Effective from date is required")
+    private LocalDate effectiveFrom;
+
+    private LocalDate effectiveTo;
 }

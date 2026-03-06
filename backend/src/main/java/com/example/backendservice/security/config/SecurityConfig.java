@@ -48,20 +48,20 @@ public class SecurityConfig {
                         .permitAll()
 
                         // Complaint endpoints
-                        .requestMatchers("/api/complaints/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/complaints/citizen/**").hasAnyRole("CITIZEN", "ADMIN")
-                        .requestMatchers("/api/complaints/{complaintId}").hasAnyRole("CITIZEN", "ADMIN")
+                        .requestMatchers("/api/v1/complaints/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/complaints/citizen/**").hasAnyRole("CITIZEN", "ADMIN")
+                        .requestMatchers("/api/v1/complaints/{complaintId}").authenticated()
 
                         // Notification endpoints
-                        .requestMatchers("/api/notifications/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/notifications/user/**")
+                        .requestMatchers("/api/v1/notifications/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/notifications/user/**")
                         .hasAnyRole("CITIZEN", "COLLECTOR", "ENTERPRISE", "ADMIN")
-                        .requestMatchers("/api/notifications/count").permitAll()
+                        .requestMatchers("/api/v1/notifications/count").permitAll()
 
                         // SSE endpoints
-                        .requestMatchers("/api/sse/subscribe/**").authenticated()
-                        .requestMatchers("/api/sse/stats").hasRole("ADMIN")
-                        .requestMatchers("/api/sse/test-broadcast").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/sse/subscribe/**").authenticated()
+                        .requestMatchers("/api/v1/sse/stats").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/sse/test-broadcast").hasRole("ADMIN")
 
                         // Collector endpoints
                         .requestMatchers("/api/v1/collector/**").hasRole("COLLECTOR")

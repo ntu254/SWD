@@ -19,26 +19,29 @@ public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "id", columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID notificationId;
 
-    @Column(name = "title", nullable = false)
+    @Column(nullable = false, length = 255)
     private String title;
 
-    @Column(name = "content", columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    @Column(name = "type")
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
     @Builder.Default
-    private String type = "General"; // General, Maintenance, Update, Alert, Promotion
+    private NotificationType type = NotificationType.General; // General, Maintenance, Update, Promotion, Alert
 
-    @Column(name = "target_audience")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "target_audience", length = 30)
     @Builder.Default
-    private String targetAudience = "All"; // All, Citizen, Collector, Enterprise
+    private NotificationTargetAudience targetAudience = NotificationTargetAudience.All; // All, Citizen, Collector, Enterprise
 
-    @Column(name = "priority")
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     @Builder.Default
-    private String priority = "Normal"; // Low, Normal, High, Urgent
+    private NotificationPriority priority = NotificationPriority.Normal; // Low, Normal, High, Urgent
 
     @Column(name = "is_active")
     @Builder.Default
@@ -52,12 +55,19 @@ public class Notification {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User createdBy;
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public UUID getCreatedByUserId() {
+        return createdBy != null ? createdBy.getUserId() : null;
+    }
 }

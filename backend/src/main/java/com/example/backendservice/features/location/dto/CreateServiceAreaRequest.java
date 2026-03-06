@@ -1,8 +1,10 @@
 package com.example.backendservice.features.location.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
@@ -11,14 +13,16 @@ import lombok.*;
 public class CreateServiceAreaRequest {
 
     @NotBlank(message = "Name is required")
-    @Size(max = 200, message = "Name must be less than 200 characters")
     private String name;
 
-    @Size(max = 500, message = "Description must be less than 500 characters")
-    private String description;
+    @NotBlank(message = "Ward code is required")
+    private String wardCode;
 
-    private Double centerLat;
-    private Double centerLng;
-    private Double radiusKm;
-    private String boundaryGeoJson;
+    @NotBlank(message = "District code is required")
+    private String districtCode;
+
+    @NotBlank(message = "City is required")
+    private String city;
+
+    private String geoPolygon;
 }

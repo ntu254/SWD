@@ -21,4 +21,9 @@ public interface EnterpriseCapabilityService {
     void deleteCapability(UUID id);
 
     void resetDailyUsedCapacity(); // Scheduled daily reset
+
+    /**
+     * Tăng công suất đã sử dụng khi hoàn thành thu gom
+     */
+    void incrementUsedCapacity(UUID capabilityId, Double weightKg);
 }

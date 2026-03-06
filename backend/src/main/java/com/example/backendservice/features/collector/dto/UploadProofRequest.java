@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Request DTO for uploading proof image
+ * Request DTO for uploading proof image and creating the collection visit payload
  */
 @Data
 @Builder
@@ -17,4 +17,8 @@ public class UploadProofRequest {
 
     @NotBlank(message = "Proof image URL is required")
     private String collectorProofImageUrl;
+    
+    private String wasteTypeId;
+    
+    private Double weightKg;
 }

@@ -5,6 +5,8 @@ import com.example.backendservice.common.dto.PageResponse;
 import com.example.backendservice.features.notification.dto.CreateNotificationRequest;
 import com.example.backendservice.features.notification.dto.NotificationResponse;
 import com.example.backendservice.features.notification.dto.UpdateNotificationRequest;
+import com.example.backendservice.features.notification.entity.NotificationTargetAudience;
+import com.example.backendservice.features.notification.entity.NotificationType;
 import com.example.backendservice.features.notification.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,17 +26,17 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
-@Tag(name = "Notification Management", description = "APIs for managing system notifications to users")
+@Tag(name = "Notification Management", description = "APIs for managing system notifications")
 public class NotificationController {
 
     private final NotificationService notificationService;
 
     // ===================== ADMIN ENDPOINTS =====================
 
-    @Operation(summary = "Create notification (Admin)", description = "Admin creates a new notification to inform users about maintenance, updates, etc.")
+    @Operation(summary = "Create notification (Admin)")
     @PostMapping("/admin/{adminId}")
     public ResponseEntity<ApiResponse<NotificationResponse>> createNotification(
-            @Parameter(description = "ID of the admin creating notification") @PathVariable UUID adminId,
+            @Parameter(description = "Admin user ID") @PathVariable UUID adminId,
             @Valid @RequestBody CreateNotificationRequest request) {
 
         NotificationResponse response = notificationService.createNotification(adminId, request);
@@ -42,11 +44,11 @@ public class NotificationController {
                 .body(ApiResponse.success("Notification created successfully", response));
     }
 
-    @Operation(summary = "Get all notifications (Admin)", description = "Admin retrieves all notifications with optional filters")
+    @Operation(summary = "Get all notifications with filters (Admin)")
     @GetMapping("/admin")
     public ResponseEntity<ApiResponse<PageResponse<NotificationResponse>>> getAllNotifications(
-            @Parameter(description = "Filter by type (General, Maintenance, Update, Alert, Promotion)") @RequestParam(required = false) String type,
-            @Parameter(description = "Filter by target audience (All, Citizen, Collector, Enterprise)") @RequestParam(required = false) String targetAudience,
+            @Parameter(description = "Filter by type") @RequestParam(required = false) NotificationType type,
+            @Parameter(description = "Filter by target audience") @RequestParam(required = false) NotificationTargetAudience targetAudience,
             @Parameter(description = "Filter by active status") @RequestParam(required = false) Boolean isActive,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -55,62 +57,66 @@ public class NotificationController {
 
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-
-        Page<NotificationResponse> notifications = notificationService.getAllNotifications(type, targetAudience,
-                isActive, pageable);
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(notifications)));
+        Page<NotificationResponse> result = notificationService.getAllNotifications(type, targetAudience, isActive,
+                pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
-    @Operation(summary = "Get notification by ID (Admin)", description = "Retrieves detailed information about a specific notification")
+    @Operation(summary = "Get notification by ID (Admin)")
     @GetMapping("/admin/{notificationId}")
     public ResponseEntity<ApiResponse<NotificationResponse>> getNotificationById(
-            @Parameter(description = "ID of the notification") @PathVariable UUID notificationId) {
+            @Parameter(description = "Notification ID") @PathVariable UUID notificationId) {
+
         NotificationResponse response = notificationService.getNotificationById(notificationId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "Update notification (Admin)", description = "Admin updates an existing notification")
+    @Operation(summary = "Update notification (Admin)")
     @PutMapping("/admin/{notificationId}")
     public ResponseEntity<ApiResponse<NotificationResponse>> updateNotification(
-            @Parameter(description = "ID of the notification") @PathVariable UUID notificationId,
+            @Parameter(description = "Notification ID") @PathVariable UUID notificationId,
             @RequestBody UpdateNotificationRequest request) {
 
         NotificationResponse response = notificationService.updateNotification(notificationId, request);
         return ResponseEntity.ok(ApiResponse.success("Notification updated successfully", response));
     }
 
-    @Operation(summary = "Toggle notification status (Admin)", description = "Admin toggles the active status of a notification")
+    @Operation(summary = "Toggle notification active status (Admin)")
     @PatchMapping("/admin/{notificationId}/toggle")
     public ResponseEntity<ApiResponse<NotificationResponse>> toggleNotificationStatus(
-            @Parameter(description = "ID of the notification") @PathVariable UUID notificationId) {
+            @Parameter(description = "Notification ID") @PathVariable UUID notificationId) {
+
         NotificationResponse response = notificationService.toggleNotificationStatus(notificationId);
         return ResponseEntity.ok(ApiResponse.success("Notification status toggled successfully", response));
     }
 
-    @Operation(summary = "Delete notification (Admin)", description = "Admin deletes a notification from the system")
+    @Operation(summary = "Delete notification (Admin)")
     @DeleteMapping("/admin/{notificationId}")
     public ResponseEntity<ApiResponse<Void>> deleteNotification(
-            @Parameter(description = "ID of the notification") @PathVariable UUID notificationId) {
+            @Parameter(description = "Notification ID") @PathVariable UUID notificationId) {
+
         notificationService.deleteNotification(notificationId);
         return ResponseEntity.ok(ApiResponse.success("Notification deleted successfully", null));
     }
 
     // ===================== USER ENDPOINTS =====================
 
-    @Operation(summary = "Get active notifications for user", description = "Retrieves active notifications for a specific user role")
-    @GetMapping("/user/{userRole}")
+    @Operation(summary = "Get active notifications for user role")
+    @GetMapping("/user/{role}")
     public ResponseEntity<ApiResponse<PageResponse<NotificationResponse>>> getActiveNotificationsForUser(
-            @Parameter(description = "User role (Citizen, Collector, Enterprise)") @PathVariable String userRole,
+            @Parameter(description = "User role (Citizen, Collector, Enterprise)") @PathVariable NotificationTargetAudience role,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<NotificationResponse> notifications = notificationService.getActiveNotificationsForUser(userRole,
-                pageable);
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(notifications)));
+        Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<NotificationResponse> result = notificationService.getActiveNotificationsForUser(role, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
-    @Operation(summary = "Count active notifications", description = "Returns the total count of active notifications")
+    @Operation(summary = "Count active notifications")
     @GetMapping("/count")
     public ResponseEntity<ApiResponse<Long>> countActiveNotifications() {
         long count = notificationService.countActiveNotifications();

@@ -1,32 +1,46 @@
 package com.example.backendservice.features.user.repository;
 
-import java.time.LocalDateTime;
+import com.example.backendservice.features.user.entity.RoleType;
+import com.example.backendservice.features.user.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import com.example.backendservice.features.user.entity.AccountStatus;
-import com.example.backendservice.features.user.entity.User;
-
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-
 @Repository
-public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificationExecutor<User> {
+public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByEmail(String email);
 
-    Optional<User> findByRefreshToken(String refreshToken);
-
     boolean existsByEmail(String email);
 
-    boolean existsByPhone(String phone);
+    Optional<User> findByUserId(UUID userId);
 
-    /**
-     * Find users by account status and deleteScheduledAt before given date
-     * Used by scheduler to find expired pending delete users for hard deletion
-     */
-    List<User> findByAccountStatusAndDeleteScheduledAtBefore(AccountStatus status, LocalDateTime dateTime);
+    List<User> findByRole(RoleType role);
+
+    @Query("SELECT u FROM User u WHERE u.role = :role AND u.deletedAt IS NULL")
+    List<User> findActiveByRole(@Param("role") RoleType role);
+
+    @Query("SELECT u FROM User u WHERE u.deletedAt IS NULL")
+    List<User> findAllActive();
+
+    @Query("SELECT u FROM User u WHERE u.email = :email AND u.deletedAt IS NULL")
+    Optional<User> findActiveByEmail(@Param("email") String email);
+
+    List<User> findByDisplayNameContainingIgnoreCase(String displayName);
+
+    @Query("SELECT u FROM User u WHERE u.role = 'ENTERPRISE' AND u.deletedAt IS NULL")
+    List<User> findAllActiveEnterprises();
+
+    @Query("SELECT u FROM User u WHERE u.role = 'COLLECTOR' AND u.deletedAt IS NULL")
+    List<User> findAllActiveCollectors();
+
+    @Query("SELECT u FROM User u WHERE u.role = 'CITIZEN' AND u.deletedAt IS NULL")
+    List<User> findAllActiveCitizens();
+
+    Optional<User> findByRefreshToken(String refreshToken);
 }

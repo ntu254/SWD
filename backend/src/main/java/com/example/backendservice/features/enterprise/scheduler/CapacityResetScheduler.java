@@ -1,39 +1,34 @@
 package com.example.backendservice.features.enterprise.scheduler;
 
-import com.example.backendservice.features.enterprise.repository.EnterpriseCapabilityRepository;
+import com.example.backendservice.features.enterprise.service.EnterpriseCapabilityService;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Scheduler for resetting daily capacity usage of EnterpriseCapability
- * Runs daily at midnight (00:00) to reset usedCapacityKg to 0
+ * Scheduled job để reset công suất đã sử dụng hàng ngày
+ * Chạy lúc 00:00 mỗi ngày
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class CapacityResetScheduler {
 
-    private static final Logger logger = LoggerFactory.getLogger(CapacityResetScheduler.class);
-    private final EnterpriseCapabilityRepository capabilityRepository;
+    private final EnterpriseCapabilityService capabilityService;
 
     /**
-     * Reset daily used capacity for all active EnterpriseCapabilities
-     * Runs daily at midnight (00:00 AM) Vietnam timezone
+     * Reset công suất đã sử dụng lúc 00:00 mỗi ngày
+     * Cron: Second Minute Hour DayOfMonth Month DayOfWeek
      */
-    @Scheduled(cron = "0 0 0 * * ?", zone = "Asia/Ho_Chi_Minh")
-    @Transactional
+    @Scheduled(cron = "0 0 0 * * *")
     public void resetDailyCapacity() {
-        logger.info("Starting scheduled daily capacity reset");
-
+        log.info("Starting daily capacity reset job");
         try {
-            int updatedCount = capabilityRepository.resetAllUsedCapacity();
-            logger.info("Successfully reset usedCapacityKg for {} enterprise capabilities", updatedCount);
-
+            capabilityService.resetDailyUsedCapacity();
+            log.info("Daily capacity reset completed successfully");
         } catch (Exception e) {
-            logger.error("Error during daily capacity reset", e);
+            log.error("Failed to reset daily capacity", e);
         }
     }
 }

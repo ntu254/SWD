@@ -1,5 +1,6 @@
 package com.example.backendservice.features.collector.dto;
 
+import com.example.backendservice.features.task.entity.TaskAssignmentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +19,7 @@ import java.util.UUID;
 public class AcceptTaskResponse {
 
     private UUID taskId;
-    private String status;
+    private TaskAssignmentStatus status;
     private Instant acceptedAt;
     private Instant onWayAt;
     private String message;

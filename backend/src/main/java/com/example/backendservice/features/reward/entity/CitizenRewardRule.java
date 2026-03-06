@@ -3,19 +3,17 @@ package com.example.backendservice.features.reward.entity;
 import com.example.backendservice.features.waste.entity.WasteType;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Quy tắc tính điểm thưởng cho Citizen
- * Định nghĩa số điểm cho mỗi kg rác theo loại
+ * Entity cho bảng CITIZEN_REWARD_RULE
+ * Quy tắc tính điểm thưởng cho Citizen theo loại rác và mức độ phân loại
  */
 @Entity
 @Table(name = "citizen_reward_rules", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "waste_type_id" })
+        @UniqueConstraint(columnNames = { "waste_type_id", "sorting_level" })
 })
 @Data
 @Builder
@@ -25,59 +23,75 @@ public class CitizenRewardRule {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "rule_id", columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID ruleId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "waste_type_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private WasteType wasteType;
 
-    @Column(name = "points_per_kg", nullable = false)
+    /**
+     * Mức độ phân loại rác
+     * GOOD: Phân loại tốt
+     * FAIR: Phân loại trung bình
+     * POOR: Phân loại kém
+     */
+    @Column(name = "sorting_level", length = 20, nullable = false)
+    private String sortingLevel; // GOOD, FAIR, POOR
+
+    /**
+     * Điểm tính theo kg
+     */
+    @Column(name = "points_per_kg")
     private Double pointsPerKg;
 
-    @Column(name = "bonus_percentage")
+    /**
+     * Điểm cố định (không phụ thuộc weight)
+     */
+    @Column(name = "points_fixed")
+    private Double pointsFixed;
+
+    @Column(name = "effective_from")
+    private LocalDate effectiveFrom;
+
+    @Column(name = "effective_to")
+    private LocalDate effectiveTo;
+
+    @Column(name = "is_active")
     @Builder.Default
-    private Double bonusPercentage = 0.0; // Extra % for special events
+    private Boolean isActive = true;
 
-    @Column(name = "min_weight_kg")
-    @Builder.Default
-    private Double minWeightKg = 0.0; // Minimum weight to qualify
+    // Helper methods
+    public UUID getWasteTypeId() {
+        return wasteType != null ? wasteType.getWasteTypeId() : null;
+    }
 
-    @Column(name = "max_points_per_day")
-    private Integer maxPointsPerDay; // Daily cap
-
-    @Column(length = 500)
-    private String description;
-
-    @Column(length = 50)
-    @Builder.Default
-    private String status = "ACTIVE"; // ACTIVE, INACTIVE
-
-    @Column(name = "valid_from")
-    private LocalDateTime validFrom;
-
-    @Column(name = "valid_until")
-    private LocalDateTime validUntil;
-
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
-
-    // Calculate points for given weight
-    public Integer calculatePoints(Double weightKg) {
-        if (weightKg < minWeightKg) {
-            return 0;
+    public boolean isEffective(LocalDate date) {
+        if (!Boolean.TRUE.equals(isActive)) {
+            return false;
         }
-        double basePoints = weightKg * pointsPerKg;
-        double bonus = basePoints * (bonusPercentage / 100.0);
-        int totalPoints = (int) Math.floor(basePoints + bonus);
-
-        if (maxPointsPerDay != null && totalPoints > maxPointsPerDay) {
-            return maxPointsPerDay;
+        if (effectiveFrom != null && date.isBefore(effectiveFrom)) {
+            return false;
         }
-        return totalPoints;
+        if (effectiveTo != null && date.isAfter(effectiveTo)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Tính điểm thưởng cho một lần thu gom
+     */
+    public double calculatePoints(Double weightKg) {
+        double points = 0.0;
+        if (pointsFixed != null) {
+            points += pointsFixed;
+        }
+        if (pointsPerKg != null && weightKg != null) {
+            points += pointsPerKg * weightKg;
+        }
+        return points;
     }
 }

@@ -1,199 +1,162 @@
 package com.example.backendservice.features.reward.service;
 
+import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.features.reward.dto.*;
-import com.example.backendservice.features.reward.entity.RewardItem;
-import com.example.backendservice.features.reward.entity.RewardRedemption;
-import com.example.backendservice.features.reward.repository.RewardItemRepository;
-import com.example.backendservice.features.reward.repository.RewardRedemptionRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.example.backendservice.features.reward.repository.LeaderboardProjection;
+import com.example.backendservice.features.reward.entity.RewardTransaction;
+import com.example.backendservice.features.reward.repository.RewardTransactionRepository;
+import com.example.backendservice.features.user.entity.User;
+import com.example.backendservice.features.user.repository.UserRepository;
+import org.springframework.data.domain.PageRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+/**
+ * Implementation of RewardService
+ * Quản lý giao dịch điểm thưởng và số dư điểm
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class RewardServiceImpl implements RewardService {
 
-    private final RewardItemRepository rewardItemRepository;
-    private final RewardRedemptionRepository redemptionRepository;
-
-    // ===================== REWARD ITEM CRUD =====================
+    private final RewardTransactionRepository transactionRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
-    public RewardItemResponse createRewardItem(CreateRewardItemRequest request) {
-        log.info("[REWARD_ITEM_CREATE] Creating new reward item: {}", request.getName());
+    public RewardTransactionResponse createTransaction(CreateRewardTransactionRequest request) {
+        User citizen = userRepository.findByUserId(request.getCitizenUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Citizen not found: " + request.getCitizenUserId()));
 
-        RewardItem item = RewardItem.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .pointsCost(request.getPointsCost())
-                .stock(request.getStock())
-                .imageUrl(request.getImageUrl())
-                .status("ACTIVE")
+        double pointsDelta = "EARN".equals(request.getTransactionType())
+                ? request.getPointsAmount()
+                : -request.getPointsAmount();
+
+        RewardTransaction transaction = RewardTransaction.builder()
+                .citizenUser(citizen)
+                .pointsDelta(pointsDelta)
+                .reasonCode(request.getTransactionType())
                 .build();
 
-        RewardItem savedItem = rewardItemRepository.save(item);
-        log.info("[REWARD_ITEM_CREATED] Created reward item with id: {}", savedItem.getId());
+        transaction = transactionRepository.save(transaction);
 
-        return RewardItemResponse.fromEntity(savedItem);
+        log.info("Created {} transaction for citizen {}: {} points",
+                request.getTransactionType(), request.getCitizenUserId(), request.getPointsAmount());
+
+        return toTransactionResponse(transaction);
     }
 
     @Override
     @Transactional
-    public RewardItemResponse updateRewardItem(UUID id, UpdateRewardItemRequest request) {
-        log.info("[REWARD_ITEM_UPDATE] Updating reward item id: {}", id);
-
-        RewardItem item = rewardItemRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Reward item not found with id: " + id));
-
-        if (request.getName() != null) {
-            item.setName(request.getName());
-        }
-        if (request.getDescription() != null) {
-            item.setDescription(request.getDescription());
-        }
-        if (request.getPointsCost() != null) {
-            item.setPointsCost(request.getPointsCost());
-        }
-        if (request.getStock() != null) {
-            item.setStock(request.getStock());
-        }
-        if (request.getImageUrl() != null) {
-            item.setImageUrl(request.getImageUrl());
-        }
-        if (request.getStatus() != null) {
-            item.setStatus(request.getStatus());
-        }
-
-        RewardItem updatedItem = rewardItemRepository.save(item);
-        log.info("[REWARD_ITEM_UPDATED] Updated reward item id: {}", id);
-
-        return RewardItemResponse.fromEntity(updatedItem);
-    }
-
-    @Override
-    public RewardItemResponse getRewardItemById(UUID id) {
-        RewardItem item = rewardItemRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Reward item not found with id: " + id));
-        return RewardItemResponse.fromEntity(item);
-    }
-
-    @Override
-    public Page<RewardItemResponse> getAllRewardItems(String status, String search, Pageable pageable) {
-        Page<RewardItem> items;
-
-        if (status != null && search != null) {
-            items = rewardItemRepository.findByStatusAndNameContainingIgnoreCase(status, search, pageable);
-        } else if (status != null) {
-            items = rewardItemRepository.findByStatus(status, pageable);
-        } else if (search != null) {
-            items = rewardItemRepository.findByNameContainingIgnoreCase(search, pageable);
-        } else {
-            items = rewardItemRepository.findAll(pageable);
-        }
-
-        return items.map(RewardItemResponse::fromEntity);
+    public RewardTransactionResponse earnPoints(UUID citizenUserId, Integer points, String description,
+            UUID referenceId) {
+        CreateRewardTransactionRequest request = CreateRewardTransactionRequest.builder()
+                .citizenUserId(citizenUserId)
+                .transactionType("EARN")
+                .pointsAmount(points)
+                .description(description)
+                .referenceId(referenceId)
+                .build();
+        return createTransaction(request);
     }
 
     @Override
     @Transactional
-    public void deleteRewardItem(UUID id) {
-        log.info("[REWARD_ITEM_DELETE] Deleting reward item id: {}", id);
-
-        if (!rewardItemRepository.existsById(id)) {
-            throw new EntityNotFoundException("Reward item not found with id: " + id);
+    public RewardTransactionResponse redeemPoints(UUID citizenUserId, Integer points, String description) {
+        // Kiểm tra citizen có đủ điểm không
+        Integer currentPoints = getCitizenPoints(citizenUserId);
+        if (currentPoints < points) {
+            throw new IllegalStateException(
+                    "Insufficient points. Current: " + currentPoints + ", Required: " + points);
         }
 
-        rewardItemRepository.deleteById(id);
-        log.info("[REWARD_ITEM_DELETED] Deleted reward item id: {}", id);
-    }
-
-    // ===================== REDEMPTION MANAGEMENT =====================
-
-    @Override
-    public Page<RedemptionResponse> getAllRedemptions(String status, Pageable pageable) {
-        Page<RewardRedemption> redemptions;
-
-        if (status != null) {
-            redemptions = redemptionRepository.findByStatus(status, pageable);
-        } else {
-            redemptions = redemptionRepository.findAll(pageable);
-        }
-
-        return redemptions.map(RedemptionResponse::fromEntity);
+        CreateRewardTransactionRequest request = CreateRewardTransactionRequest.builder()
+                .citizenUserId(citizenUserId)
+                .transactionType("REDEEM")
+                .pointsAmount(points)
+                .description(description)
+                .build();
+        return createTransaction(request);
     }
 
     @Override
-    public RedemptionResponse getRedemptionById(UUID id) {
-        RewardRedemption redemption = redemptionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Redemption not found with id: " + id));
-        return RedemptionResponse.fromEntity(redemption);
+    public RewardTransactionResponse getTransactionById(UUID transactionId) {
+        RewardTransaction transaction = transactionRepository.findByTransactionId(transactionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found: " + transactionId));
+        return toTransactionResponse(transaction);
     }
 
     @Override
-    @Transactional
-    public RedemptionResponse approveRedemption(UUID id) {
-        log.info("[REDEMPTION_APPROVE] Approving redemption id: {}", id);
+    public Page<RewardTransactionResponse> getTransactionsByCitizen(UUID citizenUserId, Pageable pageable) {
+        List<RewardTransaction> transactions = transactionRepository.findByCitizenUserId(citizenUserId);
+        List<RewardTransactionResponse> responses = transactions.stream()
+                .map(this::toTransactionResponse)
+                .collect(Collectors.toList());
 
-        RewardRedemption redemption = redemptionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Redemption not found with id: " + id));
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
 
-        if (!"PENDING".equals(redemption.getStatus())) {
-            throw new IllegalStateException("Redemption is not in PENDING status");
+        if (start > responses.size()) {
+            return new PageImpl<>(List.of(), pageable, responses.size());
         }
 
-        RewardItem item = redemption.getRewardItem();
-        if (item.getStock() < 1) {
-            throw new IllegalStateException("Reward item is out of stock");
-        }
-
-        // Deduct stock
-        item.setStock(item.getStock() - 1);
-        rewardItemRepository.save(item);
-
-        // Update redemption status
-        redemption.setStatus("APPROVED");
-        redemption.setProcessedAt(LocalDateTime.now());
-
-        RewardRedemption updated = redemptionRepository.save(redemption);
-        log.info("[REDEMPTION_APPROVED] Approved redemption id: {}, stock remaining: {}", id, item.getStock());
-
-        return RedemptionResponse.fromEntity(updated);
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
     }
 
     @Override
-    @Transactional
-    public RedemptionResponse rejectRedemption(UUID id, RejectRedemptionRequest request) {
-        log.info("[REDEMPTION_REJECT] Rejecting redemption id: {}", id);
+    public Page<RewardTransactionResponse> getAllTransactions(Pageable pageable) {
+        return transactionRepository.findAll(pageable).map(this::toTransactionResponse);
+    }
 
-        RewardRedemption redemption = redemptionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Redemption not found with id: " + id));
+    @Override
+    public Integer getCitizenPoints(UUID citizenUserId) {
+        Double totalPoints = transactionRepository.sumPointsByCitizenUserId(citizenUserId);
+        return totalPoints != null ? totalPoints.intValue() : 0;
+    }
 
-        if (!"PENDING".equals(redemption.getStatus())) {
-            throw new IllegalStateException("Redemption is not in PENDING status");
-        }
+    @Override
+    public List<LeaderboardEntryResponse> getLeaderboard(UUID areaId, int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 100));
+        List<LeaderboardProjection> ranking = transactionRepository.findLeaderboard(areaId, PageRequest.of(0, safeLimit));
 
-        // Refund points to citizen
-        var citizen = redemption.getCitizen();
-        citizen.setCurrentPoints(citizen.getCurrentPoints() + redemption.getPointsUsed());
+        return java.util.stream.IntStream.range(0, ranking.size())
+                .mapToObj(index -> {
+                    LeaderboardProjection row = ranking.get(index);
+                    String firstName = row.getFirstName() != null ? row.getFirstName() : "";
+                    String lastName = row.getLastName() != null ? row.getLastName() : "";
+                    return LeaderboardEntryResponse.builder()
+                            .rank(index + 1)
+                            .userId(row.getUserId())
+                            .firstName(firstName)
+                            .lastName(lastName)
+                            .fullName((firstName + " " + lastName).trim())
+                            .totalPoints(row.getTotalPoints() != null ? row.getTotalPoints().intValue() : 0)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
 
-        // Update redemption status
-        redemption.setStatus("REJECTED");
-        redemption.setRejectionReason(request.getReason());
-        redemption.setProcessedAt(LocalDateTime.now());
-
-        RewardRedemption updated = redemptionRepository.save(redemption);
-        log.info("[REDEMPTION_REJECTED] Rejected redemption id: {}, refunded {} points to citizen",
-                id, redemption.getPointsUsed());
-
-        return RedemptionResponse.fromEntity(updated);
+    private RewardTransactionResponse toTransactionResponse(RewardTransaction transaction) {
+        User citizen = transaction.getCitizenUser();
+        return RewardTransactionResponse.builder()
+                .transactionId(transaction.getTransactionId())
+                .citizenUserId(transaction.getCitizenUserId())
+                .citizenName(citizen != null ? citizen.getFullName() : null)
+                .transactionType(transaction.getReasonCode())
+                .pointsAmount(transaction.getPointsDelta() != null ? transaction.getPointsDelta().intValue() : 0)
+                .description(transaction.getReasonCode())
+                .referenceId(null)
+                .createdAt(transaction.getCreatedAt())
+                .build();
     }
 }

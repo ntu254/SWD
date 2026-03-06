@@ -1,36 +1,32 @@
 package com.example.backendservice.features.complaint.dto;
 
+import com.example.backendservice.features.complaint.entity.ComplaintCategory;
+import com.example.backendservice.features.complaint.entity.ComplaintPriority;
+import com.example.backendservice.features.complaint.entity.ComplaintStatus;
 import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class ComplaintResponse {
-
-    private UUID id;
-    private UUID citizenId;
-    private String citizenName;
-    private String citizenEmail;
-
-    private UUID collectorId;
-    private String collectorName;
-    private UUID taskAssignmentId;
-
+    private UUID complaintId;
+    private UUID createdByUserId;
+    private String createdByUserName;
     private String title;
-    private String description;
-    private String category;
-    private String evidenceImages;
-    private String status;
-    private String priority;
+    private String content;
+    private ComplaintCategory category;
+    private ComplaintPriority priority;
+    private ComplaintStatus status;
     private String adminResponse;
-    private UUID resolvedById;
-    private String resolvedByName;
-    private LocalDateTime resolvedAt;
+    private UUID reportId;
+    private UUID visitId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime resolvedAt;
+    private UUID rewardTransactionId;
+    private ComplaintResolutionResponse resolution;
 }

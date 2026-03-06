@@ -1,5 +1,6 @@
 package com.example.backendservice.features.collector.dto;
 
+import com.example.backendservice.features.task.entity.TaskAssignmentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +22,7 @@ public class CollectorTaskResponse {
     private UUID collectorId;
     private UUID reportId;
     private UUID enterpriseId;
-    private String status;
+    private TaskAssignmentStatus status;
     private String note;
     private String collectorProofImageUrl;
     private Instant assignedAt;

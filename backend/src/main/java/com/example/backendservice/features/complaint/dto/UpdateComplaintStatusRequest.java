@@ -1,19 +1,17 @@
 package com.example.backendservice.features.complaint.dto;
 
+import com.example.backendservice.features.complaint.entity.ComplaintStatus;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-import java.util.UUID;
-
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class UpdateComplaintStatusRequest {
 
-    private String status; // Pending, In_Progress, Resolved, Rejected
+    @NotNull(message = "Status is required")
+    private ComplaintStatus status;
 
     private String adminResponse;
-
-    private UUID resolvedById;
 }

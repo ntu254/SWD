@@ -1,5 +1,8 @@
 package com.example.backendservice.features.notification.dto;
 
+import com.example.backendservice.features.notification.entity.NotificationPriority;
+import com.example.backendservice.features.notification.entity.NotificationTargetAudience;
+import com.example.backendservice.features.notification.entity.NotificationType;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -13,9 +16,9 @@ public class UpdateNotificationRequest {
 
     private String title;
     private String content;
-    private String type;
-    private String targetAudience;
-    private String priority;
+    private NotificationType type;
+    private NotificationTargetAudience targetAudience;
+    private NotificationPriority priority;
     private Boolean isActive;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
