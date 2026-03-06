@@ -3,6 +3,7 @@ import { AuthProvider } from '@shared/contexts';
 import HomePage from './features/landing/pages/HomePage';
 import AuthPage from './features/auth/pages/AuthPage';
 import { RewardManagementPage } from '@features/reward-redemption';
+import { RewardExchangePage } from '@features/reward-exchange-service';
 import { UserManagementPage } from '@features/user-management';
 import { NotificationManagementPage } from '@features/notification-management/pages/NotificationManagementPage';
 import { ComplaintManagementPage } from '@features/complaint-management/pages/ComplaintManagementPage';
