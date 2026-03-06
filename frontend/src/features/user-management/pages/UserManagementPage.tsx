@@ -73,7 +73,7 @@ export const UserManagementPage: React.FC = () => {
         setIsDeleteDialogOpen(true);
     };
 
-    const handleRestoreClick = async (id: number) => {
+    const handleRestoreClick = async (id: string) => {
         try {
             await restoreUser(id);
             await fetchUsers(filters);
@@ -251,8 +251,8 @@ export const UserManagementPage: React.FC = () => {
                                                         <button
                                                             onClick={() => handlePageChange(page)}
                                                             className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${page === pagination.currentPage
-                                                                    ? 'bg-brand-600 text-white'
-                                                                    : 'text-gray-700 hover:bg-gray-100'
+                                                                ? 'bg-brand-600 text-white'
+                                                                : 'text-gray-700 hover:bg-gray-100'
                                                                 }`}
                                                         >
                                                             {page + 1}

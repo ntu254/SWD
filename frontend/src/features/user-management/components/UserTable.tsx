@@ -6,8 +6,8 @@ interface UserTableProps {
     users: AdminUserResponse[];
     onEdit: (user: AdminUserResponse) => void;
     onUpdateStatus: (user: AdminUserResponse) => void;
-    onDelete: (id: number) => void;
-    onRestore: (id: number) => void;
+    onDelete: (id: string) => void;
+    onRestore: (id: string) => void;
 }
 
 export const UserTable: React.FC<UserTableProps> = ({
@@ -83,8 +83,8 @@ export const UserTable: React.FC<UserTableProps> = ({
                             <tr
                                 key={user.id}
                                 className={`hover:bg-gray-50 transition-colors ${user.accountStatus === 'PENDING_DELETE'
-                                        ? 'bg-red-50/30'
-                                        : ''
+                                    ? 'bg-red-50/30'
+                                    : ''
                                     }`}
                             >
                                 {/* User Info */}

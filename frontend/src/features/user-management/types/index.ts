@@ -5,7 +5,7 @@ export type UserRole = 'ADMIN' | 'ENTERPRISE' | 'CITIZEN' | 'COLLECTOR';
 export type AccountStatus = 'ACTIVE' | 'DISABLED' | 'BANNED' | 'PENDING_DELETE';
 
 export interface AdminUserResponse {
-    id: number;
+    id: string;
     firstName: string;
     lastName: string;
     fullName: string;

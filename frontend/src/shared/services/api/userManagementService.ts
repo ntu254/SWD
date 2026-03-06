@@ -37,7 +37,7 @@ export const userManagementService = {
     /**
      * Get user by ID
      */
-    async getUserById(id: number): Promise<AdminUserResponse> {
+    async getUserById(id: string): Promise<AdminUserResponse> {
         const response: ApiSingleResponse = await apiClient.get(`${BASE_URL}/${id}`);
         return response.data;
     },
@@ -53,7 +53,7 @@ export const userManagementService = {
     /**
      * Update user details
      */
-    async updateUser(id: number, data: UpdateUserRequest): Promise<AdminUserResponse> {
+    async updateUser(id: string, data: UpdateUserRequest): Promise<AdminUserResponse> {
         const response: ApiSingleResponse = await apiClient.put(`${BASE_URL}/${id}`, data);
         return response.data;
     },
@@ -61,7 +61,7 @@ export const userManagementService = {
     /**
      * Update user role
      */
-    async updateUserRole(id: number, data: UpdateUserRoleRequest): Promise<AdminUserResponse> {
+    async updateUserRole(id: string, data: UpdateUserRoleRequest): Promise<AdminUserResponse> {
         const response: ApiSingleResponse = await apiClient.patch(
             `${BASE_URL}/${id}/role`,
             data
@@ -73,7 +73,7 @@ export const userManagementService = {
      * Update user status (ACTIVE, DISABLED, BANNED, PENDING_DELETE)
      */
     async updateUserStatus(
-        id: number,
+        id: string,
         data: UpdateUserStatusRequest
     ): Promise<AdminUserResponse> {
         const response: ApiSingleResponse = await apiClient.patch(
@@ -86,14 +86,14 @@ export const userManagementService = {
     /**
      * Soft delete user (sets status to PENDING_DELETE)
      */
-    async deleteUser(id: number): Promise<void> {
+    async deleteUser(id: string): Promise<void> {
         await apiClient.delete(`${BASE_URL}/${id}`);
     },
 
     /**
      * Restore deleted user
      */
-    async restoreUser(id: number): Promise<AdminUserResponse> {
+    async restoreUser(id: string): Promise<AdminUserResponse> {
         const response: ApiSingleResponse = await apiClient.post(`${BASE_URL}/${id}/restore`);
         return response.data;
     },

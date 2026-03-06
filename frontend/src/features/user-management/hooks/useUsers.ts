@@ -21,10 +21,10 @@ interface UseUsersReturn {
     error: string | null;
     fetchUsers: (filters?: UserFilters) => Promise<void>;
     createUser: (data: CreateUserRequest) => Promise<void>;
-    updateUser: (id: number, data: UpdateUserRequest) => Promise<void>;
-    updateUserStatus: (id: number, data: UpdateUserStatusRequest) => Promise<void>;
-    deleteUser: (id: number) => Promise<void>;
-    restoreUser: (id: number) => Promise<void>;
+    updateUser: (id: string, data: UpdateUserRequest) => Promise<void>;
+    updateUserStatus: (id: string, data: UpdateUserStatusRequest) => Promise<void>;
+    deleteUser: (id: string) => Promise<void>;
+    restoreUser: (id: string) => Promise<void>;
 }
 
 export const useUsers = (): UseUsersReturn => {
@@ -73,7 +73,7 @@ export const useUsers = (): UseUsersReturn => {
         }
     }, []);
 
-    const updateUser = useCallback(async (id: number, data: UpdateUserRequest) => {
+    const updateUser = useCallback(async (id: string, data: UpdateUserRequest) => {
         setLoading(true);
         setError(null);
         try {
@@ -87,7 +87,7 @@ export const useUsers = (): UseUsersReturn => {
     }, []);
 
     const updateUserStatus = useCallback(
-        async (id: number, data: UpdateUserStatusRequest) => {
+        async (id: string, data: UpdateUserStatusRequest) => {
             setLoading(true);
             setError(null);
             try {
@@ -102,7 +102,7 @@ export const useUsers = (): UseUsersReturn => {
         []
     );
 
-    const deleteUser = useCallback(async (id: number) => {
+    const deleteUser = useCallback(async (id: string) => {
         setLoading(true);
         setError(null);
         try {
@@ -115,7 +115,7 @@ export const useUsers = (): UseUsersReturn => {
         }
     }, []);
 
-    const restoreUser = useCallback(async (id: number) => {
+    const restoreUser = useCallback(async (id: string) => {
         setLoading(true);
         setError(null);
         try {
