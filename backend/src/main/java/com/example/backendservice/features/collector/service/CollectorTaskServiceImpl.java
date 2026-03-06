@@ -144,13 +144,61 @@ public class CollectorTaskServiceImpl implements CollectorTaskService {
         TaskAssignment assignment = taskAssignmentRepository.findByTaskIdAndCollectorUserId(taskId, collectorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task assignment not found"));
 
-        if (assignment.getStatus() != TaskAssignmentStatus.COLLECTED) {
-            throw new IllegalStateException("Can only upload proof for COLLECTED tasks");
+        if (assignment.getStatus() != TaskAssignmentStatus.COLLECTED && assignment.getStatus() != TaskAssignmentStatus.ON_THE_WAY) {
+            throw new IllegalStateException("Can only upload proof for IN_PROGRESS or COLLECTED tasks");
+        }
+        
+        // Ensure task is marked as COLLECTED
+        assignment.setStatus(TaskAssignmentStatus.COLLECTED);
+        taskAssignmentRepository.save(assignment);
+        
+        Task task = assignment.getTask();
+        if (task != null) {
+            task.setStatus(TaskStatus.COLLECTED);
+            taskRepository.save(task);
         }
 
-        // Note: The current entity doesn't have a proof image field
-        // This would need to be added to TaskAssignment or handled separately
-        log.info("Proof uploaded for task {}", taskId);
+        // Auto-create CollectionVisit to tie it to the new verification flow
+        try {
+            // Find existing visit or create new one
+            com.example.backendservice.features.collection.entity.CollectionVisit visit = visitRepository.findByTaskId(taskId)
+                .stream().findFirst().orElseGet(() -> {
+                     com.example.backendservice.features.collection.entity.CollectionVisit newVisit = com.example.backendservice.features.collection.entity.CollectionVisit.builder()
+                        .task(task)
+                        .collectorUser(assignment.getCollectorUser())
+                        .visitedAt(LocalDateTime.now())
+                        .visitStatus("PENDING_REWARD") // Waiting for Enterprise to approve
+                        .build();
+                     return visitRepository.save(newVisit);
+                });
+
+            // Save evidence photo
+            com.example.backendservice.features.collection.entity.EvidencePhoto photo = com.example.backendservice.features.collection.entity.EvidencePhoto.builder()
+                        .visit(visit)
+                        .photoUrl(request.getCollectorProofImageUrl())
+                        .takenAt(LocalDateTime.now())
+                        .note("AFTER")
+                        .build();
+            photoRepository.save(photo);
+            
+            // Save waste item if provided
+            if (request.getWasteTypeId() != null && request.getWeightKg() != null) {
+                com.example.backendservice.features.waste.entity.WasteType wasteType = wasteTypeRepository.findByWasteTypeId(UUID.fromString(request.getWasteTypeId()))
+                        .orElseThrow(() -> new ResourceNotFoundException("Waste type not found"));
+                        
+                com.example.backendservice.features.collection.entity.VisitWasteItem item = com.example.backendservice.features.collection.entity.VisitWasteItem.builder()
+                                .visit(visit)
+                                .wasteType(wasteType)
+                                .weightKg(request.getWeightKg())
+                                .sortingLevel("GOOD")
+                                .build();
+                wasteItemRepository.save(item);
+            }
+            
+            log.info("CollectionVisit created/updated with proof for task {}", taskId);
+        } catch (Exception e) {
+            log.error("Failed to auto-create collection visit for task {}: {}", taskId, e.getMessage());
+        }
 
         return toTaskResponse(assignment);
     }
