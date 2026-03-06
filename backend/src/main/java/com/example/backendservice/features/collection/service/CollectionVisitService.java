@@ -12,6 +12,8 @@ public interface CollectionVisitService {
     CollectionVisitResponse startVisit(UUID collectorUserId, CreateCollectionVisitRequest request);
 
     CollectionVisitResponse completeVisit(UUID visitId);
+    
+    CollectionVisitResponse verifyVisit(UUID visitId);
 
     CollectionVisitResponse getVisitById(UUID visitId);
 

@@ -37,6 +37,13 @@ public class CollectionVisitController {
         CollectionVisitResponse response = collectionVisitService.completeVisit(visitId);
         return ResponseEntity.ok(response);
     }
+    
+    @PatchMapping("/{visitId}/verify")
+    @Operation(summary = "Enterprise verify visit and award points")
+    public ResponseEntity<CollectionVisitResponse> verifyVisit(@PathVariable UUID visitId) {
+        CollectionVisitResponse response = collectionVisitService.verifyVisit(visitId);
+        return ResponseEntity.ok(response);
+    }
 
     @GetMapping("/{visitId}")
     @Operation(summary = "Get visit by ID")

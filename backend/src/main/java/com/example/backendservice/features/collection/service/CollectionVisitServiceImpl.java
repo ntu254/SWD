@@ -15,6 +15,7 @@ import com.example.backendservice.features.user.repository.UserRepository;
 import com.example.backendservice.features.waste.entity.WasteType;
 import com.example.backendservice.features.waste.repository.WasteTypeRepository;
 import com.example.backendservice.features.reward.service.RewardRuleService;
+import com.example.backendservice.features.reward.service.RewardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,6 +41,7 @@ public class CollectionVisitServiceImpl implements CollectionVisitService {
         private final UserRepository userRepository;
         private final WasteTypeRepository wasteTypeRepository;
         private final RewardRuleService rewardRuleService;
+        private final RewardService rewardService;
 
         @Override
         @Transactional
@@ -84,6 +86,41 @@ public class CollectionVisitServiceImpl implements CollectionVisitService {
                 visit = visitRepository.save(visit);
 
                 log.info("Completed visit {}", visitId);
+                return toVisitResponse(visit);
+        }
+        
+        @Override
+        @Transactional
+        public CollectionVisitResponse verifyVisit(UUID visitId) {
+                CollectionVisit visit = visitRepository.findByVisitId(visitId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Visit not found: " + visitId));
+
+                visit.setVisitStatus("VERIFIED");
+                visit = visitRepository.save(visit);
+                
+                Task task = visit.getTask();
+                
+                if (task != null && task.getWasteReport() != null) {
+                        com.example.backendservice.features.waste.entity.WasteReport report = task.getWasteReport();
+                        UUID citizenId = report.getReporterUserId();
+                        
+                        if (citizenId != null) {
+                                List<VisitWasteItem> items = wasteItemRepository.findByVisitId(visit.getVisitId());
+                                for (VisitWasteItem item : items) {
+                                        if (item.getWeightKg() != null && item.getWeightKg() > 0) {
+                                                Integer points = rewardRuleService.calculatePoints(
+                                                                item.getWasteTypeId(), item.getWeightKg());
+                                                if (points != null && points > 0) {
+                                                        String description = "Thu gom "
+                                                                        + (item.getWasteType() != null ? item.getWasteType().getName() : "rác");
+                                                        rewardService.earnPoints(citizenId, points, description, task.getTaskId());
+                                                }
+                                        }
+                                }
+                        }
+                }
+
+                log.info("Verified visit {}", visitId);
                 return toVisitResponse(visit);
         }
 
