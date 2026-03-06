@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "EcoCollect",
+    "slug": "eco-collect",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#065f46"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.ecocollect.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png",
+        "backgroundColor": "#065f46"
+      },
+      "package": "com.ecocollect.app"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow EcoCollect to access your camera to scan waste."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow EcoCollect to use your location to tag waste reports."
+        }
+      ]
+    ],
+    "scheme": "ecocollect",
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
