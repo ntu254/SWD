@@ -252,22 +252,9 @@ public class TaskServiceImpl implements TaskService {
             report.setStatus("COMPLETED");
             wasteReportRepository.save(report);
 
-            // Tự động cộng điểm cho Citizen dựa trên khối lượng rác thu gom
-            UUID citizenId = report.getReporterUserId();
-            if (citizenId != null) {
-                List<VisitWasteItem> items = visitWasteItemRepository.findByTaskId(task.getTaskId());
-                for (VisitWasteItem item : items) {
-                    if (item.getWeightKg() != null && item.getWeightKg() > 0) {
-                        Integer points = rewardRuleService.calculatePoints(
-                                item.getWasteTypeId(), item.getWeightKg());
-                        if (points != null && points > 0) {
-                            String description = "Thu gom "
-                                    + (item.getWasteType() != null ? item.getWasteType().getName() : "rác");
-                            rewardService.earnPoints(citizenId, points, description, task.getTaskId());
-                        }
-                    }
-                }
-            }
+        // Note: The logic to auto-award points here has been removed.
+        // Points will now be awarded when the Enterprise explicitly verifies
+        // the CollectionVisit via the Verification Dashboard.
         }
 
         log.info("Assignment {} completed by collector {}", assignmentId, assignment.getCollectorUserId());
