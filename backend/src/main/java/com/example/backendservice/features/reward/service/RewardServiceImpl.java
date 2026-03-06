@@ -2,10 +2,12 @@ package com.example.backendservice.features.reward.service;
 
 import com.example.backendservice.common.exception.ResourceNotFoundException;
 import com.example.backendservice.features.reward.dto.*;
+import com.example.backendservice.features.reward.repository.LeaderboardProjection;
 import com.example.backendservice.features.reward.entity.RewardTransaction;
 import com.example.backendservice.features.reward.repository.RewardTransactionRepository;
 import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.UserRepository;
+import org.springframework.data.domain.PageRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -120,6 +122,28 @@ public class RewardServiceImpl implements RewardService {
     public Integer getCitizenPoints(UUID citizenUserId) {
         Double totalPoints = transactionRepository.sumPointsByCitizenUserId(citizenUserId);
         return totalPoints != null ? totalPoints.intValue() : 0;
+    }
+
+    @Override
+    public List<LeaderboardEntryResponse> getLeaderboard(UUID areaId, int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 100));
+        List<LeaderboardProjection> ranking = transactionRepository.findLeaderboard(areaId, PageRequest.of(0, safeLimit));
+
+        return java.util.stream.IntStream.range(0, ranking.size())
+                .mapToObj(index -> {
+                    LeaderboardProjection row = ranking.get(index);
+                    String firstName = row.getFirstName() != null ? row.getFirstName() : "";
+                    String lastName = row.getLastName() != null ? row.getLastName() : "";
+                    return LeaderboardEntryResponse.builder()
+                            .rank(index + 1)
+                            .userId(row.getUserId())
+                            .firstName(firstName)
+                            .lastName(lastName)
+                            .fullName((firstName + " " + lastName).trim())
+                            .totalPoints(row.getTotalPoints() != null ? row.getTotalPoints().intValue() : 0)
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     private RewardTransactionResponse toTransactionResponse(RewardTransaction transaction) {

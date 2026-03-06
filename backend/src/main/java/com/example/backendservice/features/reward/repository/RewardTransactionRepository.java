@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
 
 @Repository
 public interface RewardTransactionRepository extends JpaRepository<RewardTransaction, UUID> {
@@ -43,4 +44,22 @@ public interface RewardTransactionRepository extends JpaRepository<RewardTransac
 
     @Query("SELECT rt FROM RewardTransaction rt WHERE rt.createdByAdmin.userId = :adminUserId ORDER BY rt.createdAt DESC")
     List<RewardTransaction> findByCreatedByAdminId(@Param("adminUserId") UUID adminUserId);
+
+    @Query("""
+            SELECT u.userId AS userId,
+                   u.firstName AS firstName,
+                   u.lastName AS lastName,
+                   COALESCE(SUM(rt.pointsDelta), 0) AS totalPoints
+            FROM RewardTransaction rt
+            JOIN rt.citizenUser u
+            WHERE (:areaId IS NULL OR EXISTS (
+                SELECT cp.userId
+                FROM CitizenProfile cp
+                WHERE cp.user = u
+                AND cp.defaultArea.areaId = :areaId
+            ))
+            GROUP BY u.userId, u.firstName, u.lastName
+            ORDER BY COALESCE(SUM(rt.pointsDelta), 0) DESC
+            """)
+    List<LeaderboardProjection> findLeaderboard(@Param("areaId") UUID areaId, Pageable pageable);
 }

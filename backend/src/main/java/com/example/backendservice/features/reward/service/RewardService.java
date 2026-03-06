@@ -4,6 +4,7 @@ import com.example.backendservice.features.reward.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -27,4 +28,6 @@ public interface RewardService {
 
     // Points
     Integer getCitizenPoints(UUID citizenUserId);
+
+    List<LeaderboardEntryResponse> getLeaderboard(UUID areaId, int limit);
 }
