@@ -168,7 +168,7 @@ public interface AnalyticsRepository extends JpaRepository<Task, UUID> {
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime);
 
-    @Query("SELECT COUNT(DISTINCT u.userId) FROM User u WHERE u.role = 'COLLECTOR' AND u.isActive = true")
+    @Query("SELECT COUNT(DISTINCT u.userId) FROM User u WHERE u.role = 'COLLECTOR' AND u.accountStatus = 'ACTIVE'")
     Long countGlobalActiveCollectors();
 
     @Query("SELECT COUNT(u.userId) FROM User u")
