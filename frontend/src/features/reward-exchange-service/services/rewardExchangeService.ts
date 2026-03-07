@@ -1,12 +1,12 @@
 import axios from 'axios';
 import type {
   AvailableReward,
-  UserPointsInfo,
-  ExchangeRequest,
   ExchangeHistory,
-  RewardFilters,
-  PaginatedRewards,
+  ExchangeRequest,
   ExchangeResponse,
+  PaginatedRewards,
+  RewardFilters,
+  UserPointsInfo,
 } from '../types';
 
 // Tạo apiClient riêng cho Reward Exchange Service
@@ -57,20 +57,22 @@ export const rewardExchangeService = {
       );
     }
     if (filters?.minPoints) {
-      rewards = rewards.filter(r => r.pointsRequired >= filters.minPoints!);
+      rewards = rewards.filter(r => r.pointsCost >= filters.minPoints!);
     }
     if (filters?.maxPoints) {
-      rewards = rewards.filter(r => r.pointsRequired <= filters.maxPoints!);
+      rewards = rewards.filter(r => r.pointsCost <= filters.maxPoints!);
     }
 
     // Sorting
     if (filters?.sortBy) {
       rewards.sort((a, b) => {
         let comparison = 0;
-        if (filters.sortBy === 'pointsRequired') {
-          comparison = a.pointsRequired - b.pointsRequired;
+        if (filters.sortBy === 'pointsCost') {
+          comparison = a.pointsCost - b.pointsCost;
         } else if (filters.sortBy === 'name') {
           comparison = a.name.localeCompare(b.name);
+        } else if (filters.sortBy === 'createdAt') {
+          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         }
         return filters.sortOrder === 'desc' ? -comparison : comparison;
       });
@@ -85,8 +87,8 @@ export const rewardExchangeService = {
       content: paginatedRewards,
       totalElements: total,
       totalPages: Math.ceil(total / size),
-      size,
-      number: page,
+      currentPage: page,
+      pageSize: size,
     };
   },
 
@@ -112,16 +114,20 @@ export const rewardExchangeService = {
    * Exchange reward (create exchange request)
    */
   async exchangeReward(request: ExchangeRequest): Promise<ExchangeResponse> {
+    // Get the reward to calculate cost
+    const reward = await this.getRewardById(request.rewardId);
+    const totalCost = reward.pointsCost * (request.quantity || 1);
+
     // MockAPI: Tạo exchange mới
     const response = await apiClient.post('/exchanges', {
       ...request,
       status: 'PENDING',
       exchangeDate: new Date().toISOString(),
+      pointsSpent: totalCost,
     });
 
     // Cập nhật user points (trừ points)
     const userPoints = await this.getUserPoints();
-    const totalCost = request.pointsSpent;
 
     // Lấy id từ user_points để update
     const allUserPoints = await apiClient.get('/user_points');
@@ -135,8 +141,8 @@ export const rewardExchangeService = {
 
     return {
       success: true,
-      exchangeId: response.data.id,
-      pointsSpent: totalCost,
+      data: response.data,
+      message: 'Exchange request submitted successfully',
       remainingPoints: userPoints.currentPoints - totalCost,
     };
   },

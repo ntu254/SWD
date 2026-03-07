@@ -1,6 +1,6 @@
+import { Filter, Search, SlidersHorizontal, X } from 'lucide-react';
 import React from 'react';
-import { Search, Filter, SlidersHorizontal, X } from 'lucide-react';
-import type { RewardFilters } from '../types';
+import type { RewardCategory, RewardFilters } from '../types';
 
 interface FiltersBarProps {
   filters: RewardFilters;
@@ -34,7 +34,7 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
   onSearchChange,
 }) => {
   const handleCategoryChange = (category: string) => {
-    onFiltersChange({ ...filters, category: category || undefined });
+    onFiltersChange({ ...filters, category: (category as RewardCategory) || undefined });
   };
 
   const handleSortChange = (sortValue: string) => {
@@ -65,7 +65,7 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
             value={searchTerm}
             onChange={e => onSearchChange(e.target.value)}
             className="
-              w-full pl-10 pr-4 py-3 
+              w-full pl-10 pr-4 py-3
               bg-gray-50 border border-gray-200 rounded-xl
               font-medium text-gray-800
               focus:bg-white focus:border-brand-500 focus:ring-[3px] focus:ring-brand-500/10 focus:outline-none
@@ -85,7 +85,7 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
             value={filters.category || ''}
             onChange={e => handleCategoryChange(e.target.value)}
             className="
-              w-full lg:w-48 pl-10 pr-10 py-3 
+              w-full lg:w-48 pl-10 pr-10 py-3
               bg-gray-50 border border-gray-200 rounded-xl
               font-medium text-gray-800
               focus:bg-white focus:border-brand-500 focus:ring-[3px] focus:ring-brand-500/10 focus:outline-none
@@ -113,7 +113,7 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
             }
             onChange={e => handleSortChange(e.target.value)}
             className="
-              w-full lg:w-56 pl-10 pr-10 py-3 
+              w-full lg:w-56 pl-10 pr-10 py-3
               bg-gray-50 border border-gray-200 rounded-xl
               font-medium text-gray-800
               focus:bg-white focus:border-brand-500 focus:ring-[3px] focus:ring-brand-500/10 focus:outline-none
