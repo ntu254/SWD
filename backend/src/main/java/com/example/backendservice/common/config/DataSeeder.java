@@ -18,8 +18,6 @@ import com.example.backendservice.features.user.entity.CitizenProfile;
 import com.example.backendservice.features.user.entity.CollectorProfile;
 import com.example.backendservice.features.user.entity.RoleType;
 import com.example.backendservice.features.user.entity.User;
-import com.example.backendservice.features.user.repository.CitizenProfileRepository;
-import com.example.backendservice.features.user.repository.CollectorProfileRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
 import com.example.backendservice.features.collection.entity.CollectionVisit;
 import com.example.backendservice.features.collection.repository.CollectionVisitRepository;
@@ -30,8 +28,8 @@ import com.example.backendservice.features.location.entity.ServiceArea;
 import com.example.backendservice.features.location.repository.ServiceAreaRepository;
 import com.example.backendservice.features.waste.entity.WasteType;
 import com.example.backendservice.features.waste.repository.WasteTypeRepository;
-import com.example.backendservice.features.reward.entity.RewardRule;
-import com.example.backendservice.features.reward.repository.RewardRuleRepository;
+import com.example.backendservice.features.reward.entity.CitizenRewardRule;
+import com.example.backendservice.features.reward.repository.CitizenRewardRuleRepository;
 
 import java.time.LocalDateTime;
 import java.time.LocalDate;
@@ -56,8 +54,8 @@ import jakarta.persistence.PersistenceContext;
 public class DataSeeder {
 
     private final UserRepository userRepository;
-    private final CitizenProfileRepository citizenProfileRepository;
-    private final CollectorProfileRepository collectorProfileRepository;
+    private final com.example.backendservice.features.user.repository.CitizenProfileRepository citizenProfileRepository;
+    private final com.example.backendservice.features.user.repository.CollectorProfileRepository collectorProfileRepository;
     private final TaskRepository taskRepository;
     private final TaskAssignmentRepository taskAssignmentRepository;
     private final ComplaintRepository complaintRepository;

@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class RewardRuleServiceImpl implements RewardRuleService {
 
-    private final CitizenRewardRuleRepository ruleRepository;
-    private final WasteTypeRepository wasteTypeRepository;
+    private final CitizenRewardRuleRepository repository;
+    private final com.example.backendservice.features.waste.repository.WasteTypeRepository wasteTypeRepository;
 
     @Override
     @Transactional
@@ -35,54 +35,49 @@ public class RewardRuleServiceImpl implements RewardRuleService {
         log.info("Creating reward rule for waste type: {}", request.getWasteTypeId());
 
         // Lookup WasteType từ DB
-        WasteType wasteType = wasteTypeRepository.findByWasteTypeId(request.getWasteTypeId())
+        com.example.backendservice.features.waste.entity.WasteType wasteType = wasteTypeRepository.findByWasteTypeId(request.getWasteTypeId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Waste type not found: " + request.getWasteTypeId()));
 
         CitizenRewardRule rule = CitizenRewardRule.builder()
                 .wasteType(wasteType)
                 .sortingLevel(request.getSortingLevel())
-                .pointsFixed(request.getPointsFixed() != null ? request.getPointsFixed().doubleValue() : null)
+                .pointsFixed(request.getPointsFixed() != null ? request.getPointsFixed().doubleValue() : 0.0)
                 .pointsPerKg(request.getPointsPerKg())
                 .effectiveFrom(request.getEffectiveFrom())
                 .effectiveTo(request.getEffectiveTo())
                 .isActive(true)
                 .build();
 
-        rule = ruleRepository.save(rule);
-        log.info("Reward rule created: {} for waste type: {}", rule.getRuleId(), wasteType.getName());
+        rule = repository.save(rule);
+        log.info("Created reward rule {} for waste type {}", rule.getRuleId(), request.getWasteTypeId());
 
         return toResponse(rule);
     }
 
     @Override
     public RewardRuleResponse getRuleById(UUID id) {
-        CitizenRewardRule rule = ruleRepository.findByRuleId(id)
+        CitizenRewardRule rule = repository.findByRuleId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reward rule not found: " + id));
         return toResponse(rule);
     }
 
     @Override
     public RewardRuleResponse getRuleByWasteType(UUID wasteTypeId) {
-        List<CitizenRewardRule> rules = ruleRepository.findActiveByWasteTypeId(wasteTypeId);
-        if (rules.isEmpty()) {
-            throw new ResourceNotFoundException("No active rules found for waste type: " + wasteTypeId);
-        }
-        return toResponse(rules.get(0));
+        // Just return the first active rule for this waste type
+        CitizenRewardRule rule = repository.findActiveByWasteTypeId(wasteTypeId).stream().findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("No active reward rule for waste type: " + wasteTypeId));
+        return toResponse(rule);
     }
 
     @Override
     public List<RewardRuleResponse> getAllRules() {
-        return ruleRepository.findAll().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        return repository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     @Override
     public List<RewardRuleResponse> getActiveRules() {
-        return ruleRepository.findAllActive().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        return repository.findAllActive().stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     @Override
@@ -90,7 +85,7 @@ public class RewardRuleServiceImpl implements RewardRuleService {
     public RewardRuleResponse updateRule(UUID id, CreateRewardRuleRequest request) {
         log.info("Updating reward rule: {}", id);
 
-        CitizenRewardRule rule = ruleRepository.findByRuleId(id)
+        CitizenRewardRule rule = repository.findByRuleId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reward rule not found: " + id));
 
         // Update WasteType nếu có
@@ -100,24 +95,14 @@ public class RewardRuleServiceImpl implements RewardRuleService {
                             "Waste type not found: " + request.getWasteTypeId()));
             rule.setWasteType(wasteType);
         }
-        if (request.getSortingLevel() != null) {
-            rule.setSortingLevel(request.getSortingLevel());
-        }
-        if (request.getPointsFixed() != null) {
-            rule.setPointsFixed(request.getPointsFixed().doubleValue());
-        }
-        if (request.getPointsPerKg() != null) {
-            rule.setPointsPerKg(request.getPointsPerKg());
-        }
-        if (request.getEffectiveFrom() != null) {
-            rule.setEffectiveFrom(request.getEffectiveFrom());
-        }
-        if (request.getEffectiveTo() != null) {
-            rule.setEffectiveTo(request.getEffectiveTo());
-        }
+        rule.setSortingLevel(request.getSortingLevel());
+        rule.setPointsFixed(request.getPointsFixed() != null ? request.getPointsFixed().doubleValue() : 0.0);
+        rule.setPointsPerKg(request.getPointsPerKg());
+        rule.setEffectiveFrom(request.getEffectiveFrom());
+        rule.setEffectiveTo(request.getEffectiveTo());
 
-        rule = ruleRepository.save(rule);
-        log.info("Reward rule updated: {}", id);
+        rule = repository.save(rule);
+        log.info("Updated reward rule {}", id);
 
         return toResponse(rule);
     }
@@ -126,36 +111,37 @@ public class RewardRuleServiceImpl implements RewardRuleService {
     @Transactional
     public void activateRule(UUID id) {
         log.info("Activating reward rule: {}", id);
-        CitizenRewardRule rule = ruleRepository.findByRuleId(id)
+        CitizenRewardRule rule = repository.findByRuleId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reward rule not found: " + id));
         rule.setIsActive(true);
-        ruleRepository.save(rule);
+        repository.save(rule);
+        log.info("Activated reward rule {}", id);
     }
 
     @Override
     @Transactional
     public void deactivateRule(UUID id) {
         log.info("Deactivating reward rule: {}", id);
-        CitizenRewardRule rule = ruleRepository.findByRuleId(id)
+        CitizenRewardRule rule = repository.findByRuleId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reward rule not found: " + id));
         rule.setIsActive(false);
-        ruleRepository.save(rule);
+        repository.save(rule);
+        log.info("Deactivated reward rule {}", id);
     }
 
     @Override
     @Transactional
     public void deleteRule(UUID id) {
         log.info("Deleting reward rule: {}", id);
-        CitizenRewardRule rule = ruleRepository.findByRuleId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Reward rule not found: " + id));
-        ruleRepository.delete(rule);
+        repository.deleteById(id);
+        log.info("Deleted reward rule {}", id);
     }
 
     @Override
     public Integer calculatePoints(UUID wasteTypeId, Double weightKg) {
         log.debug("Calculating points for waste type {} with weight {} kg", wasteTypeId, weightKg);
 
-        List<CitizenRewardRule> rules = ruleRepository.findActiveByWasteTypeId(wasteTypeId);
+        List<CitizenRewardRule> rules = repository.findActiveByWasteTypeId(wasteTypeId);
         if (rules.isEmpty()) {
             log.warn("No active rules found for waste type: {}", wasteTypeId);
             return 0;

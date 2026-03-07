@@ -33,6 +33,10 @@ public class CollectorTaskServiceImpl implements CollectorTaskService {
 
     private final TaskRepository taskRepository;
     private final TaskAssignmentRepository taskAssignmentRepository;
+    private final com.example.backendservice.features.collection.repository.CollectionVisitRepository visitRepository;
+    private final com.example.backendservice.features.collection.repository.EvidencePhotoRepository photoRepository;
+    private final com.example.backendservice.features.waste.repository.WasteTypeRepository wasteTypeRepository;
+    private final com.example.backendservice.features.collection.repository.VisitWasteItemRepository wasteItemRepository;
 
     @Override
     public Page<CollectorTaskResponse> viewAssignedTasks(UUID collectorId, Pageable pageable) {
