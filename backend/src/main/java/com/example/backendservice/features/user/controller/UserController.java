@@ -1,0 +1,164 @@
+package com.example.backendservice.features.user.controller;
+
+import com.example.backendservice.features.user.dto.*;
+import com.example.backendservice.features.user.entity.RoleType;
+import com.example.backendservice.features.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/users")
+@RequiredArgsConstructor
+@Tag(name = "User Management", description = "APIs for managing users")
+public class UserController {
+
+    private final UserService userService;
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Create a new user")
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
+        UserResponse response = userService.createUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
+    @Operation(summary = "Get user by ID")
+    public ResponseEntity<UserResponse> getUserById(@PathVariable UUID userId) {
+        UserResponse response = userService.getUserById(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/email/{email}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get user by email")
+    public ResponseEntity<UserResponse> getUserByEmail(@PathVariable String email) {
+        UserResponse response = userService.getUserByEmail(email);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
+    @Operation(summary = "Update user")
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable UUID userId,
+            @Valid @RequestBody UpdateUserRequest request) {
+        UserResponse response = userService.updateUser(userId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
+    @Operation(summary = "Delete user (soft delete)")
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID userId) {
+        userService.deleteUser(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get all users with pagination")
+    public ResponseEntity<Page<UserResponse>> getAllUsers(Pageable pageable) {
+        Page<UserResponse> response = userService.getAllUsers(pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/role/{role}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get users by role")
+    public ResponseEntity<Page<UserResponse>> getUsersByRole(
+            @PathVariable RoleType role,
+            Pageable pageable) {
+        Page<UserResponse> response = userService.getUsersByRole(role, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    // Citizen Profile endpoints
+    @GetMapping("/{userId}/citizen-profile")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
+    @Operation(summary = "Get citizen profile")
+    public ResponseEntity<CitizenProfileResponse> getCitizenProfile(@PathVariable UUID userId) {
+        CitizenProfileResponse response = userService.getCitizenProfile(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{userId}/citizen-profile")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
+    @Operation(summary = "Update citizen profile")
+    public ResponseEntity<CitizenProfileResponse> updateCitizenProfile(
+            @PathVariable UUID userId,
+            @Valid @RequestBody UpdateCitizenProfileRequest request) {
+        CitizenProfileResponse response = userService.updateCitizenProfile(userId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    // Collector Profile endpoints
+    @GetMapping("/{userId}/collector-profile")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
+    @Operation(summary = "Get collector profile")
+    public ResponseEntity<CollectorProfileResponse> getCollectorProfile(@PathVariable UUID userId) {
+        CollectorProfileResponse response = userService.getCollectorProfile(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{userId}/collector-profile")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
+    @Operation(summary = "Update collector profile")
+    public ResponseEntity<CollectorProfileResponse> updateCollectorProfile(
+            @PathVariable UUID userId,
+            @Valid @RequestBody UpdateCollectorProfileRequest request) {
+        CollectorProfileResponse response = userService.updateCollectorProfile(userId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{userId}/collector-profile/location")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
+    @Operation(summary = "Update collector location")
+    public ResponseEntity<CollectorProfileResponse> updateCollectorLocation(
+            @PathVariable UUID userId,
+            @RequestParam Double lat,
+            @RequestParam Double lng) {
+        CollectorProfileResponse response = userService.updateCollectorLocation(userId, lat, lng);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{userId}/collector-profile/availability")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
+    @Operation(summary = "Set collector availability")
+    public ResponseEntity<CollectorProfileResponse> setCollectorAvailability(
+            @PathVariable UUID userId,
+            @RequestParam Boolean isAvailable) {
+        CollectorProfileResponse response = userService.setCollectorAvailability(userId, isAvailable);
+        return ResponseEntity.ok(response);
+    }
+
+    // Password management
+    @PostMapping("/{userId}/change-password")
+    @PreAuthorize("hasRole('ADMIN') or @userAccessEvaluator.isCurrentUser(#userId, authentication)")
+    @Operation(summary = "Change user password")
+    public ResponseEntity<Void> changePassword(
+            @PathVariable UUID userId,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        userService.changePassword(userId, request.getOldPassword(), request.getNewPassword());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    @PreAuthorize("hasRole('ADMIN') or #email.equalsIgnoreCase(authentication.name)")
+    @Operation(summary = "Request password reset")
+    public ResponseEntity<Void> resetPassword(@RequestParam String email) {
+        userService.resetPassword(email);
+        return ResponseEntity.ok().build();
+    }
+}

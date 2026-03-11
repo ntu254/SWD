@@ -1,0 +1,471 @@
+package com.example.backendservice.features.task.service;
+
+import com.example.backendservice.common.exception.ResourceNotFoundException;
+import com.example.backendservice.features.location.entity.ServiceArea;
+import com.example.backendservice.features.location.repository.ServiceAreaRepository;
+import com.example.backendservice.features.task.dto.*;
+import com.example.backendservice.features.task.entity.Task;
+import com.example.backendservice.features.task.entity.TaskAssignmentStatus;
+import com.example.backendservice.features.task.entity.TaskAssignment;
+import com.example.backendservice.features.task.entity.TaskStatus;
+import com.example.backendservice.features.task.repository.TaskAssignmentRepository;
+import com.example.backendservice.features.task.repository.TaskRepository;
+import com.example.backendservice.features.user.entity.RoleType;
+import com.example.backendservice.features.user.entity.User;
+import com.example.backendservice.features.collection.entity.VisitWasteItem;
+import com.example.backendservice.features.collection.repository.VisitWasteItemRepository;
+import com.example.backendservice.features.reward.service.RewardRuleService;
+import com.example.backendservice.features.reward.service.RewardService;
+import com.example.backendservice.features.user.repository.UserRepository;
+import com.example.backendservice.features.waste.entity.WasteReport;
+import com.example.backendservice.features.waste.repository.WasteReportRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class TaskServiceImpl implements TaskService {
+
+    private final TaskRepository taskRepository;
+    private final TaskAssignmentRepository taskAssignmentRepository;
+    private final WasteReportRepository wasteReportRepository;
+    private final ServiceAreaRepository serviceAreaRepository;
+    private final UserRepository userRepository;
+    private final VisitWasteItemRepository visitWasteItemRepository;
+    private final RewardService rewardService;
+    private final RewardRuleService rewardRuleService;
+
+    @Override
+    @Transactional
+    public TaskResponse createTask(CreateTaskRequest request) {
+        WasteReport report = wasteReportRepository.findByReportId(request.getReportId())
+                .orElseThrow(() -> new ResourceNotFoundException("Waste report not found: " + request.getReportId()));
+
+        ServiceArea area = serviceAreaRepository.findByAreaId(request.getAreaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Service area not found: " + request.getAreaId()));
+
+        // Get a default enterprise user (first active one, should be configurable)
+        User enterpriseUser = userRepository.findByRole(RoleType.ENTERPRISE).stream().findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("No enterprise user found"));
+
+        Task task = Task.builder()
+                .wasteReport(report)
+                .area(area)
+                .enterpriseUser(enterpriseUser)
+                .createdByUser(enterpriseUser)
+                .scheduledDate(request.getScheduledDate())
+                .status(TaskStatus.PENDING)
+                .priority("NORMAL")
+                .build();
+
+        task = taskRepository.save(task);
+
+        // Update report status
+        report.setStatus("ASSIGNED_TO_TASK");
+        wasteReportRepository.save(report);
+
+        log.info("Created task {} for report {}", task.getTaskId(), request.getReportId());
+        return toTaskResponse(task);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TaskResponse getTaskById(UUID taskId) {
+        Task task = taskRepository.findByTaskId(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+        return toTaskResponse(task);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<TaskResponse> getTasksByArea(UUID areaId, Pageable pageable) {
+        List<Task> tasks = taskRepository.findByAreaId(areaId);
+        List<TaskResponse> responses = tasks.stream().map(this::toTaskResponse).collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
+
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<TaskResponse> getTasksByStatus(TaskStatus status, Pageable pageable) {
+        List<Task> tasks = taskRepository.findByStatus(status);
+        List<TaskResponse> responses = tasks.stream().map(this::toTaskResponse).collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
+
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<TaskResponse> getTasksByScheduledDate(LocalDate date, Pageable pageable) {
+        List<Task> tasks = taskRepository.findByScheduledDate(date);
+        List<TaskResponse> responses = tasks.stream().map(this::toTaskResponse).collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
+
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<TaskResponse> getAllTasks(Pageable pageable) {
+        return taskRepository.findAll(pageable).map(this::toTaskResponse);
+    }
+
+    @Override
+    @Transactional
+    public TaskResponse updateTaskStatus(UUID taskId, TaskStatus status) {
+        Task task = taskRepository.findByTaskId(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+
+        task.setStatus(status);
+        task = taskRepository.save(task);
+        log.info("Updated task {} status to {}", taskId, status);
+
+        return toTaskResponse(task);
+    }
+
+    @Override
+    @Transactional
+    public void cancelTask(UUID taskId) {
+        Task task = taskRepository.findByTaskId(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+
+        task.setStatus(TaskStatus.CANCELLED);
+        taskRepository.save(task);
+        log.info("Cancelled task {}", taskId);
+    }
+
+    @Override
+    @Transactional
+    public TaskAssignmentResponse assignTask(AssignTaskRequest request) {
+        Task task = taskRepository.findByTaskId(request.getTaskId())
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + request.getTaskId()));
+
+        User collector = userRepository.findByUserId(request.getCollectorUserId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Collector not found: " + request.getCollectorUserId()));
+
+        TaskAssignment assignment = TaskAssignment.builder()
+                .task(task)
+                .collectorUser(collector)
+                .status(TaskAssignmentStatus.ASSIGNED)
+                .build();
+
+        assignment = taskAssignmentRepository.save(assignment);
+
+        // Update task status
+        task.setStatus(TaskStatus.ASSIGNED);
+        taskRepository.save(task);
+
+        log.info("Assigned task {} to collector {}", request.getTaskId(), request.getCollectorUserId());
+        return toAssignmentResponse(assignment);
+    }
+
+    @Override
+    @Transactional
+    public TaskAssignmentResponse acceptAssignment(UUID assignmentId) {
+        TaskAssignment assignment = taskAssignmentRepository.findByAssignmentId(assignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
+
+        if (assignment.getStatus() != TaskAssignmentStatus.ASSIGNED) {
+            throw new IllegalStateException("Assignment is not in ASSIGNED status");
+        }
+
+        assignment.setStatus(TaskAssignmentStatus.ON_THE_WAY);
+        assignment.setAcceptedAt(LocalDateTime.now());
+        assignment = taskAssignmentRepository.save(assignment);
+
+        // Update task status
+        Task task = assignment.getTask();
+        task.setStatus(TaskStatus.IN_PROGRESS);
+        taskRepository.save(task);
+
+        log.info("Assignment {} accepted by collector {}", assignmentId, assignment.getCollectorUserId());
+        return toAssignmentResponse(assignment);
+    }
+
+    @Override
+    @Transactional
+    public TaskAssignmentResponse rejectAssignment(UUID assignmentId) {
+        TaskAssignment assignment = taskAssignmentRepository.findByAssignmentId(assignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
+
+        if (assignment.getStatus() != TaskAssignmentStatus.ASSIGNED) {
+            throw new IllegalStateException("Assignment is not in ASSIGNED status");
+        }
+
+        assignment.setStatus(TaskAssignmentStatus.CANCELLED);
+        assignment.setUnassignedAt(LocalDateTime.now());
+        assignment = taskAssignmentRepository.save(assignment);
+
+        // Update task status back to PENDING if no other active assignments
+        Task task = assignment.getTask();
+        List<TaskAssignment> activeAssignments = taskAssignmentRepository.findActiveAssignmentsByCollectorUserId(
+                assignment.getCollectorUserId());
+        boolean hasOtherActiveForTask = activeAssignments.stream()
+                .anyMatch(a -> a.getTaskId().equals(task.getTaskId()) && !a.getAssignmentId().equals(assignmentId));
+
+        if (!hasOtherActiveForTask) {
+            task.setStatus(TaskStatus.PENDING);
+            taskRepository.save(task);
+        }
+
+        log.info("Assignment {} rejected by collector {}", assignmentId, assignment.getCollectorUserId());
+        return toAssignmentResponse(assignment);
+    }
+
+    @Override
+    @Transactional
+    public TaskAssignmentResponse completeAssignment(UUID assignmentId) {
+        TaskAssignment assignment = taskAssignmentRepository.findByAssignmentId(assignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
+
+        if (assignment.getStatus() != TaskAssignmentStatus.ON_THE_WAY) {
+            throw new IllegalStateException("Assignment is not in ON_THE_WAY status");
+        }
+
+        assignment.setStatus(TaskAssignmentStatus.COLLECTED);
+        assignment = taskAssignmentRepository.save(assignment);
+
+        // Update task status
+        Task task = assignment.getTask();
+        task.setStatus(TaskStatus.COLLECTED);
+        taskRepository.save(task);
+
+        // Update report status if exists
+        WasteReport report = task.getWasteReport();
+        if (report != null) {
+            report.setStatus("COMPLETED");
+            wasteReportRepository.save(report);
+
+        // Note: The logic to auto-award points here has been removed.
+        // Points will now be awarded when the Enterprise explicitly verifies
+        // the CollectionVisit via the Verification Dashboard.
+        }
+
+        log.info("Assignment {} completed by collector {}", assignmentId, assignment.getCollectorUserId());
+        return toAssignmentResponse(assignment);
+    }
+
+    @Override
+    public TaskAssignmentResponse getAssignmentById(UUID assignmentId) {
+        TaskAssignment assignment = taskAssignmentRepository.findByAssignmentId(assignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
+        return toAssignmentResponse(assignment);
+    }
+
+    @Override
+    public List<TaskAssignmentResponse> getAssignmentsByTask(UUID taskId) {
+        return taskAssignmentRepository.findByTaskId(taskId).stream()
+                .map(this::toAssignmentResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<TaskAssignmentResponse> getAssignmentsByCollector(UUID collectorUserId, Pageable pageable) {
+        List<TaskAssignment> assignments = taskAssignmentRepository.findByCollectorUserId(collectorUserId);
+        List<TaskAssignmentResponse> responses = assignments.stream()
+                .map(this::toAssignmentResponse)
+                .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
+
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
+    }
+
+    @Override
+    public Page<TaskAssignmentResponse> getPendingAssignmentsByCollector(UUID collectorUserId, Pageable pageable) {
+        List<TaskAssignment> assignments = taskAssignmentRepository.findByCollectorUserIdAndStatus(collectorUserId,
+                TaskAssignmentStatus.ASSIGNED);
+        List<TaskAssignmentResponse> responses = assignments.stream()
+                .map(this::toAssignmentResponse)
+                .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
+
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
+    }
+
+    // ===================== Enterprise Approval Workflow =====================
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<TaskResponse> getPendingApprovalTasksByEnterprise(UUID enterpriseId, Pageable pageable) {
+        log.debug("Getting pending approval tasks for enterprise: {}", enterpriseId);
+        List<Task> tasks = taskRepository.findByEnterpriseUserIdAndStatus(enterpriseId,
+                TaskStatus.PENDING_ENTERPRISE_APPROVAL);
+        List<TaskResponse> responses = tasks.stream()
+                .map(this::toTaskResponse)
+                .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), responses.size());
+
+        return new PageImpl<>(responses.subList(start, end), pageable, responses.size());
+    }
+
+    @Override
+    @Transactional
+    public TaskResponse acceptTaskByEnterprise(UUID taskId, UUID enterpriseUserId) {
+        log.info("Enterprise {} accepting task {}", enterpriseUserId, taskId);
+
+        Task task = taskRepository.findByTaskId(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+
+        // Verify enterprise owns this task
+        if (!task.getEnterpriseUserId().equals(enterpriseUserId)) {
+            throw new IllegalStateException("Task does not belong to this enterprise");
+        }
+
+        // Verify task is in correct status
+        if (task.getStatus() != TaskStatus.PENDING_ENTERPRISE_APPROVAL && task.getStatus() != TaskStatus.PENDING) {
+            throw new IllegalStateException("Task is not pending approval. Current status: " + task.getStatus());
+        }
+
+        task.setStatus(TaskStatus.PENDING); // Move to pending for assignment to collector
+        task = taskRepository.save(task);
+
+        log.info("Enterprise {} accepted task {}", enterpriseUserId, taskId);
+        return toTaskResponse(task);
+    }
+
+    @Override
+    @Transactional
+    public TaskResponse rejectTaskByEnterprise(UUID taskId, UUID enterpriseUserId, String reason) {
+        log.info("Enterprise {} rejecting task {} with reason: {}", enterpriseUserId, taskId, reason);
+
+        Task task = taskRepository.findByTaskId(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+
+        // Verify enterprise owns this task
+        if (!task.getEnterpriseUserId().equals(enterpriseUserId)) {
+            throw new IllegalStateException("Task does not belong to this enterprise");
+        }
+
+        // Verify task is in correct status
+        if (task.getStatus() != TaskStatus.PENDING_ENTERPRISE_APPROVAL && task.getStatus() != TaskStatus.PENDING) {
+            throw new IllegalStateException("Task is not pending approval. Current status: " + task.getStatus());
+        }
+
+        task.setStatus(TaskStatus.REJECTED);
+        task.setRejectionReason(reason);
+        task = taskRepository.save(task);
+
+        // Update associated waste report if exists
+        WasteReport report = task.getWasteReport();
+        if (report != null) {
+            report.setStatus("REJECTED");
+            wasteReportRepository.save(report);
+        }
+
+        log.info("Enterprise {} rejected task {}", enterpriseUserId, taskId);
+        return toTaskResponse(task);
+    }
+
+    private TaskResponse toTaskResponse(Task task) {
+        WasteReport report = task.getWasteReport();
+<<<<<<< HEAD
+
+        String citizenName = null;
+        String citizenPhone = null;
+        String wasteTypeName = null;
+        String description = null;
+        String photoUrl = null;
+        Double latitude = null;
+        Double longitude = null;
+        List<String> imageUrls = new java.util.ArrayList<>();
+
+        if (report != null) {
+            if (report.getReporterUser() != null) {
+                citizenName = report.getReporterUser().getFullName();
+                citizenPhone = report.getReporterUser().getPhone();
+            }
+            if (report.getWasteType() != null) {
+                wasteTypeName = report.getWasteType().getName();
+            }
+            description = report.getDescription();
+            photoUrl = report.getReportPhotoUrl();
+            latitude = report.getLatitude();
+            longitude = report.getLongitude();
+            if (photoUrl != null && !photoUrl.isEmpty()) {
+                imageUrls.add(photoUrl);
+            }
+        }
+
+=======
+        String imageUrl = report != null && report.getReportPhotoUrl() != null ? report.getReportPhotoUrl() : null;
+        
+>>>>>>> 94efa8069bf4a55749c276d366d098ff82648738
+        return TaskResponse.builder()
+                .id(task.getTaskId())
+                .wasteReportId(task.getReportId())
+                .enterpriseId(task.getEnterpriseUserId())
+                .areaId(task.getArea() != null ? task.getArea().getAreaId() : null)
+                .areaName(task.getArea() != null ? task.getArea().getName() : null)
+                .address(task.getArea() != null ? task.getArea().getName() : null)
+                .scheduledDate(task.getScheduledDate())
+                .status(task.getStatus())
+                .priority(task.getPriority())
+<<<<<<< HEAD
+                .citizenName(citizenName)
+                .citizenPhone(citizenPhone)
+                .wasteTypeName(wasteTypeName)
+                .description(description)
+                .photoUrl(photoUrl)
+                .imageUrls(imageUrls)
+                .latitude(latitude)
+                .longitude(longitude)
+=======
+                .rejectionReason(task.getRejectionReason())
+                
+                // Fields from Waste Report
+                .citizenName(report != null && report.getReporterUser() != null ? report.getReporterUser().getFullName() : null)
+                .citizenPhone(report != null && report.getReporterUser() != null ? report.getReporterUser().getPhone() : null)
+                .address(report != null ? "Vi tri: " + report.getLatitude() + ", " + report.getLongitude() : (task.getArea() != null ? task.getArea().getName() : null))
+                .latitude(report != null ? report.getLatitude() : null)
+                .longitude(report != null ? report.getLongitude() : null)
+                .wasteType(report != null && report.getWasteType() != null ? report.getWasteType().getName() : null)
+                .description(report != null ? report.getDescription() : null)
+                .imageUrls(imageUrl != null ? List.of(imageUrl) : List.of())
+                
+>>>>>>> 94efa8069bf4a55749c276d366d098ff82648738
+                .createdAt(task.getCreatedAt())
+                .updatedAt(task.getUpdatedAt())
+                .build();
+    }
+
+    private TaskAssignmentResponse toAssignmentResponse(TaskAssignment assignment) {
+        return TaskAssignmentResponse.builder()
+                .assignmentId(assignment.getAssignmentId())
+                .taskId(assignment.getTaskId())
+                .collectorUserId(assignment.getCollectorUserId())
+                .collectorName(
+                        assignment.getCollectorUser() != null ? assignment.getCollectorUser().getFullName() : null)
+                .status(assignment.getStatus())
+                .assignedAt(null)
+                .acceptedAt(assignment.getAcceptedAt())
+                .completedAt(null)
+                .build();
+    }
+}

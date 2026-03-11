@@ -1,0 +1,64 @@
+// API Request Types
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}
+
+export interface UpdateUserRequest {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+}
+
+// API Response Types
+export interface UserResponse {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  displayName?: string;
+  fullName?: string;
+  email: string;
+  phone?: string;
+  avatarUrl?: string;
+  accountStatus?: string;
+  role?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  user: UserResponse;
+}
+
+// Generic API Response Wrapper
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  timestamp: string;
+}
+
+// API Error Types
+export interface ApiError {
+  success: false;
+  message: string;
+  errors?: Record<string, string[]>;
+  timestamp: string;
+}
+
+// API Configuration
+export interface ApiConfig {
+  baseURL: string;
+  timeout?: number;
+  headers?: Record<string, string>;
+}

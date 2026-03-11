@@ -1,0 +1,64 @@
+import React, { useMemo } from 'react';
+import { Users, CheckCircle, Ban, Trash2 } from 'lucide-react';
+import type { AdminUserResponse } from '../types';
+
+interface KPICardsProps {
+    users: AdminUserResponse[];
+}
+
+export const KPICards: React.FC<KPICardsProps> = ({ users }) => {
+    const stats = useMemo(
+        () => [
+            {
+                label: 'Total Users',
+                value: users.length,
+                icon: Users,
+                color: 'text-blue-600',
+                bg: 'bg-blue-50',
+            },
+            {
+                label: 'Active Users',
+                value: users.filter((u) => u.accountStatus === 'ACTIVE' && u.enabled).length,
+                icon: CheckCircle,
+                color: 'text-green-600',
+                bg: 'bg-green-50',
+            },
+            {
+                label: 'Banned',
+                value: users.filter((u) => u.accountStatus === 'BANNED').length,
+                icon: Ban,
+                color: 'text-red-600',
+                bg: 'bg-red-50',
+            },
+            {
+                label: 'Pending Deletion',
+                value: users.filter((u) => u.accountStatus === 'PENDING_DELETE').length,
+                icon: Trash2,
+                color: 'text-amber-600',
+                bg: 'bg-amber-50',
+            },
+        ],
+        [users]
+    );
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((stat, idx) => (
+                <div
+                    key={idx}
+                    className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                >
+                    <div className="flex items-center justify-between mb-4">
+                        <div className={`p-2 rounded-lg ${stat.bg} ${stat.color}`}>
+                            <stat.icon size={20} />
+                        </div>
+                    </div>
+                    <div className="text-3xl font-bold text-gray-900">{stat.value}</div>
+                    <div className="text-sm text-gray-500 mt-1">{stat.label}</div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+export default KPICards;
