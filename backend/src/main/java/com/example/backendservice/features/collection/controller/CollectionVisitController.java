@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.UUID;
 
@@ -39,6 +40,7 @@ public class CollectionVisitController {
     }
     
     @PatchMapping("/{visitId}/verify")
+    @PreAuthorize("hasAnyRole('ENTERPRISE', 'ADMIN')")
     @Operation(summary = "Enterprise verify visit and award points")
     public ResponseEntity<CollectionVisitResponse> verifyVisit(@PathVariable UUID visitId) {
         CollectionVisitResponse response = collectionVisitService.verifyVisit(visitId);
@@ -71,6 +73,7 @@ public class CollectionVisitController {
     }
 
     @GetMapping("/task/{taskId}")
+    @PreAuthorize("hasAnyRole('ENTERPRISE', 'ADMIN', 'COLLECTOR')")
     @Operation(summary = "Get visits by task")
     public ResponseEntity<Page<CollectionVisitResponse>> getVisitsByTask(
             @PathVariable UUID taskId,
@@ -80,6 +83,7 @@ public class CollectionVisitController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ENTERPRISE', 'ADMIN')")
     @Operation(summary = "Get all visits")
     public ResponseEntity<Page<CollectionVisitResponse>> getAllVisits(Pageable pageable) {
         Page<CollectionVisitResponse> response = collectionVisitService.getAllVisits(pageable);
