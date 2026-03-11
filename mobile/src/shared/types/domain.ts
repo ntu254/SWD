@@ -13,7 +13,7 @@ export interface UserResponse {
 }
 
 export interface WasteType {
-    wasteTypeId: string;
+    typeId: string;
     name: string;
     description?: string | null;
     pointsPerKg: number;

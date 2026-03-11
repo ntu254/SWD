@@ -142,7 +142,7 @@ export default function ReportScreen() {
                     });
 
                     setAiSuggestion({
-                        wasteTypeId: matchedType?.wasteTypeId || '',
+                        wasteTypeId: matchedType?.typeId || '',
                         wasteTypeName: suggestion.itemName,
                         confidence: suggestion.confidence.toString(),
                         explanation: suggestion.advice,
@@ -151,7 +151,7 @@ export default function ReportScreen() {
 
                     // Auto-select if confidence is high
                     if (suggestion.confidence > 80 && matchedType) {
-                        setSelectedType(matchedType.wasteTypeId);
+                        setSelectedType(matchedType.typeId);
                     }
                 } catch (err) {
                     console.error("AI Classification failed", err);
@@ -325,22 +325,22 @@ export default function ReportScreen() {
                 <View style={styles.typeGrid}>
                     {wasteTypes.map((wt) => (
                         <TouchableOpacity
-                            key={wt.wasteTypeId}
+                            key={wt.typeId}
                             style={[
                                 styles.typeChip,
-                                selectedType === wt.wasteTypeId && {
+                                selectedType === wt.typeId && {
                                     borderColor: TYPE_COLORS[wt.name.toUpperCase()] ?? '#10b981',
                                     backgroundColor: `${TYPE_COLORS[wt.name.toUpperCase()] ?? '#10b981'}18`,
                                 },
                             ]}
-                            onPress={() => setSelectedType(wt.wasteTypeId)}
+                            onPress={() => setSelectedType(wt.typeId)}
                             activeOpacity={0.75}
                         >
                             <Text style={styles.typeEmoji}>{TYPE_EMOJIS[wt.name.toUpperCase()] ?? '📦'}</Text>
                             <Text
                                 style={[
                                     styles.typeLabel,
-                                    selectedType === wt.wasteTypeId && { color: TYPE_COLORS[wt.name.toUpperCase()] ?? '#059669', fontWeight: '700' },
+                                    selectedType === wt.typeId && { color: TYPE_COLORS[wt.name.toUpperCase()] ?? '#059669', fontWeight: '700' },
                                 ]}
                             >
                                 {wt.name}

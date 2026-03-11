@@ -378,13 +378,30 @@ public class TaskServiceImpl implements TaskService {
     }
 
     private TaskResponse toTaskResponse(Task task) {
+        WasteReport report = task.getWasteReport();
+        String imageUrl = report != null && report.getReportPhotoUrl() != null ? report.getReportPhotoUrl() : null;
+        
         return TaskResponse.builder()
-                .taskId(task.getTaskId())
-                .reportId(task.getReportId())
+                .id(task.getTaskId())
+                .wasteReportId(task.getReportId())
+                .enterpriseId(task.getEnterpriseUserId())
                 .areaId(task.getArea() != null ? task.getArea().getAreaId() : null)
                 .areaName(task.getArea() != null ? task.getArea().getName() : null)
                 .scheduledDate(task.getScheduledDate())
                 .status(task.getStatus())
+                .priority(task.getPriority())
+                .rejectionReason(task.getRejectionReason())
+                
+                // Fields from Waste Report
+                .citizenName(report != null && report.getReporterUser() != null ? report.getReporterUser().getFullName() : null)
+                .citizenPhone(report != null && report.getReporterUser() != null ? report.getReporterUser().getPhone() : null)
+                .address(report != null ? "Vi tri: " + report.getLatitude() + ", " + report.getLongitude() : (task.getArea() != null ? task.getArea().getName() : null))
+                .latitude(report != null ? report.getLatitude() : null)
+                .longitude(report != null ? report.getLongitude() : null)
+                .wasteType(report != null && report.getWasteType() != null ? report.getWasteType().getName() : null)
+                .description(report != null ? report.getDescription() : null)
+                .imageUrls(imageUrl != null ? List.of(imageUrl) : List.of())
+                
                 .createdAt(task.getCreatedAt())
                 .updatedAt(task.getUpdatedAt())
                 .build();

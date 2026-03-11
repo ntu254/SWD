@@ -63,7 +63,7 @@ public class AdminUserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENTERPRISE')")
     public ResponseEntity<ApiResponse<AdminUserResponse>> getUserById(@PathVariable UUID id) {
 
         AdminUserResponse response = adminUserService.getUserById(id);
@@ -71,7 +71,7 @@ public class AdminUserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENTERPRISE')")
     @Operation(summary = "Update user", description = "Update user details (Admin override)")
     public ResponseEntity<ApiResponse<AdminUserResponse>> updateUser(
             @PathVariable UUID id,
@@ -101,7 +101,7 @@ public class AdminUserController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENTERPRISE')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
 
         adminUserService.deleteUser(id);

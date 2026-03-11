@@ -1,7 +1,7 @@
 import { AnalysisResult, WasteType } from '../types/ai';
 
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || ''; // Should be set in .env
-const MODEL_NAME = 'gemini-1.5-flash';
+const MODEL_NAME = 'gemini-2.5-flash';
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
 
 const SYSTEM_INSTRUCTION_ANALYSIS = `

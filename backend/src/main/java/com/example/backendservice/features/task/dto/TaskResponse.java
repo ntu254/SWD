@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -15,12 +16,27 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TaskResponse {
-    private UUID taskId;
-    private UUID reportId;
+    private UUID id;
+    private UUID wasteReportId;
+    private UUID enterpriseId;
     private UUID areaId;
     private String areaName;
     private LocalDate scheduledDate;
     private TaskStatus status;
+    private String priority;
+    private String notes;
+    private String rejectionReason;
+    
+    // Details from WasteReport
+    private String citizenName;
+    private String citizenPhone;
+    private String address; // Derived from Report or Location
+    private Double latitude;
+    private Double longitude;
+    private String wasteType;
+    private String description;
+    private List<String> imageUrls;
+    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
