@@ -21,6 +21,9 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { CircleMarker, MapContainer, TileLayer } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import axios from 'axios';
 
 const STEPS = [
   { id: 1, label: 'Ảnh rác', icon: Camera },
@@ -66,7 +69,7 @@ const ReportWastePage: React.FC = () => {
     wasteReportService
       .getActiveWasteTypes()
       .then(types => setWasteTypes(types))
-      .catch(() => {});
+      .catch(() => { });
     wasteReportService
       .getServiceAreas()
       .then(areas => {
@@ -81,42 +84,97 @@ const ReportWastePage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      setImagePreview(reader.result as string);
-      // Simulate AI scan
-      setAiScanning(true);
-      setTimeout(() => {
-        setAiSuggestion('Recyclable');
-        setAiScanning(false);
-      }, 1800);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX_SIZE = 600;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedResult = canvas.toDataURL('image/jpeg', 0.6);
+          setImagePreview(compressedResult);
+
+          setAiScanning(true);
+          setTimeout(() => {
+            setAiSuggestion('Recyclable');
+            setAiScanning(false);
+          }, 1800);
+        }
+      };
+      img.src = event.target?.result as string;
     };
     reader.readAsDataURL(file);
   };
 
-  const handleGetLocation = () => {
+  const handleGetLocation = async () => {
     setLocationLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        setLat(pos.coords.latitude);
-        setLng(pos.coords.longitude);
-        setLocation(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
-        setLocationLoading(false);
-      },
-      () => {
-        setLocation('Tìm vị trí thất bại — nhập địa chỉ thủ công');
-        setLocationLoading(false);
+
+    // Fallback Geolocation logic due to strict rate limits on IPAPI and 403 on ipwho.is
+    try {
+      // Use ipinfo.io as it is extremely reliable and generous
+      const response = await fetch('https://ipinfo.io/json');
+      if (!response.ok) throw new Error('Network error from ipinfo');
+
+      const data = await response.json();
+      if (data && data.loc) {
+        const [latStr, lngStr] = data.loc.split(',');
+        const parsedLat = parseFloat(latStr);
+        const parsedLng = parseFloat(lngStr);
+
+        setLat(parsedLat);
+        setLng(parsedLng);
+
+        const addressParts = [];
+        if (data.city) addressParts.push(data.city);
+        if (data.region) addressParts.push(data.region);
+
+        setLocation(addressParts.length > 0 ? addressParts.join(', ') : `${parsedLat}, ${parsedLng}`);
+      } else {
+        throw new Error('No coordinates returned');
       }
-    );
+    } catch (err) {
+      console.warn('Lỗi lấy vị trí qua IP:', err);
+      // Last-resort fallback to a default location if strictly required or show error
+      setLocation('Không thể định vị tự động — Vui lòng nhập địa chỉ');
+      // Clearing lat/lng to enforce the "bắt buộc phải lấy được tọa độ" rule
+      setLat(undefined);
+      setLng(undefined);
+    } finally {
+      setLocationLoading(false);
+    }
   };
 
   const canNext = () => {
     if (step === 1) return !!imagePreview;
-    if (step === 2) return !!location && (serviceAreas.length === 0 || !!selectedAreaId);
+    if (step === 2) {
+      // Must have location text AND real GPS coordinates (backend requires lat/lng)
+      return !!location && lat !== undefined && lng !== undefined && (serviceAreas.length === 0 || !!selectedAreaId);
+    }
     if (step === 3) return !!wasteType;
     return true;
   };
 
   const handleSubmit = async () => {
+    if (lat === undefined || lng === undefined) {
+      setSubmitError('Vui lòng lấy vị trí GPS trước khi gửi báo cáo.');
+      return;
+    }
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -213,13 +271,12 @@ const ReportWastePage: React.FC = () => {
               <div className="flex flex-col items-center gap-1">
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all
-                  ${
-                    step > s.id
+                  ${step > s.id
                       ? 'bg-brand-500 text-white'
                       : step === s.id
                         ? 'bg-brand-500 text-white shadow-md shadow-brand-500/30'
                         : 'bg-gray-100 text-gray-400'
-                  }`}
+                    }`}
                 >
                   {step > s.id ? <CheckCircle2 size={18} /> : <s.icon size={16} />}
                 </div>
@@ -322,20 +379,37 @@ const ReportWastePage: React.FC = () => {
             <h2 className="font-bold text-lg text-gray-900 flex items-center gap-2">
               <MapPin size={20} className="text-brand-600" /> Vị trí rác
             </h2>
-            {/* Map placeholder */}
-            <div className="relative h-48 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-50 to-brand-50 border border-brand-100 flex items-center justify-center">
-              <div className="text-center space-y-2">
-                <div className="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center mx-auto">
-                  <MapPin size={22} className="text-brand-600 fill-brand-100" />
+            {/* Map placeholder or actual Map */}
+            <div className="relative h-48 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-50 to-brand-50 border border-brand-100 flex items-center justify-center z-10">
+              {lat !== undefined && lng !== undefined ? (
+                <div style={{ width: '100%', height: '100%' }}>
+                  <MapContainer
+                    key={`${lat}-${lng}`}
+                    center={[lat, lng]}
+                    zoom={16}
+                    style={{ width: '100%', height: '100%' }}
+                    zoomControl={false}
+                    dragging={false}
+                    scrollWheelZoom={false}
+                  >
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <CircleMarker center={[lat, lng]} radius={10} pathOptions={{ fillColor: '#ef4444', color: '#ffffff', weight: 2, fillOpacity: 1 }} />
+                  </MapContainer>
+                  {location && location !== `${lat.toFixed(5)}, ${lng.toFixed(5)}` && (
+                    <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 border border-gray-100 shadow-sm flex items-center gap-2 z-[1000]">
+                      <Navigation size={13} className="text-brand-500 flex-shrink-0" />
+                      <span className="truncate">{location}</span>
+                    </div>
+                  )}
                 </div>
-                <p className="text-sm text-gray-600 font-medium">
-                  Nhấn "Lấy vị trí" để hiển thị bản đồ
-                </p>
-              </div>
-              {location && (
-                <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 border border-gray-100 shadow-sm flex items-center gap-2">
-                  <Navigation size={13} className="text-brand-500" />
-                  {location}
+              ) : (
+                <div className="text-center space-y-2">
+                  <div className="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center mx-auto">
+                    <MapPin size={22} className="text-brand-600 fill-brand-100" />
+                  </div>
+                  <p className="text-sm text-gray-600 font-medium">
+                    Nhấn "Lấy vị trí" để hiển thị bản đồ
+                  </p>
                 </div>
               )}
             </div>
@@ -431,11 +505,10 @@ const ReportWastePage: React.FC = () => {
                     <button
                       key={wt.typeId}
                       onClick={() => setWasteType(wt.typeId)}
-                      className={`p-4 rounded-2xl border-2 text-left transition-all hover:shadow-md ${
-                        isSelected
-                          ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-300'
-                          : 'border-gray-200 bg-white'
-                      }`}
+                      className={`p-4 rounded-2xl border-2 text-left transition-all hover:shadow-md ${isSelected
+                        ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-300'
+                        : 'border-gray-200 bg-white'
+                        }`}
                     >
                       <div className="mb-2">{icon}</div>
                       <p className="font-bold text-gray-800 text-sm">{wt.name}</p>

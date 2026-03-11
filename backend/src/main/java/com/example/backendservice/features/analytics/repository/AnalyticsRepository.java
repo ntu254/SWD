@@ -37,7 +37,7 @@ public interface AnalyticsRepository extends JpaRepository<Task, UUID> {
 
     // ===================== WEIGHT AGGREGATION =====================
 
-    @Query("SELECT COALESCE(SUM(vwi.weightKg), 0) FROM VisitWasteItem vwi " +
+    @Query("SELECT COALESCE(SUM(vwi.weightKg), 0.0) FROM VisitWasteItem vwi " +
             "JOIN vwi.visit cv " +
             "JOIN cv.task t " +
             "WHERE t.enterpriseUser.userId = :enterpriseId " +
@@ -61,13 +61,13 @@ public interface AnalyticsRepository extends JpaRepository<Task, UUID> {
 
     // ===================== POINTS =====================
 
-    @Query("SELECT COALESCE(SUM(rt.pointsDelta), 0) FROM RewardTransaction rt " +
+    @Query("SELECT COALESCE(SUM(rt.pointsDelta), 0.0) FROM RewardTransaction rt " +
             "JOIN rt.visit cv " +
             "JOIN cv.task t " +
             "WHERE t.enterpriseUser.userId = :enterpriseId " +
             "AND rt.createdAt >= :startDateTime AND rt.createdAt < :endDateTime " +
             "AND rt.reasonCode = 'COLLECTION'")
-    Integer sumPointsAwarded(
+    Double sumPointsAwarded(
             @Param("enterpriseId") UUID enterpriseId,
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime);

@@ -31,10 +31,12 @@ public class WasteReportController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping("/{reportId}")
-    @Operation(summary = "Get waste report by ID")
-    public ResponseEntity<WasteReportResponse> getReportById(@PathVariable UUID reportId) {
-        WasteReportResponse response = wasteReportService.getReportById(reportId);
+    @GetMapping("/me")
+    @Operation(summary = "Get my waste reports")
+    public ResponseEntity<Page<WasteReportResponse>> getMyReports(
+            @RequestHeader("X-User-Id") UUID citizenUserId,
+            Pageable pageable) {
+        Page<WasteReportResponse> response = wasteReportService.getReportsByCitizen(citizenUserId, pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -47,12 +49,10 @@ public class WasteReportController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/me")
-    @Operation(summary = "Get my waste reports")
-    public ResponseEntity<Page<WasteReportResponse>> getMyReports(
-            @RequestHeader("X-User-Id") UUID citizenUserId,
-            Pageable pageable) {
-        Page<WasteReportResponse> response = wasteReportService.getReportsByCitizen(citizenUserId, pageable);
+    @GetMapping("/{reportId}")
+    @Operation(summary = "Get waste report by ID")
+    public ResponseEntity<WasteReportResponse> getReportById(@PathVariable UUID reportId) {
+        WasteReportResponse response = wasteReportService.getReportById(reportId);
         return ResponseEntity.ok(response);
     }
 

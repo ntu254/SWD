@@ -79,7 +79,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                                 : 0.0;
 
                 // Query points
-                Integer totalPoints = analyticsRepository.sumPointsAwarded(enterpriseId, startDateTime, endDateTime);
+                Double totalPoints = analyticsRepository.sumPointsAwarded(enterpriseId, startDateTime, endDateTime);
 
                 // Query reports
                 Long reportsReceived = analyticsRepository.countReportsReceived(enterpriseId, startDateTime,
@@ -97,7 +97,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                                 .reportsRejected(cancelledTasks != null ? cancelledTasks : 0L)
                                 .activeCollectors(activeCollectors != null ? activeCollectors : 0L)
                                 .averageTasksPerCollector(avgTasksPerCollector)
-                                .totalPointsAwarded(totalPoints != null ? totalPoints : 0)
+                                .totalPointsAwarded(totalPoints != null ? totalPoints.intValue() : 0)
                                 .periodStart(startDate)
                                 .periodEnd(endDate)
                                 .build();
@@ -198,7 +198,9 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
                 // Initialize with task stats
                 for (Object[] row : taskStats) {
-                        LocalDate date = (LocalDate) row[0];
+                        LocalDate date = row[0] instanceof java.sql.Date
+                                        ? ((java.sql.Date) row[0]).toLocalDate()
+                                        : (LocalDate) row[0];
                         dateMap.put(date, DailyStatDTO.builder()
                                         .date(date)
                                         .tasksCreated(row[1] != null ? ((Number) row[1]).longValue() : 0L)
@@ -210,7 +212,9 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
                 // Add weight data
                 for (Object[] row : weightStats) {
-                        LocalDate date = (LocalDate) row[0];
+                        LocalDate date = row[0] instanceof java.sql.Date
+                                        ? ((java.sql.Date) row[0]).toLocalDate()
+                                        : (LocalDate) row[0];
                         DailyStatDTO existing = dateMap.get(date);
                         if (existing != null) {
                                 existing.setWeightCollectedKg(row[1] != null ? ((Number) row[1]).doubleValue() : 0.0);

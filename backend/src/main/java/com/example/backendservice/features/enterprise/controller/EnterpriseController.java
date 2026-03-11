@@ -35,10 +35,11 @@ public class EnterpriseController {
                 .body(ApiResponse.success("Enterprise created successfully", response));
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get enterprise by ID")
-    public ResponseEntity<ApiResponse<EnterpriseResponse>> getEnterpriseById(@PathVariable UUID id) {
-        EnterpriseResponse response = enterpriseService.getEnterpriseById(id);
+    @GetMapping("/me")
+    @Operation(summary = "Get my enterprise (Enterprise Owner)")
+    public ResponseEntity<ApiResponse<EnterpriseResponse>> getMyEnterprise(
+            @RequestHeader("X-User-Id") UUID ownerId) {
+        EnterpriseResponse response = enterpriseService.getMyEnterprise(ownerId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -51,11 +52,10 @@ public class EnterpriseController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @GetMapping("/me")
-    @Operation(summary = "Get my enterprise (Enterprise Owner)")
-    public ResponseEntity<ApiResponse<EnterpriseResponse>> getMyEnterprise(
-            @RequestHeader("X-User-Id") UUID ownerId) {
-        EnterpriseResponse response = enterpriseService.getMyEnterprise(ownerId);
+    @GetMapping("/{id}")
+    @Operation(summary = "Get enterprise by ID")
+    public ResponseEntity<ApiResponse<EnterpriseResponse>> getEnterpriseById(@PathVariable UUID id) {
+        EnterpriseResponse response = enterpriseService.getEnterpriseById(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

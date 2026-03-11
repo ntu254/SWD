@@ -12,10 +12,6 @@ import com.example.backendservice.features.task.repository.TaskAssignmentReposit
 import com.example.backendservice.features.task.repository.TaskRepository;
 import com.example.backendservice.features.user.entity.RoleType;
 import com.example.backendservice.features.user.entity.User;
-import com.example.backendservice.features.collection.entity.VisitWasteItem;
-import com.example.backendservice.features.collection.repository.VisitWasteItemRepository;
-import com.example.backendservice.features.reward.service.RewardRuleService;
-import com.example.backendservice.features.reward.service.RewardService;
 import com.example.backendservice.features.user.repository.UserRepository;
 import com.example.backendservice.features.waste.entity.WasteReport;
 import com.example.backendservice.features.waste.repository.WasteReportRepository;
@@ -40,12 +36,9 @@ public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
     private final TaskAssignmentRepository taskAssignmentRepository;
+    private final UserRepository userRepository;
     private final WasteReportRepository wasteReportRepository;
     private final ServiceAreaRepository serviceAreaRepository;
-    private final UserRepository userRepository;
-    private final VisitWasteItemRepository visitWasteItemRepository;
-    private final RewardService rewardService;
-    private final RewardRuleService rewardRuleService;
 
     @Override
     @Transactional
@@ -257,9 +250,9 @@ public class TaskServiceImpl implements TaskService {
             report.setStatus("COMPLETED");
             wasteReportRepository.save(report);
 
-        // Note: The logic to auto-award points here has been removed.
-        // Points will now be awarded when the Enterprise explicitly verifies
-        // the CollectionVisit via the Verification Dashboard.
+            // Note: The logic to auto-award points here has been removed.
+            // Points will now be awarded when the Enterprise explicitly verifies
+            // the CollectionVisit via the Verification Dashboard.
         }
 
         log.info("Assignment {} completed by collector {}", assignmentId, assignment.getCollectorUserId());
@@ -385,11 +378,10 @@ public class TaskServiceImpl implements TaskService {
 
     private TaskResponse toTaskResponse(Task task) {
         WasteReport report = task.getWasteReport();
-<<<<<<< HEAD
 
         String citizenName = null;
         String citizenPhone = null;
-        String wasteTypeName = null;
+        String wasteType = null;
         String description = null;
         String photoUrl = null;
         Double latitude = null;
@@ -402,7 +394,7 @@ public class TaskServiceImpl implements TaskService {
                 citizenPhone = report.getReporterUser().getPhone();
             }
             if (report.getWasteType() != null) {
-                wasteTypeName = report.getWasteType().getName();
+                wasteType = report.getWasteType().getName();
             }
             description = report.getDescription();
             photoUrl = report.getReportPhotoUrl();
@@ -413,43 +405,26 @@ public class TaskServiceImpl implements TaskService {
             }
         }
 
-=======
-        String imageUrl = report != null && report.getReportPhotoUrl() != null ? report.getReportPhotoUrl() : null;
-        
->>>>>>> 94efa8069bf4a55749c276d366d098ff82648738
         return TaskResponse.builder()
                 .id(task.getTaskId())
                 .wasteReportId(task.getReportId())
                 .enterpriseId(task.getEnterpriseUserId())
                 .areaId(task.getArea() != null ? task.getArea().getAreaId() : null)
                 .areaName(task.getArea() != null ? task.getArea().getName() : null)
-                .address(task.getArea() != null ? task.getArea().getName() : null)
+                .address(report != null ? "Vi tri: " + report.getLatitude() + ", " + report.getLongitude()
+                        : (task.getArea() != null ? task.getArea().getName() : null))
                 .scheduledDate(task.getScheduledDate())
                 .status(task.getStatus())
                 .priority(task.getPriority())
-<<<<<<< HEAD
+                .rejectionReason(task.getRejectionReason())
                 .citizenName(citizenName)
                 .citizenPhone(citizenPhone)
-                .wasteTypeName(wasteTypeName)
+                .wasteType(wasteType)
                 .description(description)
                 .photoUrl(photoUrl)
                 .imageUrls(imageUrls)
                 .latitude(latitude)
                 .longitude(longitude)
-=======
-                .rejectionReason(task.getRejectionReason())
-                
-                // Fields from Waste Report
-                .citizenName(report != null && report.getReporterUser() != null ? report.getReporterUser().getFullName() : null)
-                .citizenPhone(report != null && report.getReporterUser() != null ? report.getReporterUser().getPhone() : null)
-                .address(report != null ? "Vi tri: " + report.getLatitude() + ", " + report.getLongitude() : (task.getArea() != null ? task.getArea().getName() : null))
-                .latitude(report != null ? report.getLatitude() : null)
-                .longitude(report != null ? report.getLongitude() : null)
-                .wasteType(report != null && report.getWasteType() != null ? report.getWasteType().getName() : null)
-                .description(report != null ? report.getDescription() : null)
-                .imageUrls(imageUrl != null ? List.of(imageUrl) : List.of())
-                
->>>>>>> 94efa8069bf4a55749c276d366d098ff82648738
                 .createdAt(task.getCreatedAt())
                 .updatedAt(task.getUpdatedAt())
                 .build();

@@ -5,17 +5,9 @@ import com.example.backendservice.features.location.entity.ServiceArea;
 import com.example.backendservice.features.location.repository.ServiceAreaRepository;
 import com.example.backendservice.features.user.entity.User;
 import com.example.backendservice.features.user.repository.UserRepository;
-import com.example.backendservice.features.task.entity.Task;
-import com.example.backendservice.features.task.entity.TaskStatus;
-import com.example.backendservice.features.task.repository.TaskRepository;
-import com.example.backendservice.features.user.entity.RoleType;
 import com.example.backendservice.features.waste.dto.*;
 import com.example.backendservice.features.waste.entity.WasteReport;
 import com.example.backendservice.features.waste.repository.WasteReportRepository;
-import com.example.backendservice.features.task.entity.Task;
-import com.example.backendservice.features.task.entity.TaskStatus;
-import com.example.backendservice.features.task.repository.TaskRepository;
-import com.example.backendservice.features.user.entity.RoleType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -24,7 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -38,21 +29,23 @@ public class WasteReportServiceImpl implements WasteReportService {
     private final UserRepository userRepository;
     private final ServiceAreaRepository serviceAreaRepository;
     private final com.example.backendservice.features.waste.repository.WasteTypeRepository wasteTypeRepository;
-    private final TaskRepository taskRepository;
 
     @Override
     @Transactional
     public WasteReportResponse createReport(UUID reporterUserId, CreateWasteReportRequest request) {
         User reporterUser = userRepository.findByUserId(reporterUserId)
-                .orElseThrow(() -> new com.example.backendservice.common.exception.ResourceNotFoundException("User not found: " + reporterUserId));
+                .orElseThrow(() -> new com.example.backendservice.common.exception.ResourceNotFoundException(
+                        "User not found: " + reporterUserId));
 
         ServiceArea area = serviceAreaRepository.findByAreaId(request.getAreaId())
-                .orElseThrow(() -> new com.example.backendservice.common.exception.ResourceNotFoundException("Service area not found: " + request.getAreaId()));
+                .orElseThrow(() -> new com.example.backendservice.common.exception.ResourceNotFoundException(
+                        "Service area not found: " + request.getAreaId()));
 
         com.example.backendservice.features.waste.entity.WasteType wasteType = null;
         if (request.getWasteTypeId() != null) {
             wasteType = wasteTypeRepository.findByWasteTypeId(request.getWasteTypeId())
-                    .orElseThrow(() -> new com.example.backendservice.common.exception.ResourceNotFoundException("Waste type not found: " + request.getWasteTypeId()));
+                    .orElseThrow(() -> new com.example.backendservice.common.exception.ResourceNotFoundException(
+                            "Waste type not found: " + request.getWasteTypeId()));
         }
 
         WasteReport report = WasteReport.builder()
@@ -67,53 +60,11 @@ public class WasteReportServiceImpl implements WasteReportService {
                 .build();
 
         final WasteReport savedReport = wasteReportRepository.save(report);
-        
+
         // Auto-assign to first enterprise for Demo
-        userRepository.findByRole(RoleType.ENTERPRISE).stream().findFirst().ifPresent(enterpriseUser -> {
-            Task task = Task.builder()
-                    .wasteReport(savedReport)
-                    .area(area)
-                    .enterpriseUser(enterpriseUser)
-                    .createdByUser(savedReport.getReporterUser())
-                    .scheduledDate(LocalDate.now().plusDays(1))
-                    .status(TaskStatus.PENDING_ENTERPRISE_APPROVAL)
-                    .priority("NORMAL")
-                    .build();
-            taskRepository.save(task);
-            savedReport.setStatus("ASSIGNED_TO_TASK");
-            wasteReportRepository.save(savedReport);
-            log.info("Auto-created task for report {} assigned to enterprise {}", savedReport.getReportId(), enterpriseUser.getUserId());
-        });
-
-<<<<<<< HEAD
-        // Auto-create a Task for enterprise review
-        try {
-            List<User> enterpriseUsers = userRepository.findByRole(RoleType.ENTERPRISE);
-            if (!enterpriseUsers.isEmpty()) {
-                User enterpriseUser = enterpriseUsers.get(0);
-                Task autoTask = Task.builder()
-                        .wasteReport(report)
-                        .area(area)
-                        .enterpriseUser(enterpriseUser)
-                        .createdByUser(reporterUser)
-                        .status(TaskStatus.PENDING_ENTERPRISE_APPROVAL)
-                        .priority("NORMAL")
-                        .build();
-                taskRepository.save(autoTask);
-                log.info("Auto-created task for waste report {}", report.getReportId());
-            } else {
-                log.warn("No enterprise user found, skipping auto-task creation for report {}", report.getReportId());
-            }
-        } catch (Exception e) {
-            log.error("Failed to auto-create task for report {}: {}", report.getReportId(), e.getMessage());
-        }
-
-        return toResponse(report);
-=======
         log.info("Created waste report {} by user {}", savedReport.getReportId(), reporterUserId);
 
         return toResponse(savedReport);
->>>>>>> 94efa8069bf4a55749c276d366d098ff82648738
     }
 
     @Override

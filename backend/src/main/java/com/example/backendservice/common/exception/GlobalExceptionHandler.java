@@ -80,6 +80,7 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error occurred: ", ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("An unexpected error occurred: " + ex.getMessage()));
+                .body(ApiResponse.error(
+                        "Debug exception: " + ex.toString() + " :: " + java.util.Arrays.toString(ex.getStackTrace())));
     }
 }
