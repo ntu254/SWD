@@ -16,8 +16,7 @@ const RewardsPage: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [redeeming, setRedeeming] = useState<string | null>(null);
 
-  const userIdStr: string | undefined =
-    (user as any)?.userId ?? (user?.id != null ? String(user.id) : undefined);
+  const userIdStr: string | undefined = user?.userId;
 
   useEffect(() => {
     Promise.all([

@@ -43,7 +43,7 @@ export default function CollectorProfilePage() {
           </div>
           <div className="flex items-center gap-1.5 text-emerald-100 text-xs mt-1">
             <Shield size={12} />
-            ID: {((user as any)?.userId ?? String(user?.id ?? '—')).slice(-12).toUpperCase()}
+            ID: {(user?.userId ?? '—').slice(-12).toUpperCase()}
           </div>
         </div>
       </div>

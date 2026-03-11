@@ -64,8 +64,7 @@ const CitizenDashboard: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const userIdStr: string | undefined =
-    (user as any)?.userId ?? (user?.id != null ? String(user.id) : undefined);
+  const userIdStr: string | undefined = user?.userId;
 
   useEffect(() => {
     const fetchData = async () => {

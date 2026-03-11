@@ -16,7 +16,7 @@ export default function UploadProofPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const collectorId = (user as any)?.userId ?? (user?.id != null ? String(user.id) : '');
+  const collectorId = user?.userId ?? '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

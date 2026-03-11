@@ -36,7 +36,7 @@ export default function TaskHistoryPage() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  const collectorId = (user as any)?.userId ?? (user?.id != null ? String(user.id) : '');
+  const collectorId = user?.userId ?? '';
 
   const load = useCallback(
     async (p = 0) => {

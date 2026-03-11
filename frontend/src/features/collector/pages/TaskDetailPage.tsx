@@ -49,7 +49,7 @@ export default function TaskDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const collectorId = (user as any)?.userId ?? (user?.id != null ? String(user.id) : '');
+  const collectorId = user?.userId ?? '';
 
   const load = useCallback(async () => {
     if (!collectorId || !id) return;

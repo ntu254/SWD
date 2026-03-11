@@ -43,7 +43,7 @@ export default function MyTasksPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterStatus>('ALL');
 
-  const collectorId = (user as any)?.userId ?? (user?.id != null ? String(user.id) : '');
+  const collectorId = user?.userId ?? '';
 
   const load = useCallback(async () => {
     if (!collectorId) return;

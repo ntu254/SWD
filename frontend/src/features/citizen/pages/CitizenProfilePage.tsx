@@ -43,7 +43,7 @@ const CitizenProfilePage: React.FC = () => {
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSaved, setPwSaved] = useState(false);
 
-  const userIdStr: string = (user as any)?.userId ?? (user?.id != null ? String(user.id) : '');
+  const userIdStr: string = user?.userId ?? '';
 
   useEffect(() => {
     if (!userIdStr) return;

@@ -55,7 +55,7 @@ const ComplaintsPage: React.FC = () => {
   const [pastComplaints, setPastComplaints] = useState<CitizenComplaintResponse[]>([]);
   const [createdId, setCreatedId] = useState<string>('');
 
-  const citizenId: string = (user as any)?.userId ?? (user?.id != null ? String(user.id) : '');
+  const citizenId: string = user?.userId ?? '';
 
   useEffect(() => {
     if (!citizenId) return;
