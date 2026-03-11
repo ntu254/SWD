@@ -6,8 +6,12 @@ import com.example.backendservice.features.auth.dto.LoginRequest;
 import com.example.backendservice.features.auth.dto.RegisterRequest;
 import com.example.backendservice.features.user.dto.UserResponse;
 import com.example.backendservice.features.user.entity.AccountStatus;
+import com.example.backendservice.features.user.entity.CitizenProfile;
+import com.example.backendservice.features.user.entity.CollectorProfile;
 import com.example.backendservice.features.user.entity.RoleType;
 import com.example.backendservice.features.user.entity.User;
+import com.example.backendservice.features.user.repository.CitizenProfileRepository;
+import com.example.backendservice.features.user.repository.CollectorProfileRepository;
 import com.example.backendservice.features.user.repository.UserRepository;
 import com.example.backendservice.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +32,8 @@ import java.time.LocalDateTime;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
+    private final CitizenProfileRepository citizenProfileRepository;
+    private final CollectorProfileRepository collectorProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -65,6 +71,15 @@ public class AuthServiceImpl implements AuthService {
 
         user = userRepository.save(user);
         log.info("User registered successfully: {}", user.getUserId());
+
+        // Auto-create role-specific profile
+        if (role == RoleType.CITIZEN) {
+            citizenProfileRepository.save(CitizenProfile.builder().user(user).points(0).build());
+            log.info("Created CitizenProfile for user: {}", user.getUserId());
+        } else if (role == RoleType.COLLECTOR) {
+            collectorProfileRepository.save(CollectorProfile.builder().user(user).status("ACTIVE").build());
+            log.info("Created CollectorProfile for user: {}", user.getUserId());
+        }
 
         // Generate tokens (placeholder for now)
         String accessToken = generateAccessToken(user);

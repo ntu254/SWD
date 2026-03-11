@@ -28,6 +28,8 @@ import {
 import { NotificationManagementPage } from '@features/notification-management/pages/NotificationManagementPage';
 import { RewardManagementPage } from '@features/reward-redemption';
 import { UserManagementPage } from '@features/user-management';
+import ForbiddenPage from '@shared/components/ForbiddenPage';
+import RoleGuard from '@shared/components/RoleGuard';
 import { AuthProvider } from '@shared/contexts';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './App.css';
@@ -42,6 +44,7 @@ function App() {
           {/* Public */}
           <Route path="/" element={<HomePage />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/403" element={<ForbiddenPage />} />
 
           {/* Admin */}
           <Route path="/admin/rewards" element={<RewardManagementPage />} />
@@ -50,15 +53,64 @@ function App() {
           <Route path="/admin/complaints" element={<ComplaintManagementPage />} />
 
           {/* Enterprise */}
-          <Route path="/enterprise" element={<EnterpriseDashboardPage />} />
-          <Route path="/enterprise/tasks" element={<EnterpriseTaskManagementPage />} />
-          <Route path="/enterprise/collectors" element={<CollectorPage />} />
-          <Route path="/enterprise/complaints" element={<EnterpriseComplaintPage />} />
-          <Route path="/enterprise/analytics" element={<AnalyticsPage />} />
-          <Route path="/enterprise/reward-config" element={<RewardConfigPage />} />
+          <Route
+            path="/enterprise"
+            element={
+              <RoleGuard allowedRoles={['ADMIN', 'ENTERPRISE']}>
+                <EnterpriseDashboardPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/enterprise/tasks"
+            element={
+              <RoleGuard allowedRoles={['ADMIN', 'ENTERPRISE']}>
+                <EnterpriseTaskManagementPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/enterprise/collectors"
+            element={
+              <RoleGuard allowedRoles={['ADMIN', 'ENTERPRISE']}>
+                <CollectorPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/enterprise/complaints"
+            element={
+              <RoleGuard allowedRoles={['ADMIN', 'ENTERPRISE']}>
+                <EnterpriseComplaintPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/enterprise/analytics"
+            element={
+              <RoleGuard allowedRoles={['ADMIN', 'ENTERPRISE']}>
+                <AnalyticsPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/enterprise/reward-config"
+            element={
+              <RoleGuard allowedRoles={['ADMIN', 'ENTERPRISE']}>
+                <RewardConfigPage />
+              </RoleGuard>
+            }
+          />
 
           {/* Citizen */}
-          <Route path="/citizen" element={<CitizenLayout />}>
+          <Route
+            path="/citizen"
+            element={
+              <RoleGuard allowedRoles={['CITIZEN']}>
+                <CitizenLayout />
+              </RoleGuard>
+            }
+          >
             <Route index element={<CitizenDashboard />} />
             <Route path="report" element={<ReportWastePage />} />
             <Route path="my-reports" element={<MyReportsPage />} />
@@ -70,7 +122,14 @@ function App() {
           </Route>
 
           {/* Collector */}
-          <Route path="/collector" element={<CollectorLayout />}>
+          <Route
+            path="/collector"
+            element={
+              <RoleGuard allowedRoles={['COLLECTOR']}>
+                <CollectorLayout />
+              </RoleGuard>
+            }
+          >
             <Route index element={<CollectorDashboard />} />
             <Route path="tasks" element={<MyTasksPage />} />
             <Route path="tasks/:id" element={<TaskDetailPage />} />

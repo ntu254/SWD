@@ -25,6 +25,7 @@ export { wasteReportService } from './wasteReportService';
 export type {
   CreateWasteReportRequest,
   PageResponse,
+  ServiceAreaResponse,
   WasteReportResponse,
   WasteTypeResponse,
 } from './wasteReportService';

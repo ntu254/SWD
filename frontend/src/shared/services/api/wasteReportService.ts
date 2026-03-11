@@ -1,5 +1,14 @@
 import apiClient from './client';
 
+export interface ServiceAreaResponse {
+  areaId: string;
+  name: string;
+  wardCode: string | null;
+  districtCode: string | null;
+  city: string | null;
+  isActive: boolean;
+}
+
 export interface WasteTypeResponse {
   typeId: string;
   code: string;
@@ -95,5 +104,13 @@ export const wasteReportService = {
   async createReport(body: CreateWasteReportRequest): Promise<WasteReportResponse> {
     const res: any = await apiClient.post('/waste-reports', body);
     return unwrap(res);
+  },
+
+  /** GET /service-areas — list of available service areas */
+  async getServiceAreas(): Promise<ServiceAreaResponse[]> {
+    const res: any = await apiClient.get('/service-areas');
+    const data = unwrap(res);
+    if (data?.content) return data.content;
+    return Array.isArray(data) ? data : [];
   },
 };

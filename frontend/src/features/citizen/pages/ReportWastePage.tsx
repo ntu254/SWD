@@ -1,5 +1,5 @@
 import Button from '@components/Button';
-import type { WasteTypeResponse } from '@shared/services/api';
+import type { ServiceAreaResponse, WasteTypeResponse } from '@shared/services/api';
 import { wasteReportService } from '@shared/services/api';
 import {
   AlertTriangle,
@@ -56,15 +56,23 @@ const ReportWastePage: React.FC = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createdReportId, setCreatedReportId] = useState<string>('');
   const [wasteTypes, setWasteTypes] = useState<WasteTypeResponse[]>([]);
+  const [serviceAreas, setServiceAreas] = useState<ServiceAreaResponse[]>([]);
+  const [selectedAreaId, setSelectedAreaId] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     wasteReportService
       .getActiveWasteTypes()
       .then(types => setWasteTypes(types))
-      .catch(() => {
-        /* fallback: leave empty */
-      });
+      .catch(() => {});
+    wasteReportService
+      .getServiceAreas()
+      .then(areas => {
+        const active = areas.filter(a => a.isActive);
+        setServiceAreas(active);
+        if (active.length === 1) setSelectedAreaId(active[0].areaId);
+      })
+      .catch(() => {});
   }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,7 +109,7 @@ const ReportWastePage: React.FC = () => {
 
   const canNext = () => {
     if (step === 1) return !!imagePreview;
-    if (step === 2) return !!location;
+    if (step === 2) return !!location && !!selectedAreaId;
     if (step === 3) return !!wasteType;
     return true;
   };
@@ -111,6 +119,7 @@ const ReportWastePage: React.FC = () => {
     setSubmitError(null);
     try {
       const report = await wasteReportService.createReport({
+        areaId: selectedAreaId || undefined,
         wasteTypeId: wasteType || undefined,
         addressText: location || undefined,
         latitude: lat,
@@ -172,6 +181,7 @@ const ReportWastePage: React.FC = () => {
               setAiSuggestion(null);
               setWasteType('');
               setLocation('');
+              setSelectedAreaId('');
               setDescription('');
               setWeight('');
               setSubmitted(false);
@@ -351,6 +361,28 @@ const ReportWastePage: React.FC = () => {
                   placeholder="VD: 123 Nguyễn Trãi, Phường 2, Q.1, TP.HCM"
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-all"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Khu vực thu gom *
+                </label>
+                {serviceAreas.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic">Đang tải khu vực...</p>
+                ) : (
+                  <select
+                    value={selectedAreaId}
+                    onChange={e => setSelectedAreaId(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-all bg-white"
+                  >
+                    <option value="">— Chọn khu vực —</option>
+                    {serviceAreas.map(area => (
+                      <option key={area.areaId} value={area.areaId}>
+                        {area.name}
+                        {area.city ? ` — ${area.city}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
           </div>

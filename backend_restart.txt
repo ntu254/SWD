@@ -1,0 +1,1105 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< com.example:backend-service >---------------------
+[INFO] Building backend-service 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.4.1:run (default-cli) > test-compile @ backend-service >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ backend-service ---
+[INFO] Copying 4 resources from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ backend-service ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 214 source files with javac [debug parameters release 21] to target\classes
+[WARNING] /D:/TuaTua/FU/SWD392/SWD/backend/src/main/java/com/example/backendservice/common/config/RestTemplateConfig.java:[16,17] setConnectTimeout(java.time.Duration) in org.springframework.boot.web.client.RestTemplateBuilder has been deprecated and marked for removal
+[WARNING] /D:/TuaTua/FU/SWD392/SWD/backend/src/main/java/com/example/backendservice/common/config/RestTemplateConfig.java:[17,17] setReadTimeout(java.time.Duration) in org.springframework.boot.web.client.RestTemplateBuilder has been deprecated and marked for removal
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ backend-service ---
+[INFO] skip non existing resourceDirectory D:\TuaTua\FU\SWD392\SWD\backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ backend-service ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 4 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] <<< spring-boot:3.4.1:run (default-cli) < test-compile @ backend-service <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.4.1:run (default-cli) @ backend-service ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.1)
+
+2026-03-11T16:48:16.766+07:00  INFO 46100 --- [backend-service] [           main] c.e.b.BackendServiceApplication          : Starting BackendServiceApplication using Java 21.0.10 with PID 46100 (D:\TuaTua\FU\SWD392\SWD\backend\target\classes started by TuaTua in D:\TuaTua\FU\SWD392\SWD\backend)
+2026-03-11T16:48:16.767+07:00 DEBUG 46100 --- [backend-service] [           main] c.e.b.BackendServiceApplication          : Running with Spring Boot v3.4.1, Spring v6.2.1
+2026-03-11T16:48:16.767+07:00  INFO 46100 --- [backend-service] [           main] c.e.b.BackendServiceApplication          : The following 1 profile is active: "dev"
+2026-03-11T16:48:17.403+07:00  INFO 46100 --- [backend-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-03-11T16:48:17.526+07:00  INFO 46100 --- [backend-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 118 ms. Found 21 JPA repository interfaces.
+2026-03-11T16:48:17.914+07:00  INFO 46100 --- [backend-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-03-11T16:48:17.925+07:00  INFO 46100 --- [backend-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-11T16:48:17.925+07:00  INFO 46100 --- [backend-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.34]
+2026-03-11T16:48:17.981+07:00  INFO 46100 --- [backend-service] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-03-11T16:48:17.981+07:00  INFO 46100 --- [backend-service] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1182 ms
+2026-03-11T16:48:18.081+07:00  INFO 46100 --- [backend-service] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-03-11T16:48:18.123+07:00  INFO 46100 --- [backend-service] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.4.Final
+2026-03-11T16:48:18.148+07:00  INFO 46100 --- [backend-service] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-03-11T16:48:18.334+07:00  INFO 46100 --- [backend-service] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-03-11T16:48:18.355+07:00  INFO 46100 --- [backend-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-11T16:48:19.753+07:00  INFO 46100 --- [backend-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@4a0c3aa8
+2026-03-11T16:48:19.754+07:00  INFO 46100 --- [backend-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-11T16:48:19.946+07:00  WARN 46100 --- [backend-service] [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-03-11T16:48:20.221+07:00  INFO 46100 --- [backend-service] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 17.6
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-03-11T16:48:21.031+07:00  INFO 46100 --- [backend-service] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+Hibernate: 
+    set client_min_messages = WARNING
+Hibernate: 
+    alter table if exists citizen_reward_rules 
+       drop constraint if exists FK4g68gp6iyjnsjalmpl63ll30s
+Hibernate: 
+    alter table if exists citizens 
+       drop constraint if exists FKj9tsxlt2ffvenn5xknx6f350b
+Hibernate: 
+    alter table if exists citizens 
+       drop constraint if exists FKgx7s2yqk5jxh5dmc03swk30em
+Hibernate: 
+    alter table if exists collection_visits 
+       drop constraint if exists FKghdalithoh2l9cr0931cd2nsm
+Hibernate: 
+    alter table if exists collection_visits 
+       drop constraint if exists FK1p3yncvrecl4pg7hwajkuqji8
+Hibernate: 
+    alter table if exists collector_kpi_daily 
+       drop constraint if exists FKfpd9utj8fo1oqoyjxeg28yn36
+Hibernate: 
+    alter table if exists collector_kpi_daily 
+       drop constraint if exists FKm20xa84eudyj391d7y1n2fofk
+Hibernate: 
+    alter table if exists collectors 
+       drop constraint if exists FKbb7vbnkk0xnuxte89ovyamecw
+Hibernate: 
+    alter table if exists collectors 
+       drop constraint if exists FKtgcsn3oc48q110bkj70r61cmm
+Hibernate: 
+    alter table if exists collectors 
+       drop constraint if exists FK6m9ylxjcfj1o0hgf5o4udcj3o
+Hibernate: 
+    alter table if exists complaint_resolutions 
+       drop constraint if exists FKbwo4w8rv1y88x7rdquhbooo2i
+Hibernate: 
+    alter table if exists complaint_resolutions 
+       drop constraint if exists FKq6h363dyskiydq8dwsa3knve2
+Hibernate: 
+    alter table if exists complaints 
+       drop constraint if exists FKcvncmh2c7d5bxicdb3dv4sp4m
+Hibernate: 
+    alter table if exists complaints 
+       drop constraint if exists FK1myso076u2ymkpad24etq7r11
+Hibernate: 
+    alter table if exists complaints 
+       drop constraint if exists FK78kqvmhkael2dqyd77b2j1umm
+Hibernate: 
+    alter table if exists complaints 
+       drop constraint if exists FK6koe543t6ir90uelt32j06466
+Hibernate: 
+    alter table if exists enterprise_capabilities 
+       drop constraint if exists FK6h5v2wctp5fp7wg45tg84ycth
+Hibernate: 
+    alter table if exists enterprise_capabilities 
+       drop constraint if exists FK22slqnsbue9uitua389eir19t
+Hibernate: 
+    alter table if exists enterprise_capabilities 
+       drop constraint if exists FK76fa99tju9yr2l8gxxov9w79l
+Hibernate: 
+    alter table if exists evidence_photos 
+       drop constraint if exists FKdtphrckr7y63uaoqeppg7vbyn
+Hibernate: 
+    alter table if exists notifications 
+       drop constraint if exists FKn22rn1rf9urqnq9uaxhslbj3y
+Hibernate: 
+    alter table if exists reward_transactions 
+       drop constraint if exists FK883cy18d9igx4506cg4luutox
+Hibernate: 
+    alter table if exists reward_transactions 
+       drop constraint if exists FK3dq9nu5oljsbygweybaka6r15
+Hibernate: 
+    alter table if exists reward_transactions 
+       drop constraint if exists FKhbjrhrkv57dy1f6l86qqg1xo9
+Hibernate: 
+    alter table if exists reward_transactions 
+       drop constraint if exists FKtap3n107eena180jwn6pa4jq3
+Hibernate: 
+    alter table if exists task_assignments 
+       drop constraint if exists FK2aubluf5k3wshwvteb2fmxvul
+Hibernate: 
+    alter table if exists task_assignments 
+       drop constraint if exists FKk36vhf9tt6t3woselwnkis6v6
+Hibernate: 
+    alter table if exists tasks 
+       drop constraint if exists FK8c5xehxjdvw4duysjloafaj5g
+Hibernate: 
+    alter table if exists tasks 
+       drop constraint if exists FKlfv6vbvc9hlcsghkhl5aabkaj
+Hibernate: 
+    alter table if exists tasks 
+       drop constraint if exists FKidmi74w61rja2yrm2owoua69
+Hibernate: 
+    alter table if exists tasks 
+       drop constraint if exists FKo5w4aksgtv77qxq56rsvy0usa
+Hibernate: 
+    alter table if exists visit_waste_items 
+       drop constraint if exists FKcsdw6ageyxy03lveyvw97r16i
+Hibernate: 
+    alter table if exists visit_waste_items 
+       drop constraint if exists FKj9p0qhk4n5vae0bl4yudtypxp
+Hibernate: 
+    alter table if exists waste_reports 
+       drop constraint if exists FKaj4yoj4nca926e6fbkf8kn7gm
+Hibernate: 
+    alter table if exists waste_reports 
+       drop constraint if exists FK58at60unh8b3p8se1h0gx25b4
+Hibernate: 
+    alter table if exists waste_reports 
+       drop constraint if exists FKf5yghp0aycp86wpvgxp1p2m7o
+Hibernate: 
+    drop table if exists citizen_reward_rules cascade
+Hibernate: 
+    drop table if exists citizens cascade
+Hibernate: 
+    drop table if exists collection_visits cascade
+Hibernate: 
+    drop table if exists collector_kpi_daily cascade
+Hibernate: 
+    drop table if exists collectors cascade
+Hibernate: 
+    drop table if exists complaint_resolutions cascade
+Hibernate: 
+    drop table if exists complaints cascade
+Hibernate: 
+    drop table if exists enterprise_capabilities cascade
+Hibernate: 
+    drop table if exists evidence_photos cascade
+Hibernate: 
+    drop table if exists notifications cascade
+Hibernate: 
+    drop table if exists reward_items cascade
+Hibernate: 
+    drop table if exists reward_transactions cascade
+Hibernate: 
+    drop table if exists service_areas cascade
+Hibernate: 
+    drop table if exists system_settings cascade
+Hibernate: 
+    drop table if exists task_assignments cascade
+Hibernate: 
+    drop table if exists tasks cascade
+Hibernate: 
+    drop table if exists users cascade
+Hibernate: 
+    drop table if exists visit_waste_items cascade
+Hibernate: 
+    drop table if exists waste_reports cascade
+Hibernate: 
+    drop table if exists waste_types cascade
+Hibernate: 
+    create table citizen_reward_rules (
+        effective_from date,
+        effective_to date,
+        is_active boolean,
+        points_fixed float(53),
+        points_per_kg float(53),
+        rule_id uuid not null,
+        waste_type_id uuid not null,
+        sorting_level varchar(20) not null,
+        primary key (rule_id),
+        unique (waste_type_id, sorting_level)
+    )
+Hibernate: 
+    create table citizens (
+        latitude float(53),
+        longitude float(53),
+        points integer,
+        created_at timestamp(6),
+        updated_at timestamp(6),
+        default_area_id uuid,
+        user_id uuid not null,
+        address_text varchar(500),
+        primary key (user_id)
+    )
+Hibernate: 
+    create table collection_visits (
+        visited_at timestamp(6),
+        collector_user_id uuid not null,
+        task_id uuid not null,
+        visit_id uuid not null,
+        visit_status varchar(30),
+        collector_note TEXT,
+        primary key (visit_id)
+    )
+Hibernate: 
+    create table collector_kpi_daily (
+        actual_visits integer,
+        actual_weight_kg float(53),
+        kpi_date date not null,
+        min_visits integer,
+        min_weight_kg float(53),
+        updated_at timestamp(6),
+        area_id uuid not null,
+        collector_user_id uuid not null,
+        kpi_id uuid not null,
+        status varchar(20) check (status in ('PENDING','MET','NOT_MET')),
+        primary key (kpi_id),
+        unique (collector_user_id, area_id, kpi_date)
+    )
+Hibernate: 
+    create table collectors (
+        created_at timestamp(6),
+        updated_at timestamp(6),
+        default_area_id uuid,
+        enterprise_user_id uuid,
+        user_id uuid not null,
+        status varchar(20),
+        primary key (user_id)
+    )
+Hibernate: 
+    create table complaint_resolutions (
+        is_accepted boolean,
+        resolved_at timestamp(6),
+        admin_user_id uuid not null,
+        complaint_id uuid not null,
+        resolution_id uuid not null,
+        decision varchar(50),
+        note TEXT,
+        primary key (resolution_id)
+    )
+Hibernate: 
+    create table complaints (
+        created_at timestamp(6),
+        resolved_at timestamp(6),
+        updated_at timestamp(6),
+        complaint_id uuid not null,
+        created_by_user_id uuid not null,
+        report_id uuid,
+        reward_transaction_id uuid unique,
+        visit_id uuid,
+        priority varchar(20) check (priority in ('Low','Normal','High','Urgent')),
+        category varchar(30) check (category in ('BUG','FEATURE','POINTS_ERROR','COLLECTION_ISSUE','SERVICE_ISSUE','OTHER')),
+        status varchar(30) check (status in ('Pending','In_Progress','Resolved','Rejected')),
+        admin_response TEXT,
+        content TEXT not null,
+        title varchar(255),
+        primary key (complaint_id)
+    )
+Hibernate: 
+    create table enterprise_capabilities (
+        daily_capacity_kg float(53) not null,
+        effective_from date,
+        effective_to date,
+        used_capacity_kg float(53),
+        capability_id uuid not null,
+        enterprise_user_id uuid not null,
+        service_area_id uuid not null,
+        waste_type_id uuid not null,
+        primary key (capability_id),
+        unique (enterprise_user_id, waste_type_id, service_area_id)
+    )
+Hibernate: 
+    create table evidence_photos (
+        taken_at timestamp(6),
+        photo_id uuid not null,
+        visit_id uuid not null,
+        note TEXT,
+        photo_url varchar(255) not null,
+        primary key (photo_id)
+    )
+Hibernate: 
+    create table notifications (
+        is_active boolean,
+        created_at timestamp(6),
+        end_date timestamp(6),
+        start_date timestamp(6),
+        updated_at timestamp(6),
+        created_by uuid not null,
+        id uuid not null,
+        priority varchar(20) check (priority in ('Low','Normal','High','Urgent')),
+        target_audience varchar(30) check (target_audience in ('All','Citizen','Collector','Enterprise')),
+        type varchar(30) check (type in ('General','Maintenance','Update','Promotion','Alert')),
+        content TEXT not null,
+        title varchar(255) not null,
+        primary key (id)
+    )
+Hibernate: 
+    create table reward_items (
+        is_active boolean not null,
+        points_cost integer not null,
+        stock integer not null,
+        created_at timestamp(6),
+        updated_at timestamp(6),
+        item_id uuid not null,
+        description TEXT,
+        image_url varchar(255),
+        name varchar(255) not null,
+        primary key (item_id)
+    )
+Hibernate: 
+    create table reward_transactions (
+        points_delta float(53) not null,
+        created_at timestamp(6),
+        citizen_user_id uuid not null,
+        complaint_id uuid,
+        created_by_admin_id uuid,
+        transaction_id uuid not null,
+        visit_id uuid,
+        reason_code varchar(30),
+        primary key (transaction_id)
+    )
+Hibernate: 
+    create table service_areas (
+        is_active boolean,
+        created_at timestamp(6),
+        updated_at timestamp(6),
+        area_id uuid not null,
+        name varchar(200) not null,
+        geo_boundary_wkt TEXT,
+        primary key (area_id)
+    )
+Hibernate: 
+    create table system_settings (
+        data_type varchar(255),
+        description varchar(255),
+        setting_key varchar(255) not null,
+        setting_value varchar(255) not null,
+        primary key (setting_key)
+    )
+Hibernate: 
+    create table task_assignments (
+        accepted_at timestamp(6),
+        assigned_at timestamp(6),
+        unassigned_at timestamp(6),
+        assignment_id uuid not null,
+        collector_user_id uuid not null,
+        task_id uuid not null,
+        status varchar(30) check (status in ('ASSIGNED','ON_THE_WAY','COLLECTED','FAILED','CANCELLED','ACCEPTED','COMPLETED','REJECTED','UNASSIGNED')),
+        collector_note TEXT,
+        primary key (assignment_id)
+    )
+Hibernate: 
+    create table tasks (
+        scheduled_date date,
+        created_at timestamp(6),
+        updated_at timestamp(6),
+        area_id uuid,
+        created_by_user_id uuid not null,
+        enterprise_user_id uuid not null,
+        report_id uuid,
+        task_id uuid not null,
+        priority varchar(20),
+        status varchar(30) check (status in ('PENDING','PENDING_ENTERPRISE_APPROVAL','ASSIGNED','IN_PROGRESS','COLLECTED','FAILED','COMPLETED','CANCELLED','REJECTED')),
+        rejection_reason varchar(500),
+        primary key (task_id)
+    )
+Hibernate: 
+    create table users (
+        created_at timestamp(6),
+        deleted_at timestamp(6),
+        refresh_token_expiry timestamp(6),
+        updated_at timestamp(6),
+        user_id uuid not null,
+        account_status varchar(20) not null check (account_status in ('ACTIVE','DISABLED','BANNED','PENDING_DELETE')),
+        phone varchar(20),
+        role varchar(20) not null check (role in ('ADMIN','ENTERPRISE','CITIZEN','COLLECTOR')),
+        refresh_token varchar(500),
+        avatar_url varchar(255),
+        display_name varchar(255),
+        email varchar(255) not null unique,
+        first_name varchar(255) not null,
+        last_name varchar(255) not null,
+        password_hash varchar(255) not null,
+        primary key (user_id)
+    )
+Hibernate: 
+    create table visit_waste_items (
+        weight_kg float(53),
+        item_id uuid not null,
+        visit_id uuid not null,
+        waste_type_id uuid not null,
+        sorting_level varchar(20),
+        contamination_note TEXT,
+        primary key (item_id)
+    )
+Hibernate: 
+    create table waste_reports (
+        gps_accuracy_meters float(53),
+        latitude float(53),
+        longitude float(53),
+        created_at timestamp(6),
+        requested_pickup_time timestamp(6),
+        area_id uuid,
+        report_id uuid not null,
+        reporter_user_id uuid not null,
+        waste_type_id uuid,
+        status varchar(30),
+        description TEXT,
+        report_photo_url varchar(255),
+        primary key (report_id)
+    )
+Hibernate: 
+    create table waste_types (
+        is_active boolean,
+        is_recyclable boolean,
+        waste_type_id uuid not null,
+        name varchar(100) not null unique,
+        description varchar(500),
+        primary key (waste_type_id)
+    )
+Hibernate: 
+    alter table if exists citizen_reward_rules 
+       add constraint FK4g68gp6iyjnsjalmpl63ll30s 
+       foreign key (waste_type_id) 
+       references waste_types
+Hibernate: 
+    alter table if exists citizens 
+       add constraint FKj9tsxlt2ffvenn5xknx6f350b 
+       foreign key (default_area_id) 
+       references service_areas
+Hibernate: 
+    alter table if exists citizens 
+       add constraint FKgx7s2yqk5jxh5dmc03swk30em 
+       foreign key (user_id) 
+       references users
+Hibernate: 
+    alter table if exists collection_visits 
+       add constraint FKghdalithoh2l9cr0931cd2nsm 
+       foreign key (collector_user_id) 
+       references users
+Hibernate: 
+    alter table if exists collection_visits 
+       add constraint FK1p3yncvrecl4pg7hwajkuqji8 
+       foreign key (task_id) 
+       references tasks
+Hibernate: 
+    alter table if exists collector_kpi_daily 
+       add constraint FKfpd9utj8fo1oqoyjxeg28yn36 
+       foreign key (area_id) 
+       references service_areas
+Hibernate: 
+    alter table if exists collector_kpi_daily 
+       add constraint FKm20xa84eudyj391d7y1n2fofk 
+       foreign key (collector_user_id) 
+       references users
+Hibernate: 
+    alter table if exists collectors 
+       add constraint FKbb7vbnkk0xnuxte89ovyamecw 
+       foreign key (default_area_id) 
+       references service_areas
+Hibernate: 
+    alter table if exists collectors 
+       add constraint FKtgcsn3oc48q110bkj70r61cmm 
+       foreign key (enterprise_user_id) 
+       references users
+Hibernate: 
+    alter table if exists collectors 
+       add constraint FK6m9ylxjcfj1o0hgf5o4udcj3o 
+       foreign key (user_id) 
+       references users
+Hibernate: 
+    alter table if exists complaint_resolutions 
+       add constraint FKbwo4w8rv1y88x7rdquhbooo2i 
+       foreign key (admin_user_id) 
+       references users
+Hibernate: 
+    alter table if exists complaint_resolutions 
+       add constraint FKq6h363dyskiydq8dwsa3knve2 
+       foreign key (complaint_id) 
+       references complaints
+Hibernate: 
+    alter table if exists complaints 
+       add constraint FKcvncmh2c7d5bxicdb3dv4sp4m 
+       foreign key (created_by_user_id) 
+       references users
+Hibernate: 
+    alter table if exists complaints 
+       add constraint FK1myso076u2ymkpad24etq7r11 
+       foreign key (reward_transaction_id) 
+       references reward_transactions
+Hibernate: 
+    alter table if exists complaints 
+       add constraint FK78kqvmhkael2dqyd77b2j1umm 
+       foreign key (visit_id) 
+       references collection_visits
+Hibernate: 
+    alter table if exists complaints 
+       add constraint FK6koe543t6ir90uelt32j06466 
+       foreign key (report_id) 
+       references waste_reports
+Hibernate: 
+    alter table if exists enterprise_capabilities 
+       add constraint FK6h5v2wctp5fp7wg45tg84ycth 
+       foreign key (enterprise_user_id) 
+       references users
+Hibernate: 
+    alter table if exists enterprise_capabilities 
+       add constraint FK22slqnsbue9uitua389eir19t 
+       foreign key (service_area_id) 
+       references service_areas
+Hibernate: 
+    alter table if exists enterprise_capabilities 
+       add constraint FK76fa99tju9yr2l8gxxov9w79l 
+       foreign key (waste_type_id) 
+       references waste_types
+Hibernate: 
+    alter table if exists evidence_photos 
+       add constraint FKdtphrckr7y63uaoqeppg7vbyn 
+       foreign key (visit_id) 
+       references collection_visits
+Hibernate: 
+    alter table if exists notifications 
+       add constraint FKn22rn1rf9urqnq9uaxhslbj3y 
+       foreign key (created_by) 
+       references users
+Hibernate: 
+    alter table if exists reward_transactions 
+       add constraint FK883cy18d9igx4506cg4luutox 
+       foreign key (citizen_user_id) 
+       references users
+Hibernate: 
+    alter table if exists reward_transactions 
+       add constraint FK3dq9nu5oljsbygweybaka6r15 
+       foreign key (complaint_id) 
+       references complaints
+Hibernate: 
+    alter table if exists reward_transactions 
+       add constraint FKhbjrhrkv57dy1f6l86qqg1xo9 
+       foreign key (created_by_admin_id) 
+       references users
+Hibernate: 
+    alter table if exists reward_transactions 
+       add constraint FKtap3n107eena180jwn6pa4jq3 
+       foreign key (visit_id) 
+       references collection_visits
+Hibernate: 
+    alter table if exists task_assignments 
+       add constraint FK2aubluf5k3wshwvteb2fmxvul 
+       foreign key (collector_user_id) 
+       references users
+Hibernate: 
+    alter table if exists task_assignments 
+       add constraint FKk36vhf9tt6t3woselwnkis6v6 
+       foreign key (task_id) 
+       references tasks
+Hibernate: 
+    alter table if exists tasks 
+       add constraint FK8c5xehxjdvw4duysjloafaj5g 
+       foreign key (area_id) 
+       references service_areas
+Hibernate: 
+    alter table if exists tasks 
+       add constraint FKlfv6vbvc9hlcsghkhl5aabkaj 
+       foreign key (created_by_user_id) 
+       references users
+Hibernate: 
+    alter table if exists tasks 
+       add constraint FKidmi74w61rja2yrm2owoua69 
+       foreign key (enterprise_user_id) 
+       references users
+Hibernate: 
+    alter table if exists tasks 
+       add constraint FKo5w4aksgtv77qxq56rsvy0usa 
+       foreign key (report_id) 
+       references waste_reports
+Hibernate: 
+    alter table if exists visit_waste_items 
+       add constraint FKcsdw6ageyxy03lveyvw97r16i 
+       foreign key (visit_id) 
+       references collection_visits
+Hibernate: 
+    alter table if exists visit_waste_items 
+       add constraint FKj9p0qhk4n5vae0bl4yudtypxp 
+       foreign key (waste_type_id) 
+       references waste_types
+Hibernate: 
+    alter table if exists waste_reports 
+       add constraint FKaj4yoj4nca926e6fbkf8kn7gm 
+       foreign key (area_id) 
+       references service_areas
+Hibernate: 
+    alter table if exists waste_reports 
+       add constraint FK58at60unh8b3p8se1h0gx25b4 
+       foreign key (reporter_user_id) 
+       references users
+Hibernate: 
+    alter table if exists waste_reports 
+       add constraint FKf5yghp0aycp86wpvgxp1p2m7o 
+       foreign key (waste_type_id) 
+       references waste_types
+2026-03-11T16:48:36.837+07:00  INFO 46100 --- [backend-service] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-03-11T16:48:36.997+07:00  INFO 46100 --- [backend-service] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-03-11T16:48:37.303+07:00 DEBUG 46100 --- [backend-service] [           main] c.e.b.s.jwt.JwtAuthenticationFilter      : Filter 'jwtAuthenticationFilter' configured for use
+2026-03-11T16:48:38.945+07:00  WARN 46100 --- [backend-service] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-03-11T16:48:38.966+07:00  INFO 46100 --- [backend-service] [           main] eAuthenticationProviderManagerConfigurer : Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2026-03-11T16:48:38.966+07:00  WARN 46100 --- [backend-service] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2026-03-11T16:48:39.211+07:00 DEBUG 46100 --- [backend-service] [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with filters: DisableEncodeUrlFilter, WebAsyncManagerIntegrationFilter, SecurityContextHolderFilter, HeaderWriterFilter, CorsFilter, LogoutFilter, JwtAuthenticationFilter, RequestCacheAwareFilter, SecurityContextHolderAwareRequestFilter, AnonymousAuthenticationFilter, SessionManagementFilter, ExceptionTranslationFilter, AuthorizationFilter
+2026-03-11T16:48:39.437+07:00  INFO 46100 --- [backend-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2026-03-11T16:48:39.447+07:00  INFO 46100 --- [backend-service] [           main] c.e.b.BackendServiceApplication          : Started BackendServiceApplication in 22.925 seconds (process running for 23.147)
+Hibernate: 
+    select
+        count(*) 
+    from
+        users u1_0
+2026-03-11T16:48:39.763+07:00  INFO 46100 --- [backend-service] [           main] c.e.b.common.config.DataSeeder           : === Seeding all sample data ===
+Hibernate: 
+    insert 
+    into
+        users
+        (account_status, avatar_url, created_at, deleted_at, display_name, email, first_name, last_name, password_hash, phone, refresh_token, refresh_token_expiry, role, updated_at, user_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-03-11T16:48:39.989+07:00  INFO 46100 --- [backend-service] [           main] c.e.b.common.config.DataSeeder           : Created admin user: admin@example.com
+Hibernate: 
+    insert 
+    into
+        users
+        (account_status, avatar_url, created_at, deleted_at, display_name, email, first_name, last_name, password_hash, phone, refresh_token, refresh_token_expiry, role, updated_at, user_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        citizens
+        (address_text, created_at, default_area_id, latitude, longitude, points, updated_at, user_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        users
+        (account_status, avatar_url, created_at, deleted_at, display_name, email, first_name, last_name, password_hash, phone, refresh_token, refresh_token_expiry, role, updated_at, user_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        citizens
+        (address_text, created_at, default_area_id, latitude, longitude, points, updated_at, user_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        users
+        (account_status, avatar_url, created_at, deleted_at, display_name, email, first_name, last_name, password_hash, phone, refresh_token, refresh_token_expiry, role, updated_at, user_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        citizens
+        (address_text, created_at, default_area_id, latitude, longitude, points, updated_at, user_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+2026-03-11T16:48:40.997+07:00  INFO 46100 --- [backend-service] [           main] c.e.b.common.config.DataSeeder           : Created 3 citizens
+Hibernate: 
+    insert 
+    into
+        users
+        (account_status, avatar_url, created_at, deleted_at, display_name, email, first_name, last_name, password_hash, phone, refresh_token, refresh_token_expiry, role, updated_at, user_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-03-11T16:48:41.193+07:00  INFO 46100 --- [backend-service] [           main] c.e.b.common.config.DataSeeder           : Created enterprise user: enterprise@example.com
+Hibernate: 
+    insert 
+    into
+        users
+        (account_status, avatar_url, created_at, deleted_at, display_name, email, first_name, last_name, password_hash, phone, refresh_token, refresh_token_expiry, role, updated_at, user_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        collectors
+        (created_at, default_area_id, enterprise_user_id, status, updated_at, user_id) 
+    values
+        (?, ?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        users
+        (account_status, avatar_url, created_at, deleted_at, display_name, email, first_name, last_name, password_hash, phone, refresh_token, refresh_token_expiry, role, updated_at, user_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        collectors
+        (created_at, default_area_id, enterprise_user_id, status, updated_at, user_id) 
+    values
+        (?, ?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        users
+        (account_status, avatar_url, created_at, deleted_at, display_name, email, first_name, last_name, password_hash, phone, refresh_token, refresh_token_expiry, role, updated_at, user_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        collectors
+        (created_at, default_area_id, enterprise_user_id, status, updated_at, user_id) 
+    values
+        (?, ?, ?, ?, ?, ?)
+2026-03-11T16:48:42.170+07:00  INFO 46100 --- [backend-service] [           main] c.e.b.common.config.DataSeeder           : Created 3 collectors
+Hibernate: 
+    select
+        count(*) 
+    from
+        waste_types wt1_0
+Hibernate: 
+    insert 
+    into
+        waste_types
+        (description, is_active, is_recyclable, name, waste_type_id) 
+    values
+        (?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        waste_types
+        (description, is_active, is_recyclable, name, waste_type_id) 
+    values
+        (?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        waste_types
+        (description, is_active, is_recyclable, name, waste_type_id) 
+    values
+        (?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        waste_types
+        (description, is_active, is_recyclable, name, waste_type_id) 
+    values
+        (?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        waste_types
+        (description, is_active, is_recyclable, name, waste_type_id) 
+    values
+        (?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        waste_types
+        (description, is_active, is_recyclable, name, waste_type_id) 
+    values
+        (?, ?, ?, ?, ?)
+2026-03-11T16:48:43.107+07:00  INFO 46100 --- [backend-service] [           main] c.e.b.common.config.DataSeeder           : Seeded waste types
+Hibernate: 
+    select
+        count(*) 
+    from
+        citizen_reward_rules crr1_0
+Hibernate: 
+    select
+        wt1_0.waste_type_id,
+        wt1_0.description,
+        wt1_0.is_active,
+        wt1_0.is_recyclable,
+        wt1_0.name 
+    from
+        waste_types wt1_0 
+    where
+        wt1_0.name=?
+Hibernate: 
+    select
+        wt1_0.waste_type_id,
+        wt1_0.description,
+        wt1_0.is_active,
+        wt1_0.is_recyclable,
+        wt1_0.name 
+    from
+        waste_types wt1_0 
+    where
+        wt1_0.name=?
+Hibernate: 
+    insert 
+    into
+        citizen_reward_rules
+        (effective_from, effective_to, is_active, points_fixed, points_per_kg, sorting_level, waste_type_id, rule_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        citizen_reward_rules
+        (effective_from, effective_to, is_active, points_fixed, points_per_kg, sorting_level, waste_type_id, rule_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+2026-03-11T16:48:43.801+07:00  INFO 46100 --- [backend-service] [           main] c.e.b.common.config.DataSeeder           : Seeded reward rules
+Hibernate: 
+    select
+        count(*) 
+    from
+        service_areas sa1_0
+Hibernate: 
+    select
+        sa1_0.area_id,
+        sa1_0.created_at,
+        sa1_0.geo_boundary_wkt,
+        sa1_0.is_active,
+        sa1_0.name,
+        sa1_0.updated_at 
+    from
+        service_areas sa1_0 
+    where
+        sa1_0.name=?
+Hibernate: 
+    insert 
+    into
+        service_areas
+        (created_at, geo_boundary_wkt, is_active, name, updated_at, area_id) 
+    values
+        (?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        sa1_0.area_id,
+        sa1_0.created_at,
+        sa1_0.geo_boundary_wkt,
+        sa1_0.is_active,
+        sa1_0.name,
+        sa1_0.updated_at 
+    from
+        service_areas sa1_0 
+    where
+        sa1_0.name=?
+Hibernate: 
+    insert 
+    into
+        service_areas
+        (created_at, geo_boundary_wkt, is_active, name, updated_at, area_id) 
+    values
+        (?, ?, ?, ?, ?, ?)
+2026-03-11T16:48:44.462+07:00  INFO 46100 --- [backend-service] [           main] c.e.b.common.config.DataSeeder           : Created service areas
+Hibernate: 
+    select
+        u1_0.user_id,
+        u1_0.account_status,
+        u1_0.avatar_url,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.display_name,
+        u1_0.email,
+        u1_0.first_name,
+        u1_0.last_name,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.refresh_token,
+        u1_0.refresh_token_expiry,
+        u1_0.role,
+        u1_0.updated_at 
+    from
+        users u1_0 
+    where
+        u1_0.email=?
+Hibernate: 
+    select
+        u1_0.user_id,
+        u1_0.account_status,
+        u1_0.avatar_url,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.display_name,
+        u1_0.email,
+        u1_0.first_name,
+        u1_0.last_name,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.refresh_token,
+        u1_0.refresh_token_expiry,
+        u1_0.role,
+        u1_0.updated_at 
+    from
+        users u1_0 
+    where
+        u1_0.email=?
+Hibernate: 
+    select
+        u1_0.user_id,
+        u1_0.account_status,
+        u1_0.avatar_url,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.display_name,
+        u1_0.email,
+        u1_0.first_name,
+        u1_0.last_name,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.refresh_token,
+        u1_0.refresh_token_expiry,
+        u1_0.role,
+        u1_0.updated_at 
+    from
+        users u1_0 
+    where
+        u1_0.email=?
+Hibernate: 
+    select
+        sa1_0.area_id,
+        sa1_0.created_at,
+        sa1_0.geo_boundary_wkt,
+        sa1_0.is_active,
+        sa1_0.name,
+        sa1_0.updated_at 
+    from
+        service_areas sa1_0 
+    where
+        sa1_0.name=?
+Hibernate: 
+    insert 
+    into
+        tasks
+        (area_id, created_at, created_by_user_id, enterprise_user_id, priority, rejection_reason, scheduled_date, status, updated_at, report_id, task_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        task_assignments
+        (accepted_at, assigned_at, collector_note, collector_user_id, status, task_id, unassigned_at, assignment_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        u1_0.user_id,
+        u1_0.account_status,
+        u1_0.avatar_url,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.display_name,
+        u1_0.email,
+        u1_0.first_name,
+        u1_0.last_name,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.refresh_token,
+        u1_0.refresh_token_expiry,
+        u1_0.role,
+        u1_0.updated_at 
+    from
+        users u1_0 
+    where
+        u1_0.email=?
+Hibernate: 
+    insert 
+    into
+        complaints
+        (admin_response, category, content, created_at, created_by_user_id, priority, resolved_at, reward_transaction_id, status, title, updated_at, visit_id, report_id, complaint_id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        count(*) 
+    from
+        system_settings ss1_0
+2026-03-11T16:48:45.658+07:00  INFO 46100 --- [backend-service] [           main] c.e.b.common.config.DataSeeder           : Seeding default system settings...
+Hibernate: 
+    select
+        ss1_0.setting_key,
+        ss1_0.data_type,
+        ss1_0.description,
+        ss1_0.setting_value 
+    from
+        system_settings ss1_0 
+    where
+        ss1_0.setting_key=?
+Hibernate: 
+    select
+        ss1_0.setting_key,
+        ss1_0.data_type,
+        ss1_0.description,
+        ss1_0.setting_value 
+    from
+        system_settings ss1_0 
+    where
+        ss1_0.setting_key=?
+Hibernate: 
+    select
+        ss1_0.setting_key,
+        ss1_0.data_type,
+        ss1_0.description,
+        ss1_0.setting_value 
+    from
+        system_settings ss1_0 
+    where
+        ss1_0.setting_key=?
+Hibernate: 
+    select
+        ss1_0.setting_key,
+        ss1_0.data_type,
+        ss1_0.description,
+        ss1_0.setting_value 
+    from
+        system_settings ss1_0 
+    where
+        ss1_0.setting_key=?
+Hibernate: 
+    insert 
+    into
+        system_settings
+        (data_type, description, setting_value, setting_key) 
+    values
+        (?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        system_settings
+        (data_type, description, setting_value, setting_key) 
+    values
+        (?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        system_settings
+        (data_type, description, setting_value, setting_key) 
+    values
+        (?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        system_settings
+        (data_type, description, setting_value, setting_key) 
+    values
+        (?, ?, ?, ?)
+2026-03-11T16:48:46.703+07:00  INFO 46100 --- [backend-service] [           main] c.e.b.common.config.DataSeeder           : === Sample data seeded successfully! ===
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  02:39 min
+[INFO] Finished at: 2026-03-11T16:50:46+07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:3.4.1:run (default-cli) on project backend-service: Process terminated with exit code: -1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
