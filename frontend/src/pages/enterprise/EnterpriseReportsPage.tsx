@@ -308,11 +308,18 @@ export function EnterpriseReportsPage() {
           ) : (
             <div className="grid gap-3">
               {reports.map((report) => (
-                <button
+                <div
                   key={report.reportId}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelected(report)}
-                  className="shell-card shell-card-hover flex w-full items-start gap-4 p-4 text-left sm:p-5"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelected(report);
+                    }
+                  }}
+                  className="shell-card shell-card-hover flex w-full cursor-pointer items-start gap-4 p-4 text-left sm:p-5"
                 >
                   {report.reportPhotoUrl ? (
                     <img
@@ -381,7 +388,7 @@ export function EnterpriseReportsPage() {
                       </div>
                     </div>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           )}

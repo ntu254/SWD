@@ -132,19 +132,28 @@ export const CitizenReportPage: React.FC = () => {
     }
 
     try {
+      let reportPhotoUrl: string | undefined;
+      if (imageFile) {
+        try {
+          reportPhotoUrl = await reportsApi
+            .uploadPhoto(imageFile)
+            .then((response) => response.data?.data as string | undefined);
+        } catch {
+          // Fallback for local/dev when image host is not configured.
+          reportPhotoUrl = imagePreview ?? undefined;
+          if (reportPhotoUrl) {
+            toast.warn("Photo upload service unavailable, using inline report image.");
+          }
+        }
+      }
+
       await reportsApi.create({
         description: data.description || "",
         wasteTypeId: data.wasteTypeId,
         areaId: data.areaId,
         latitude: data.latitude,
         longitude: data.longitude,
-        reportPhotoUrl: imageFile
-          ? (
-              await reportsApi
-                .uploadPhoto(imageFile)
-                .then((response) => response.data?.data as string | undefined)
-            ) ?? undefined
-          : undefined,
+        reportPhotoUrl,
       });
 
       toast.success(

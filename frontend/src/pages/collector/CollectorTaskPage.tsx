@@ -81,9 +81,19 @@ export const CollectorTaskPage: React.FC = () => {
         throw new Error("Estimated weight must be a number greater than 0.");
       }
 
-      const photoUrl = await tasksApi
-        .uploadEvidence(proofFile)
-        .then((response) => response.data?.data as string | undefined);
+      let photoUrl: string | undefined;
+      try {
+        photoUrl = await tasksApi
+          .uploadEvidence(proofFile)
+          .then((response) => response.data?.data as string | undefined);
+      } catch {
+        // Fallback for local/dev when image host is not configured.
+        photoUrl = imagePreview ?? undefined;
+        if (!photoUrl) {
+          throw new Error("Failed to upload evidence photo.");
+        }
+        toast.warn("Evidence upload service unavailable, using inline proof image.");
+      }
 
       const wasteItems =
         report?.wasteTypeId
