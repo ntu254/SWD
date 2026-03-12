@@ -1,0 +1,4 @@
+﻿src/components/layout/AppLayout.tsx(5,10): error TS1484: 'User' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/layout/TopNav.tsx(5,53): error TS2307: Cannot find module '../ui/avatar' or its corresponding type declarations.
+src/components/layout/TopNav.tsx(6,132): error TS2307: Cannot find module '../ui/dropdown-menu' or its corresponding type declarations.
+src/pages/citizen/CitizenReportPage.tsx(88,8): error TS6133: 'error' is declared but its value is never read.

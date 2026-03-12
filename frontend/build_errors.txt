@@ -1,0 +1,7 @@
+﻿src/components/layout/AppLayout.tsx(5,10): error TS1484: 'User' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/layout/Sidebar.tsx(13,10): error TS1484: 'User' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/layout/TopNav.tsx(3,10): error TS1484: 'User' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/layout/TopNav.tsx(11,49): error TS6133: 'user' is declared but its value is never read.
+src/components/maps/MapComponent.tsx(1,17): error TS6133: 'useEffect' is declared but its value is never read.
+src/pages/citizen/CitizenDashboard.tsx(7,10): error TS1484: 'WasteReport' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/pages/citizen/CitizenReportPage.tsx(88,8): error TS6133: 'error' is declared but its value is never read.

@@ -1,0 +1,1788 @@
+{
+  "info": {
+    "name": "SWD392 - Waste Collection API",
+    "description": "Full Postman collection for SWD392 Waste Collection System.\n\nRoles: ADMIN, ENTERPRISE, COLLECTOR, CITIZEN\n\n**Setup:**\n1. Set variable `baseUrl` = `http://localhost:8080/api`\n2. Run **[AUTH] Admin Setup** first to get admin token\n3. Run requests in order for full business flow test\n\nTokens are automatically saved to collection variables via Tests scripts.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api",
+      "type": "string"
+    },
+    { "key": "adminToken", "value": "", "type": "string" },
+    { "key": "enterpriseToken", "value": "", "type": "string" },
+    { "key": "collectorToken", "value": "", "type": "string" },
+    { "key": "citizenToken", "value": "", "type": "string" },
+    { "key": "citizenRefreshToken", "value": "", "type": "string" },
+    { "key": "wasteTypeOrganicId", "value": "", "type": "string" },
+    { "key": "wasteTypeRecyclableId", "value": "", "type": "string" },
+    { "key": "serviceAreaId", "value": "", "type": "string" },
+    { "key": "rewardItemId", "value": "", "type": "string" },
+    { "key": "reportId", "value": "", "type": "string" },
+    { "key": "reportId2", "value": "", "type": "string" },
+    { "key": "taskId", "value": "", "type": "string" },
+    { "key": "capabilityId", "value": "", "type": "string" },
+    { "key": "ruleId", "value": "", "type": "string" },
+    { "key": "collectorId", "value": "", "type": "string" },
+    { "key": "citizenId", "value": "", "type": "string" },
+    { "key": "enterpriseId", "value": "", "type": "string" },
+    { "key": "complaintId", "value": "", "type": "string" },
+    { "key": "notificationId", "value": "", "type": "string" },
+    { "key": "ts", "value": "test01", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "🔐 [1] Auth",
+      "item": [
+        {
+          "name": "Admin Setup / Reset",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var j = pm.response.json();",
+                  "    pm.collectionVariables.set('adminToken', j.data.accessToken);",
+                  "    pm.test('Admin token received', () => pm.expect(j.data.accessToken).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Setup-Secret", "value": "swd392-setup-secret" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@swd392.com\",\n  \"password\": \"Test1234!\",\n  \"firstName\": \"Admin\",\n  \"lastName\": \"SWD392\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/admin-setup",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "admin-setup"]
+            }
+          }
+        },
+        {
+          "name": "Register - Enterprise",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var j = pm.response.json();",
+                  "    pm.collectionVariables.set('enterpriseToken', j.data.accessToken);",
+                  "    pm.collectionVariables.set('enterpriseId', j.data.userId);",
+                  "    pm.test('Enterprise registered', () => pm.expect(j.data.accessToken).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"enterprise{{ts}}@swd392.com\",\n  \"password\": \"Test1234!\",\n  \"firstName\": \"EcoRecycle\",\n  \"lastName\": \"Corp\",\n  \"role\": \"ENTERPRISE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Register - Collector",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var j = pm.response.json();",
+                  "    pm.collectionVariables.set('collectorToken', j.data.accessToken);",
+                  "    pm.collectionVariables.set('collectorId', j.data.userId);",
+                  "    pm.test('Collector registered', () => pm.expect(j.data.accessToken).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"collector{{ts}}@swd392.com\",\n  \"password\": \"Test1234!\",\n  \"firstName\": \"Nguyen\",\n  \"lastName\": \"Collector\",\n  \"role\": \"COLLECTOR\",\n  \"enterpriseUserId\": \"{{enterpriseId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Register - Citizen",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var j = pm.response.json();",
+                  "    pm.collectionVariables.set('citizenToken', j.data.accessToken);",
+                  "    pm.collectionVariables.set('citizenRefreshToken', j.data.refreshToken);",
+                  "    pm.collectionVariables.set('citizenId', j.data.userId);",
+                  "    pm.test('Citizen registered', () => pm.expect(j.data.accessToken).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"citizen{{ts}}@swd392.com\",\n  \"password\": \"Test1234!\",\n  \"firstName\": \"Tran\",\n  \"lastName\": \"Citizen\",\n  \"role\": \"CITIZEN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login - Citizen",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var j = pm.response.json();",
+                  "    pm.collectionVariables.set('citizenToken', j.data.accessToken);",
+                  "    pm.collectionVariables.set('citizenRefreshToken', j.data.refreshToken);",
+                  "    pm.test('Login successful', () => pm.expect(j.data.accessToken).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"citizen{{ts}}@swd392.com\",\n  \"password\": \"Test1234!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var j = pm.response.json();",
+                  "    pm.collectionVariables.set('citizenToken', j.data.accessToken);",
+                  "    pm.test('Token refreshed', () => pm.expect(j.data.accessToken).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{citizenRefreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "👤 [2] User Profile",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"TranUpdated\",\n  \"lastName\": \"Citizen\",\n  \"phone\": \"0901234567\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🗑️ [3] Waste Types (Public)",
+      "item": [
+        {
+          "name": "List All Waste Types",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/waste-types",
+              "host": ["{{baseUrl}}"],
+              "path": ["waste-types"]
+            }
+          }
+        },
+        {
+          "name": "Get Waste Type by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/waste-types/{{wasteTypeOrganicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["waste-types", "{{wasteTypeOrganicId}}"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📍 [4] Service Areas (Public)",
+      "item": [
+        {
+          "name": "List All Service Areas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/service-areas",
+              "host": ["{{baseUrl}}"],
+              "path": ["service-areas"]
+            }
+          }
+        },
+        {
+          "name": "Get Service Area by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/service-areas/{{serviceAreaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["service-areas", "{{serviceAreaId}}"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📋 [5] Waste Reports (Citizen)",
+      "item": [
+        {
+          "name": "Create Waste Report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var j = pm.response.json();",
+                  "    pm.collectionVariables.set('reportId', j.data.reportId);",
+                  "    pm.test('Report created', () => pm.expect(j.data.reportId).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"wasteTypeId\": \"{{wasteTypeRecyclableId}}\",\n  \"areaId\": \"{{serviceAreaId}}\",\n  \"latitude\": 10.775,\n  \"longitude\": 106.700,\n  \"description\": \"Recyclable plastic bags near my house\",\n  \"reportPhotoUrl\": \"https://example.com/photo.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports"]
+            }
+          }
+        },
+        {
+          "name": "Get My Reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/mine?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "mine"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Report Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/{{reportId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "{{reportId}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Report",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/{{reportId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "{{reportId}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "List All Reports (Admin/Enterprise)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🏭 [6] Enterprise",
+      "item": [
+        {
+          "name": "Capabilities",
+          "item": [
+            {
+              "name": "List My Capabilities",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/capabilities",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "capabilities"]
+                }
+              }
+            },
+            {
+              "name": "Add Capability",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var j = pm.response.json();",
+                      "    pm.collectionVariables.set('capabilityId', j.data.capabilityId);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"serviceAreaId\": \"{{serviceAreaId}}\",\n  \"wasteTypeId\": \"{{wasteTypeRecyclableId}}\",\n  \"dailyCapacityKg\": 500.0,\n  \"effectiveFrom\": \"2026-01-01\",\n  \"effectiveTo\": \"2026-12-31\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/capabilities",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "capabilities"]
+                }
+              }
+            },
+            {
+              "name": "Delete Capability",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/capabilities/{{capabilityId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "capabilities", "{{capabilityId}}"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reward Rules",
+          "item": [
+            {
+              "name": "List Reward Rules",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/reward-rules",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "reward-rules"]
+                }
+              }
+            },
+            {
+              "name": "Create Reward Rule (GOOD - Recyclable)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201 || pm.response.code === 200) {",
+                      "    var j = pm.response.json();",
+                      "    pm.collectionVariables.set('ruleId', j.data.ruleId);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"wasteTypeId\": \"{{wasteTypeRecyclableId}}\",\n  \"sortingLevel\": \"GOOD\",\n  \"pointsFixed\": 50.0,\n  \"pointsPerKg\": 10.0\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/reward-rules",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "reward-rules"]
+                }
+              }
+            },
+            {
+              "name": "Create Reward Rule (ACCEPTABLE - Organic)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"wasteTypeId\": \"{{wasteTypeOrganicId}}\",\n  \"sortingLevel\": \"ACCEPTABLE\",\n  \"pointsFixed\": 20.0,\n  \"pointsPerKg\": 5.0\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/reward-rules",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "reward-rules"]
+                }
+              }
+            },
+            {
+              "name": "Update Reward Rule",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"wasteTypeId\": \"{{wasteTypeRecyclableId}}\",\n  \"sortingLevel\": \"GOOD\",\n  \"pointsFixed\": 60.0,\n  \"pointsPerKg\": 12.0\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/reward-rules/{{ruleId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "reward-rules", "{{ruleId}}"]
+                }
+              }
+            },
+            {
+              "name": "Delete Reward Rule",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/reward-rules/{{ruleId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "reward-rules", "{{ruleId}}"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reports & Tasks",
+          "item": [
+            {
+              "name": "View Pending Reports",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/reports/pending?page=0&size=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "reports", "pending"],
+                  "query": [
+                    { "key": "page", "value": "0" },
+                    { "key": "size", "value": "20" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Accept Report (Create Task)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var j = pm.response.json();",
+                      "    pm.collectionVariables.set('taskId', j.data.taskId);",
+                      "    pm.test('Task created', () => pm.expect(j.data.taskId).to.be.a('string'));",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/reports/{{reportId}}/accept",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "reports", "{{reportId}}", "accept"]
+                }
+              }
+            },
+            {
+              "name": "Reject Report",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/reports/{{reportId2}}/reject?reason=OutOfServiceArea",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "reports", "{{reportId2}}", "reject"],
+                  "query": [{ "key": "reason", "value": "OutOfServiceArea" }]
+                }
+              }
+            },
+            {
+              "name": "List Enterprise Tasks",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/tasks?page=0&size=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "tasks"],
+                  "query": [
+                    { "key": "page", "value": "0" },
+                    { "key": "size", "value": "20" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Task Detail",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/tasks/{{taskId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "tasks", "{{taskId}}"]
+                }
+              }
+            },
+            {
+              "name": "Assign Task to Collector",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"collectorUserId\": \"{{collectorId}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/tasks/{{taskId}}/assign",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "tasks", "{{taskId}}", "assign"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Collectors & KPI",
+          "item": [
+            {
+              "name": "List My Collectors",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/collectors",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "collectors"]
+                }
+              }
+            },
+            {
+              "name": "Set Collector KPI",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"collectorUserId\": \"{{collectorId}}\",\n  \"areaId\": \"{{serviceAreaId}}\",\n  \"minVisits\": 3,\n  \"minWeightKg\": 30.0\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/collectors/kpi",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "collectors", "kpi"]
+                }
+              }
+            },
+            {
+              "name": "Get Collector KPI History",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{enterpriseToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/enterprise/collectors/{{collectorId}}/kpi",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["enterprise", "collectors", "{{collectorId}}", "kpi"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "🚛 [7] Collector",
+      "item": [
+        {
+          "name": "View My Tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{collectorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/collector/tasks?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["collector", "tasks"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Task Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{collectorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/collector/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["collector", "tasks", "{{taskId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Task Status → ON_THE_WAY",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{collectorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/collector/tasks/{{taskId}}/status?status=ON_THE_WAY",
+              "host": ["{{baseUrl}}"],
+              "path": ["collector", "tasks", "{{taskId}}", "status"],
+              "query": [{ "key": "status", "value": "ON_THE_WAY" }]
+            }
+          }
+        },
+        {
+          "name": "Update Task Status → ARRIVED",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{collectorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/collector/tasks/{{taskId}}/status?status=ARRIVED",
+              "host": ["{{baseUrl}}"],
+              "path": ["collector", "tasks", "{{taskId}}", "status"],
+              "query": [{ "key": "status", "value": "ARRIVED" }]
+            }
+          }
+        },
+        {
+          "name": "Complete Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{collectorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visitStatus\": \"SUCCESS\",\n  \"collectorNote\": \"Collected 15kg recyclable material, good sorting\",\n  \"photoUrls\": [\n    \"https://example.com/evidence1.jpg\",\n    \"https://example.com/evidence2.jpg\"\n  ],\n  \"wasteItems\": [\n    {\n      \"wasteTypeId\": \"{{wasteTypeRecyclableId}}\",\n      \"weightKg\": 15.0,\n      \"sortingLevel\": \"GOOD\",\n      \"contaminationNote\": \"Clean\"\n    },\n    {\n      \"wasteTypeId\": \"{{wasteTypeOrganicId}}\",\n      \"weightKg\": 8.0,\n      \"sortingLevel\": \"ACCEPTABLE\",\n      \"contaminationNote\": \"Minor mix\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collector/tasks/{{taskId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["collector", "tasks", "{{taskId}}", "complete"]
+            }
+          }
+        },
+        {
+          "name": "View KPI Today",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{collectorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/collector/kpi/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["collector", "kpi", "today"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🎁 [8] Rewards (Citizen)",
+      "item": [
+        {
+          "name": "Get My Points Balance",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rewards/balance",
+              "host": ["{{baseUrl}}"],
+              "path": ["rewards", "balance"]
+            }
+          }
+        },
+        {
+          "name": "View My Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rewards/transactions?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["rewards", "transactions"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "View Leaderboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rewards/leaderboard?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["rewards", "leaderboard"],
+              "query": [{ "key": "limit", "value": "10" }]
+            }
+          }
+        },
+        {
+          "name": "View Available Reward Items",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rewards/items",
+              "host": ["{{baseUrl}}"],
+              "path": ["rewards", "items"]
+            }
+          }
+        },
+        {
+          "name": "Redeem Reward Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemId\": \"{{rewardItemId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/rewards/redeem",
+              "host": ["{{baseUrl}}"],
+              "path": ["rewards", "redeem"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📣 [9] Notifications",
+      "item": [
+        {
+          "name": "My Notifications (Citizen)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List All Notifications (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/notifications?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "notifications"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Notification (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var j = pm.response.json();",
+                  "    pm.collectionVariables.set('notificationId', j.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"System Update {{ts}}\",\n  \"content\": \"New reward rules are now in effect\",\n  \"type\": \"General\",\n  \"targetAudience\": \"All\",\n  \"priority\": \"Normal\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Deactivate Notification (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/notifications/{{notificationId}}/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "admin",
+                "notifications",
+                "{{notificationId}}",
+                "deactivate"
+              ]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📝 [10] Complaints",
+      "item": [
+        {
+          "name": "Submit Complaint (Citizen)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var j = pm.response.json();",
+                  "    pm.collectionVariables.set('complaintId', j.data.complaintId);",
+                  "    pm.test('Complaint submitted', () => pm.expect(j.data.complaintId).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Collector was late\",\n  \"content\": \"Collector arrived 3 hours after the scheduled time\",\n  \"category\": \"COLLECTION_ISSUE\",\n  \"priority\": \"Normal\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/complaints",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints"]
+            }
+          }
+        },
+        {
+          "name": "Get My Complaints (Citizen)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/complaints/mine?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", "mine"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Complaint Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/complaints/{{complaintId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", "{{complaintId}}"]
+            }
+          }
+        },
+        {
+          "name": "List All Complaints (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/complaints?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Resolve Complaint (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"RESOLVED\",\n  \"note\": \"Collector was delayed due to traffic. Apology issued.\",\n  \"isAccepted\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/complaints/{{complaintId}}/resolve",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", "{{complaintId}}", "resolve"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "⚙️ [11] Admin - System",
+      "item": [
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "List All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/{{citizenId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", "{{citizenId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update User Status (activate/deactivate)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/{{citizenId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", "{{citizenId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"CITIZEN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/{{citizenId}}/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", "{{citizenId}}", "role"]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/{{citizenId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", "{{citizenId}}"]
+            }
+          }
+        },
+        {
+          "name": "List Enterprises",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/enterprises?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "enterprises"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Waste Types",
+          "item": [
+            {
+              "name": "Create Waste Type",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var j = pm.response.json();",
+                      "    pm.collectionVariables.set('wasteTypeOrganicId', j.data.wasteTypeId);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Organic Waste {{ts}}\",\n  \"description\": \"Food and plant waste\",\n  \"isActive\": true,\n  \"isRecyclable\": false\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/waste-types",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "waste-types"]
+                }
+              }
+            },
+            {
+              "name": "Create Recyclable Waste Type",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var j = pm.response.json();",
+                      "    pm.collectionVariables.set('wasteTypeRecyclableId', j.data.wasteTypeId);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Recyclable {{ts}}\",\n  \"description\": \"Plastic, paper, glass\",\n  \"isActive\": true,\n  \"isRecyclable\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/waste-types",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "waste-types"]
+                }
+              }
+            },
+            {
+              "name": "Update Waste Type",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Organic Waste Updated\",\n  \"description\": \"Food, plant and garden waste\",\n  \"isActive\": true,\n  \"isRecyclable\": false\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/waste-types/{{wasteTypeOrganicId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "waste-types", "{{wasteTypeOrganicId}}"]
+                }
+              }
+            },
+            {
+              "name": "Delete Waste Type",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/waste-types/{{wasteTypeOrganicId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "waste-types", "{{wasteTypeOrganicId}}"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Service Areas",
+          "item": [
+            {
+              "name": "Create Service Area",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var j = pm.response.json();",
+                      "    pm.collectionVariables.set('serviceAreaId', j.data.areaId);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"District 1 - {{ts}}\",\n  \"geoBoundaryWkt\": \"POLYGON((0 0,1 0,1 1,0 1,0 0))\",\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/service-areas",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "service-areas"]
+                }
+              }
+            },
+            {
+              "name": "Update Service Area",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"District 1 Updated\",\n  \"geoBoundaryWkt\": \"POLYGON((0 0,2 0,2 2,0 2,0 0))\",\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/service-areas/{{serviceAreaId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "service-areas", "{{serviceAreaId}}"]
+                }
+              }
+            },
+            {
+              "name": "Delete Service Area",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/service-areas/{{serviceAreaId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "service-areas", "{{serviceAreaId}}"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reward Items",
+          "item": [
+            {
+              "name": "List All Reward Items (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/reward-items",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "reward-items"]
+                }
+              }
+            },
+            {
+              "name": "Create Reward Item",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var j = pm.response.json();",
+                      "    pm.collectionVariables.set('rewardItemId', j.data.itemId);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Eco Bag {{ts}}\",\n  \"description\": \"Reusable eco-friendly bag\",\n  \"pointsCost\": 500,\n  \"stock\": 100,\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/reward-items",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "reward-items"]
+                }
+              }
+            },
+            {
+              "name": "Update Reward Item",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Eco Bag Premium\",\n  \"description\": \"Premium reusable bag\",\n  \"pointsCost\": 600,\n  \"stock\": 50,\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/reward-items/{{rewardItemId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "reward-items", "{{rewardItemId}}"]
+                }
+              }
+            },
+            {
+              "name": "Delete Reward Item",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/reward-items/{{rewardItemId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "reward-items", "{{rewardItemId}}"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "System Settings",
+          "item": [
+            {
+              "name": "List All Settings",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/settings",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "settings"]
+                }
+              }
+            },
+            {
+              "name": "Get Setting by Key",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/settings/max_reports_per_citizen_per_day",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "admin",
+                    "settings",
+                    "max_reports_per_citizen_per_day"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Setting",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"settingKey\": \"new_setting_{{ts}}\",\n  \"settingValue\": \"42\",\n  \"description\": \"A new setting\",\n  \"dataType\": \"INTEGER\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/settings",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "settings"]
+                }
+              }
+            },
+            {
+              "name": "Update Setting",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"settingValue\": \"10\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/settings/max_reports_per_citizen_per_day",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "admin",
+                    "settings",
+                    "max_reports_per_citizen_per_day"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Delete Setting",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/settings/new_setting_{{ts}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "settings", "new_setting_{{ts}}"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "🔒 [12] Security Tests",
+      "item": [
+        {
+          "name": "Citizen → Admin endpoint (expect 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 403 Forbidden', () => pm.expect(pm.response.code).to.equal(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users"]
+            }
+          }
+        },
+        {
+          "name": "Collector → Enterprise endpoint (expect 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 403 Forbidden', () => pm.expect(pm.response.code).to.equal(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{collectorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/enterprise/reports/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["enterprise", "reports", "pending"]
+            }
+          }
+        },
+        {
+          "name": "No Token → Protected endpoint (expect 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 401 Unauthorized', () => pm.expect(pm.response.code).to.equal(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

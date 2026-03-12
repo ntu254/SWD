@@ -1,0 +1,267 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.citizen_reward_rules (
+  effective_from date,
+  effective_to date,
+  is_active boolean,
+  points_fixed double precision,
+  points_per_kg double precision,
+  rule_id uuid NOT NULL,
+  waste_type_id uuid NOT NULL,
+  sorting_level character varying NOT NULL,
+  CONSTRAINT citizen_reward_rules_pkey PRIMARY KEY (rule_id),
+  CONSTRAINT fk4g68gp6iyjnsjalmpl63ll30s FOREIGN KEY (waste_type_id) REFERENCES public.waste_types(waste_type_id)
+);
+CREATE TABLE public.citizens (
+  latitude double precision,
+  longitude double precision,
+  points integer,
+  created_at timestamp without time zone,
+  updated_at timestamp without time zone,
+  default_area_id uuid,
+  user_id uuid NOT NULL,
+  address_text character varying,
+  CONSTRAINT citizens_pkey PRIMARY KEY (user_id),
+  CONSTRAINT fkj9tsxlt2ffvenn5xknx6f350b FOREIGN KEY (default_area_id) REFERENCES public.service_areas(area_id),
+  CONSTRAINT fkgx7s2yqk5jxh5dmc03swk30em FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+);
+CREATE TABLE public.collection_visits (
+  visited_at timestamp without time zone,
+  collector_user_id uuid NOT NULL,
+  task_id uuid NOT NULL,
+  visit_id uuid NOT NULL,
+  visit_status character varying,
+  collector_note text,
+  CONSTRAINT collection_visits_pkey PRIMARY KEY (visit_id),
+  CONSTRAINT fkghdalithoh2l9cr0931cd2nsm FOREIGN KEY (collector_user_id) REFERENCES public.users(user_id),
+  CONSTRAINT fk1p3yncvrecl4pg7hwajkuqji8 FOREIGN KEY (task_id) REFERENCES public.tasks(task_id)
+);
+CREATE TABLE public.collector_kpi_daily (
+  actual_visits integer,
+  actual_weight_kg double precision,
+  kpi_date date NOT NULL,
+  min_visits integer,
+  min_weight_kg double precision,
+  updated_at timestamp without time zone,
+  area_id uuid NOT NULL,
+  collector_user_id uuid NOT NULL,
+  kpi_id uuid NOT NULL,
+  status character varying CHECK (status::text = ANY (ARRAY['PENDING'::character varying, 'MET'::character varying, 'NOT_MET'::character varying]::text[])),
+  CONSTRAINT collector_kpi_daily_pkey PRIMARY KEY (kpi_id),
+  CONSTRAINT fkfpd9utj8fo1oqoyjxeg28yn36 FOREIGN KEY (area_id) REFERENCES public.service_areas(area_id),
+  CONSTRAINT fkm20xa84eudyj391d7y1n2fofk FOREIGN KEY (collector_user_id) REFERENCES public.users(user_id)
+);
+CREATE TABLE public.collectors (
+  created_at timestamp without time zone,
+  updated_at timestamp without time zone,
+  default_area_id uuid,
+  enterprise_user_id uuid,
+  user_id uuid NOT NULL,
+  status character varying,
+  CONSTRAINT collectors_pkey PRIMARY KEY (user_id),
+  CONSTRAINT fkbb7vbnkk0xnuxte89ovyamecw FOREIGN KEY (default_area_id) REFERENCES public.service_areas(area_id),
+  CONSTRAINT fktgcsn3oc48q110bkj70r61cmm FOREIGN KEY (enterprise_user_id) REFERENCES public.users(user_id),
+  CONSTRAINT fk6m9ylxjcfj1o0hgf5o4udcj3o FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+);
+CREATE TABLE public.complaint_resolutions (
+  is_accepted boolean,
+  resolved_at timestamp without time zone,
+  admin_user_id uuid NOT NULL,
+  complaint_id uuid NOT NULL,
+  resolution_id uuid NOT NULL,
+  decision character varying,
+  note text,
+  CONSTRAINT complaint_resolutions_pkey PRIMARY KEY (resolution_id),
+  CONSTRAINT fkbwo4w8rv1y88x7rdquhbooo2i FOREIGN KEY (admin_user_id) REFERENCES public.users(user_id),
+  CONSTRAINT fkq6h363dyskiydq8dwsa3knve2 FOREIGN KEY (complaint_id) REFERENCES public.complaints(complaint_id)
+);
+CREATE TABLE public.complaints (
+  created_at timestamp without time zone,
+  resolved_at timestamp without time zone,
+  updated_at timestamp without time zone,
+  complaint_id uuid NOT NULL,
+  created_by_user_id uuid NOT NULL,
+  report_id uuid,
+  reward_transaction_id uuid UNIQUE,
+  visit_id uuid,
+  priority character varying CHECK (priority::text = ANY (ARRAY['Low'::character varying, 'Normal'::character varying, 'High'::character varying, 'Urgent'::character varying]::text[])),
+  category character varying CHECK (category::text = ANY (ARRAY['BUG'::character varying, 'FEATURE'::character varying, 'POINTS_ERROR'::character varying, 'COLLECTION_ISSUE'::character varying, 'SERVICE_ISSUE'::character varying, 'OTHER'::character varying]::text[])),
+  status character varying CHECK (status::text = ANY (ARRAY['Pending'::character varying, 'In_Progress'::character varying, 'Resolved'::character varying, 'Rejected'::character varying]::text[])),
+  admin_response text,
+  content text NOT NULL,
+  title character varying,
+  CONSTRAINT complaints_pkey PRIMARY KEY (complaint_id),
+  CONSTRAINT fkcvncmh2c7d5bxicdb3dv4sp4m FOREIGN KEY (created_by_user_id) REFERENCES public.users(user_id),
+  CONSTRAINT fk1myso076u2ymkpad24etq7r11 FOREIGN KEY (reward_transaction_id) REFERENCES public.reward_transactions(transaction_id),
+  CONSTRAINT fk78kqvmhkael2dqyd77b2j1umm FOREIGN KEY (visit_id) REFERENCES public.collection_visits(visit_id),
+  CONSTRAINT fk6koe543t6ir90uelt32j06466 FOREIGN KEY (report_id) REFERENCES public.waste_reports(report_id)
+);
+CREATE TABLE public.enterprise_capabilities (
+  daily_capacity_kg double precision NOT NULL,
+  effective_from date,
+  effective_to date,
+  used_capacity_kg double precision,
+  capability_id uuid NOT NULL,
+  enterprise_user_id uuid NOT NULL,
+  service_area_id uuid NOT NULL,
+  waste_type_id uuid NOT NULL,
+  CONSTRAINT enterprise_capabilities_pkey PRIMARY KEY (capability_id),
+  CONSTRAINT fk6h5v2wctp5fp7wg45tg84ycth FOREIGN KEY (enterprise_user_id) REFERENCES public.users(user_id),
+  CONSTRAINT fk22slqnsbue9uitua389eir19t FOREIGN KEY (service_area_id) REFERENCES public.service_areas(area_id),
+  CONSTRAINT fk76fa99tju9yr2l8gxxov9w79l FOREIGN KEY (waste_type_id) REFERENCES public.waste_types(waste_type_id)
+);
+CREATE TABLE public.evidence_photos (
+  taken_at timestamp without time zone,
+  photo_id uuid NOT NULL,
+  visit_id uuid NOT NULL,
+  note text,
+  photo_url character varying NOT NULL,
+  CONSTRAINT evidence_photos_pkey PRIMARY KEY (photo_id),
+  CONSTRAINT fkdtphrckr7y63uaoqeppg7vbyn FOREIGN KEY (visit_id) REFERENCES public.collection_visits(visit_id)
+);
+CREATE TABLE public.notifications (
+  is_active boolean,
+  created_at timestamp without time zone,
+  end_date timestamp without time zone,
+  start_date timestamp without time zone,
+  updated_at timestamp without time zone,
+  created_by uuid NOT NULL,
+  id uuid NOT NULL,
+  priority character varying CHECK (priority::text = ANY (ARRAY['Low'::character varying, 'Normal'::character varying, 'High'::character varying, 'Urgent'::character varying]::text[])),
+  target_audience character varying CHECK (target_audience::text = ANY (ARRAY['All'::character varying, 'Citizen'::character varying, 'Collector'::character varying, 'Enterprise'::character varying]::text[])),
+  type character varying CHECK (type::text = ANY (ARRAY['General'::character varying, 'Maintenance'::character varying, 'Update'::character varying, 'Promotion'::character varying, 'Alert'::character varying]::text[])),
+  content text NOT NULL,
+  title character varying NOT NULL,
+  CONSTRAINT notifications_pkey PRIMARY KEY (id),
+  CONSTRAINT fkn22rn1rf9urqnq9uaxhslbj3y FOREIGN KEY (created_by) REFERENCES public.users(user_id)
+);
+CREATE TABLE public.reward_items (
+  is_active boolean NOT NULL,
+  points_cost integer NOT NULL,
+  stock integer NOT NULL,
+  created_at timestamp without time zone,
+  updated_at timestamp without time zone,
+  item_id uuid NOT NULL,
+  description text,
+  image_url character varying,
+  name character varying NOT NULL,
+  CONSTRAINT reward_items_pkey PRIMARY KEY (item_id)
+);
+CREATE TABLE public.reward_transactions (
+  points_delta double precision NOT NULL,
+  created_at timestamp without time zone,
+  citizen_user_id uuid NOT NULL,
+  complaint_id uuid,
+  created_by_admin_id uuid,
+  transaction_id uuid NOT NULL,
+  visit_id uuid,
+  reason_code character varying,
+  CONSTRAINT reward_transactions_pkey PRIMARY KEY (transaction_id),
+  CONSTRAINT fk883cy18d9igx4506cg4luutox FOREIGN KEY (citizen_user_id) REFERENCES public.users(user_id),
+  CONSTRAINT fk3dq9nu5oljsbygweybaka6r15 FOREIGN KEY (complaint_id) REFERENCES public.complaints(complaint_id),
+  CONSTRAINT fkhbjrhrkv57dy1f6l86qqg1xo9 FOREIGN KEY (created_by_admin_id) REFERENCES public.users(user_id),
+  CONSTRAINT fktap3n107eena180jwn6pa4jq3 FOREIGN KEY (visit_id) REFERENCES public.collection_visits(visit_id)
+);
+CREATE TABLE public.service_areas (
+  is_active boolean,
+  created_at timestamp without time zone,
+  updated_at timestamp without time zone,
+  area_id uuid NOT NULL,
+  name character varying NOT NULL,
+  geo_boundary_wkt text,
+  CONSTRAINT service_areas_pkey PRIMARY KEY (area_id)
+);
+CREATE TABLE public.system_settings (
+  data_type character varying,
+  description character varying,
+  setting_key character varying NOT NULL,
+  setting_value character varying NOT NULL,
+  CONSTRAINT system_settings_pkey PRIMARY KEY (setting_key)
+);
+CREATE TABLE public.task_assignments (
+  accepted_at timestamp without time zone,
+  assigned_at timestamp without time zone,
+  unassigned_at timestamp without time zone,
+  assignment_id uuid NOT NULL,
+  collector_user_id uuid NOT NULL,
+  task_id uuid NOT NULL,
+  status character varying CHECK (status::text = ANY (ARRAY['ASSIGNED'::character varying, 'ON_THE_WAY'::character varying, 'COLLECTED'::character varying, 'FAILED'::character varying, 'CANCELLED'::character varying, 'ACCEPTED'::character varying, 'COMPLETED'::character varying, 'REJECTED'::character varying, 'UNASSIGNED'::character varying]::text[])),
+  collector_note text,
+  CONSTRAINT task_assignments_pkey PRIMARY KEY (assignment_id),
+  CONSTRAINT fk2aubluf5k3wshwvteb2fmxvul FOREIGN KEY (collector_user_id) REFERENCES public.users(user_id),
+  CONSTRAINT fkk36vhf9tt6t3woselwnkis6v6 FOREIGN KEY (task_id) REFERENCES public.tasks(task_id)
+);
+CREATE TABLE public.tasks (
+  scheduled_date date,
+  created_at timestamp without time zone,
+  updated_at timestamp without time zone,
+  area_id uuid,
+  created_by_user_id uuid NOT NULL,
+  enterprise_user_id uuid NOT NULL,
+  report_id uuid,
+  task_id uuid NOT NULL,
+  priority character varying,
+  status character varying CHECK (status::text = ANY (ARRAY['PENDING'::character varying, 'PENDING_ENTERPRISE_APPROVAL'::character varying, 'ASSIGNED'::character varying, 'IN_PROGRESS'::character varying, 'COLLECTED'::character varying, 'FAILED'::character varying, 'COMPLETED'::character varying, 'CANCELLED'::character varying, 'REJECTED'::character varying]::text[])),
+  rejection_reason character varying,
+  CONSTRAINT tasks_pkey PRIMARY KEY (task_id),
+  CONSTRAINT fk8c5xehxjdvw4duysjloafaj5g FOREIGN KEY (area_id) REFERENCES public.service_areas(area_id),
+  CONSTRAINT fklfv6vbvc9hlcsghkhl5aabkaj FOREIGN KEY (created_by_user_id) REFERENCES public.users(user_id),
+  CONSTRAINT fkidmi74w61rja2yrm2owoua69 FOREIGN KEY (enterprise_user_id) REFERENCES public.users(user_id),
+  CONSTRAINT fko5w4aksgtv77qxq56rsvy0usa FOREIGN KEY (report_id) REFERENCES public.waste_reports(report_id)
+);
+CREATE TABLE public.users (
+  created_at timestamp without time zone,
+  deleted_at timestamp without time zone,
+  refresh_token_expiry timestamp without time zone,
+  updated_at timestamp without time zone,
+  user_id uuid NOT NULL,
+  account_status character varying NOT NULL CHECK (account_status::text = ANY (ARRAY['ACTIVE'::character varying, 'DISABLED'::character varying, 'BANNED'::character varying, 'PENDING_DELETE'::character varying]::text[])),
+  phone character varying,
+  role character varying NOT NULL CHECK (role::text = ANY (ARRAY['ADMIN'::character varying, 'ENTERPRISE'::character varying, 'CITIZEN'::character varying, 'COLLECTOR'::character varying]::text[])),
+  refresh_token character varying,
+  avatar_url character varying,
+  display_name character varying,
+  email character varying NOT NULL UNIQUE,
+  first_name character varying NOT NULL,
+  last_name character varying NOT NULL,
+  password_hash character varying NOT NULL,
+  CONSTRAINT users_pkey PRIMARY KEY (user_id)
+);
+CREATE TABLE public.visit_waste_items (
+  weight_kg double precision,
+  item_id uuid NOT NULL,
+  visit_id uuid NOT NULL,
+  waste_type_id uuid NOT NULL,
+  sorting_level character varying,
+  contamination_note text,
+  CONSTRAINT visit_waste_items_pkey PRIMARY KEY (item_id),
+  CONSTRAINT fkcsdw6ageyxy03lveyvw97r16i FOREIGN KEY (visit_id) REFERENCES public.collection_visits(visit_id),
+  CONSTRAINT fkj9p0qhk4n5vae0bl4yudtypxp FOREIGN KEY (waste_type_id) REFERENCES public.waste_types(waste_type_id)
+);
+CREATE TABLE public.waste_reports (
+  gps_accuracy_meters double precision,
+  latitude double precision,
+  longitude double precision,
+  created_at timestamp without time zone,
+  requested_pickup_time timestamp without time zone,
+  area_id uuid,
+  report_id uuid NOT NULL,
+  reporter_user_id uuid NOT NULL,
+  waste_type_id uuid,
+  status character varying,
+  description text,
+  report_photo_url character varying,
+  CONSTRAINT waste_reports_pkey PRIMARY KEY (report_id),
+  CONSTRAINT fkaj4yoj4nca926e6fbkf8kn7gm FOREIGN KEY (area_id) REFERENCES public.service_areas(area_id),
+  CONSTRAINT fk58at60unh8b3p8se1h0gx25b4 FOREIGN KEY (reporter_user_id) REFERENCES public.users(user_id),
+  CONSTRAINT fkf5yghp0aycp86wpvgxp1p2m7o FOREIGN KEY (waste_type_id) REFERENCES public.waste_types(waste_type_id)
+);
+CREATE TABLE public.waste_types (
+  is_active boolean,
+  is_recyclable boolean,
+  waste_type_id uuid NOT NULL,
+  name character varying NOT NULL UNIQUE,
+  description character varying,
+  CONSTRAINT waste_types_pkey PRIMARY KEY (waste_type_id)
+);

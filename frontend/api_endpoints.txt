@@ -1,0 +1,407 @@
+﻿
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AdminController.java:1
+9:@RequestMapping("/api/admin")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AdminController.java:2
+8:    @GetMapping("/dashboard")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AdminController.java:3
+4:    @GetMapping("/users")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AdminController.java:4
+4:    
+@GetMapping("/users/{userId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AdminController.java:5
+0:    @PutMapping("/users/{userId}
+/status")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AdminController.java:5
+9:    @PutMapping("/users/{userId}
+/role")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AdminController.java:6
+8:    
+@DeleteMapping("/users/{userId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AdminController.java:7
+5:    @GetMapping("/enterprises")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AdminRewardController.
+java:18:@RequestMapping("/api/admi
+n/reward-items")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AdminRewardController.
+java:26:    @GetMapping
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AdminRewardController.
+java:34:    @PostMapping
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AdminRewardController.
+java:41:    
+@PutMapping("/{itemId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AdminRewardController.
+java:50:    
+@DeleteMapping("/{itemId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AuthController.java:16
+:@RequestMapping("/api/auth")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AuthController.java:24
+:    @PostMapping("/register")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AuthController.java:32
+:    @PostMapping("/login")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AuthController.java:39
+:    @PostMapping("/refresh")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AuthController.java:46
+:    @PostMapping("/logout")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\AuthController.java:53
+:    @PostMapping("/admin-setup")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\CollectorController.ja
+va:20:@RequestMapping("/api/collec
+tor")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\CollectorController.ja
+va:29:    @GetMapping("/tasks")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\CollectorController.ja
+va:38:    
+@GetMapping("/tasks/{taskId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\CollectorController.ja
+va:44:    @PutMapping("/tasks/{tas
+kId}/status")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\CollectorController.ja
+va:53:    @PostMapping("/tasks/{ta
+skId}/complete")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\CollectorController.ja
+va:62:    
+@GetMapping("/kpi/today")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\ComplaintController.ja
+va:19:@RequestMapping("/api/compla
+ints")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\ComplaintController.ja
+va:27:    @PostMapping
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\ComplaintController.ja
+va:36:    @GetMapping("/mine")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\ComplaintController.ja
+va:46:    
+@GetMapping("/{complaintId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\ComplaintController.ja
+va:54:    @GetMapping
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\ComplaintController.ja
+va:65:    @PutMapping("/{complaint
+Id}/resolve")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseCapabilityCo
+ntroller.java:22:@RequestMapping("
+/api/enterprise/capabilities")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseCapabilityCo
+ntroller.java:31:    @GetMapping
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseCapabilityCo
+ntroller.java:38:    @PostMapping
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseCapabilityCo
+ntroller.java:46:    
+@DeleteMapping("/{capabilityId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseKpiControlle
+r.java:21:@RequestMapping("/api/en
+terprise")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseKpiControlle
+r.java:30:    
+@GetMapping("/collectors")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseKpiControlle
+r.java:37:    
+@PostMapping("/collectors/kpi")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseKpiControlle
+r.java:45:    @GetMapping("/collec
+tors/{collectorId}/kpi")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseRewardRuleCo
+ntroller.java:20:@RequestMapping("
+/api/enterprise/reward-rules")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseRewardRuleCo
+ntroller.java:28:    @GetMapping
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseRewardRuleCo
+ntroller.java:34:    @PostMapping
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseRewardRuleCo
+ntroller.java:42:    
+@PutMapping("/{ruleId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseRewardRuleCo
+ntroller.java:51:    
+@DeleteMapping("/{ruleId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseTaskControll
+er.java:22:@RequestMapping("/api/e
+nterprise")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseTaskControll
+er.java:32:    
+@GetMapping("/reports/pending")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseTaskControll
+er.java:41:    @PutMapping("/repor
+ts/{reportId}/accept")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseTaskControll
+er.java:48:    @PutMapping("/repor
+ts/{reportId}/reject")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseTaskControll
+er.java:57:    
+@GetMapping("/tasks")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseTaskControll
+er.java:67:    
+@GetMapping("/tasks/{taskId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\EnterpriseTaskControll
+er.java:73:    @PostMapping("/task
+s/{taskId}/assign")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\NotificationController
+.java:26:    
+@GetMapping("/api/notifications")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\NotificationController
+.java:44:    @GetMapping("/api/adm
+in/notifications")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\NotificationController
+.java:54:    @PostMapping("/api/ad
+min/notifications")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\NotificationController
+.java:63:    @PutMapping("/api/adm
+in/notifications/{notificationId}/
+deactivate")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\RewardController.java:
+19:@RequestMapping("/api/rewards")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\RewardController.java:
+27:    @GetMapping("/balance")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\RewardController.java:
+35:    
+@GetMapping("/transactions")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\RewardController.java:
+45:    @GetMapping("/leaderboard")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\RewardController.java:
+52:    @GetMapping("/items")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\RewardController.java:
+58:    @PostMapping("/redeem")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\ServiceAreaController.
+java:25:    
+@GetMapping("/api/service-areas")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\ServiceAreaController.
+java:31:    @GetMapping("/api/serv
+ice-areas/{areaId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\ServiceAreaController.
+java:39:    @PostMapping("/api/adm
+in/service-areas")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\ServiceAreaController.
+java:47:    @PutMapping("/api/admi
+n/service-areas/{areaId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\ServiceAreaController.
+java:60:    @DeleteMapping("/api/a
+dmin/service-areas/{areaId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\SystemSettingControlle
+r.java:18:@RequestMapping("/api/ad
+min/settings")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\SystemSettingControlle
+r.java:26:    @GetMapping
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\SystemSettingControlle
+r.java:32:    
+@GetMapping("/{key}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\SystemSettingControlle
+r.java:40:    
+@PutMapping("/{key}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\SystemSettingControlle
+r.java:52:    @PostMapping
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\SystemSettingControlle
+r.java:61:    
+@DeleteMapping("/{key}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\UserController.java:19
+:@RequestMapping("/api/users")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\UserController.java:27
+:    @GetMapping("/me")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\UserController.java:34
+:    @PutMapping("/me")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\UserController.java:41
+:    @PostMapping(value = 
+"/me/avatar", consumes = MediaType
+.MULTIPART_FORM_DATA_VALUE)
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\WasteReportController.
+java:20:@RequestMapping("/api/repo
+rts")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\WasteReportController.
+java:28:    @PostMapping
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\WasteReportController.
+java:35:    @GetMapping("/mine")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\WasteReportController.
+java:44:    
+@GetMapping("/{reportId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\WasteReportController.
+java:50:    
+@PutMapping("/{reportId}/cancel")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\WasteReportController.
+java:57:    @GetMapping
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\WasteTypeController.ja
+va:25:    
+@GetMapping("/api/waste-types")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\WasteTypeController.ja
+va:32:    @GetMapping("/api/waste-
+types/{wasteTypeId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\WasteTypeController.ja
+va:40:    @PostMapping("/api/admin
+/waste-types")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\WasteTypeController.ja
+va:48:    @PutMapping("/api/admin/
+waste-types/{wasteTypeId}")
+D:\TuaTua\FU\SWD392\swd-v2\backend
+\src\main\java\com\wastecollection
+\controller\WasteTypeController.ja
+va:63:    @DeleteMapping("/api/adm
+in/waste-types/{wasteTypeId}")
+
+
