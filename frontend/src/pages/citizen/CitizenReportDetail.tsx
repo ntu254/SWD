@@ -82,6 +82,25 @@ function getTimeline(report: WasteReport): TimelineStep[] {
       },
     ];
   }
+  if (report.status === "CANCELLED") {
+    return [
+      {
+        status: "PENDING",
+        label: "Report created",
+        date: new Date(report.createdAt).toLocaleString(),
+        active: true,
+        completed: true,
+      },
+      {
+        status: "CANCELLED",
+        label: "Report cancelled",
+        date: "Cancelled by citizen before assignment",
+        active: true,
+        completed: false,
+        isError: true,
+      },
+    ];
+  }
 
   const currentIndex = orderedStatuses.indexOf(report.status);
 

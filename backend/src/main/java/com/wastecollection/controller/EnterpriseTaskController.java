@@ -67,7 +67,8 @@ public class EnterpriseTaskController {
     @GetMapping("/tasks/{taskId}")
     @Operation(summary = "Get a task detail")
     public ResponseEntity<ApiResponse<TaskDto>> getTask(@PathVariable UUID taskId) {
-        return ResponseEntity.ok(ApiResponse.success(taskService.getTask(taskId)));
+        return ResponseEntity.ok(ApiResponse.success(
+                taskService.getTaskForEnterprise(taskId, securityUtils.getCurrentUserId())));
     }
 
     @PostMapping("/tasks/{taskId}/assign")

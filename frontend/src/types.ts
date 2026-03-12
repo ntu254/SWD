@@ -26,20 +26,29 @@ export interface WasteReport {
   gpsAccuracyMeters?: number | null;
   description?: string | null;
   reportPhotoUrl?: string | null;
-  status: 'PENDING' | 'ACCEPTED' | 'ASSIGNED' | 'ON_THE_WAY' | 'COLLECTED' | 'REJECTED';
+  status: 'PENDING' | 'ACCEPTED' | 'ASSIGNED' | 'ON_THE_WAY' | 'COLLECTED' | 'REJECTED' | 'CANCELLED';
   requestedPickupTime?: string | null;
   createdAt: string;
 }
 
 export interface Task {
   taskId: string;
-  reportId: string;
+  reportId?: string | null;
   enterpriseUserId: string;
   enterpriseName: string;
   createdByUserId: string;
+  collectorUserId?: string | null;
+  collectorName?: string | null;
+  assignmentStatus?: string | null;
   areaId?: string | null;
   areaName?: string | null;
-  status: 'ASSIGNED' | 'ON_THE_WAY' | 'COLLECTED';
+  status:
+    | 'PENDING_ENTERPRISE_APPROVAL'
+    | 'ASSIGNED'
+    | 'ON_THE_WAY'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'COLLECTED';
   priority?: string | null;
   scheduledDate?: string | null;
   rejectionReason?: string | null;

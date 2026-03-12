@@ -5,6 +5,7 @@ import com.wastecollection.common.PageResponse;
 import com.wastecollection.dto.report.CreateReportRequest;
 import com.wastecollection.dto.report.ReportDto;
 import com.wastecollection.security.SecurityUtils;
+import com.wastecollection.service.CloudinaryService;
 import com.wastecollection.service.WasteReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -24,12 +26,20 @@ public class WasteReportController {
 
     private final WasteReportService reportService;
     private final SecurityUtils securityUtils;
+    private final CloudinaryService cloudinaryService;
 
     @PostMapping
     @Operation(summary = "Create a new waste report (CITIZEN)")
     public ResponseEntity<ApiResponse<ReportDto>> createReport(@Valid @RequestBody CreateReportRequest request) {
         ReportDto dto = reportService.createReport(securityUtils.getCurrentUserId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Report created", dto));
+    }
+
+    @PostMapping("/upload-photo")
+    @Operation(summary = "Upload report evidence photo")
+    public ResponseEntity<ApiResponse<String>> uploadReportPhoto(@RequestParam("file") MultipartFile file) {
+        String url = cloudinaryService.uploadImage(file, "report-photos");
+        return ResponseEntity.ok(ApiResponse.success("Photo uploaded", url));
     }
 
     @GetMapping("/mine")

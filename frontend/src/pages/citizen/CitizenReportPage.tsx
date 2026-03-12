@@ -7,7 +7,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 import React, { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { z } from "zod";
@@ -17,7 +17,6 @@ import { MapComponent } from "../../components/maps/MapComponent";
 import { Button } from "../../components/ui/button";
 import {
   PageHeader,
-  PageHero,
   SectionCard,
   SectionHeader,
 } from "../../components/ui/page";
@@ -46,6 +45,7 @@ type ServiceAreaOption = {
 
 export const CitizenReportPage: React.FC = () => {
   const navigate = useNavigate();
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(
     null,
@@ -53,7 +53,6 @@ export const CitizenReportPage: React.FC = () => {
   const [isCapturingLocation, setIsCapturingLocation] = useState(false);
 
   const {
-    control,
     register,
     handleSubmit,
     setValue,
@@ -79,12 +78,10 @@ export const CitizenReportPage: React.FC = () => {
       serviceAreasApi.getAll().then((response) => response.data.data),
   });
 
-  const selectedWasteType = useWatch({ control, name: "wasteTypeId" });
-  const selectedArea = useWatch({ control, name: "areaId" });
-
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    setImageFile(file);
 
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -141,6 +138,13 @@ export const CitizenReportPage: React.FC = () => {
         areaId: data.areaId,
         latitude: data.latitude,
         longitude: data.longitude,
+        reportPhotoUrl: imageFile
+          ? (
+              await reportsApi
+                .uploadPhoto(imageFile)
+                .then((response) => response.data?.data as string | undefined)
+            ) ?? undefined
+          : undefined,
       });
 
       toast.success(
@@ -244,7 +248,10 @@ export const CitizenReportPage: React.FC = () => {
                         size="sm"
                         variant="secondary"
                         className="absolute bottom-4 right-4"
-                        onClick={() => setImagePreview(null)}
+                        onClick={() => {
+                          setImagePreview(null);
+                          setImageFile(null);
+                        }}
                       >
                         Replace photo
                       </Button>

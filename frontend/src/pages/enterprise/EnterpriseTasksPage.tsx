@@ -29,7 +29,7 @@ const STATUS_TABS = [
   { label: "ALL", value: "ALL" },
   { label: "PENDING", value: "PENDING_ENTERPRISE_APPROVAL" },
   { label: "ASSIGNED", value: "ASSIGNED" },
-  { label: "IN PROGRESS", value: "IN_PROGRESS" },
+  { label: "ON THE WAY", value: "ON_THE_WAY" },
   { label: "COMPLETED", value: "COMPLETED" },
 ] as const;
 
@@ -63,6 +63,7 @@ function getTaskVariant(status: string) {
     case "ASSIGNED":
       return "assigned" as const;
     case "IN_PROGRESS":
+    case "ON_THE_WAY":
       return "ontheway" as const;
     case "COMPLETED":
       return "collected" as const;
@@ -216,7 +217,7 @@ export function EnterpriseTasksPage() {
     (task) => task.status === "PENDING_ENTERPRISE_APPROVAL",
   ).length;
   const activeCount = tasks.filter((task) =>
-    ["ASSIGNED", "IN_PROGRESS"].includes(task.status),
+    ["ASSIGNED", "ON_THE_WAY", "IN_PROGRESS"].includes(task.status),
   ).length;
   const completedCount = tasks.filter(
     (task) => task.status === "COMPLETED",

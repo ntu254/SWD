@@ -15,6 +15,9 @@ public class TaskDto {
     private UUID enterpriseUserId;
     private String enterpriseName;
     private UUID createdByUserId;
+    private UUID collectorUserId;
+    private String collectorName;
+    private String assignmentStatus;
     private UUID areaId;
     private String areaName;
     private String status;

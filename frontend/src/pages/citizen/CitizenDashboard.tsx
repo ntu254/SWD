@@ -16,7 +16,6 @@ import { Button } from "../../components/ui/button";
 import {
   EmptyState,
   PageHeader,
-  PageHero,
   SectionCard,
   SectionHeader,
   StatCard,
@@ -34,7 +33,6 @@ export const CitizenDashboard: React.FC = () => {
 
   const reports: WasteReport[] = reportsData?.data?.content || [];
   const totalReports = reportsData?.data?.totalElements || 0;
-  const pendingCount = reports.filter((report) => report.status === "PENDING").length;
 
   return (
     <div className="space-y-4 lg:space-y-5">

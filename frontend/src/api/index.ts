@@ -2,6 +2,13 @@ import api from "./axios";
 
 export const reportsApi = {
   create: (data: unknown) => api.post("/reports", data),
+  uploadPhoto: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return api.post("/reports/upload-photo", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
   getMine: (page = 0) => api.get(`/reports/mine?page=${page}`),
   getAll: (page = 0, status?: string) =>
     api.get(`/reports?page=${page}${status ? `&status=${status}` : ""}`),
@@ -36,6 +43,13 @@ export const tasksApi = {
     api.put(`/collector/tasks/${taskId}/status?status=${status}`),
   completeTask: (taskId: string, data: unknown) =>
     api.post(`/collector/tasks/${taskId}/complete`, data),
+  uploadEvidence: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return api.post("/collector/evidence/upload", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
 
 export const rewardsApi = {

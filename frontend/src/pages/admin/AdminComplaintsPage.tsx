@@ -11,7 +11,6 @@ import {
   FilterTabs,
   ModalShell,
   PageHeader,
-  PageHero,
   SectionCard,
   SectionHeader,
   StatCard,

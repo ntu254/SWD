@@ -5,7 +5,6 @@ import {
   History,
   Sparkles,
   Ticket,
-  Wallet,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -16,7 +15,6 @@ import { Button } from "../../components/ui/button";
 import {
   EmptyState,
   PageHeader,
-  PageHero,
   SectionCard,
   SectionHeader,
   StatCard,

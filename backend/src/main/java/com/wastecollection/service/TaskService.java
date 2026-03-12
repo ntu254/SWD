@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +24,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class TaskService {
+    private static final List<String> ACTIVE_ASSIGNMENT_STATUSES = List.of("ASSIGNED", "ACCEPTED", "ON_THE_WAY", "IN_PROGRESS");
+    private static final List<String> COLLECTOR_VISIBLE_ASSIGNMENT_STATUSES = List.of("ASSIGNED", "ACCEPTED", "ON_THE_WAY", "IN_PROGRESS", "COMPLETED");
 
     private final TaskRepository taskRepository;
     private final TaskAssignmentRepository assignmentRepository;
@@ -32,6 +35,7 @@ public class TaskService {
     private final WasteReportRepository reportRepository;
     private final UserRepository userRepository;
     private final ServiceAreaRepository serviceAreaRepository;
+    private final EnterpriseCapabilityRepository capabilityRepository;
     private final RewardService rewardService;
     private final CollectorKpiDailyRepository kpiRepository;
 
@@ -76,6 +80,7 @@ public class TaskService {
         }
         User enterprise = userRepository.findById(enterpriseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Enterprise", "id", enterpriseId));
+        ensureEnterpriseCanHandleReport(report, enterprise.getUserId());
 
         Task task = Task.builder()
                 .report(report)
@@ -97,6 +102,14 @@ public class TaskService {
         if (!"PENDING".equals(report.getStatus())) {
             throw new BadRequestException("Report is not in PENDING status");
         }
+        User enterprise = userRepository.findById(enterpriseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Enterprise", "id", enterpriseId));
+        ensureEnterpriseCanHandleReport(report, enterprise.getUserId());
+
+        String normalizedReason = reason == null ? "" : reason.trim();
+        if (!normalizedReason.isEmpty()) {
+            log.info("Report {} rejected by enterprise {}. Reason: {}", reportId, enterpriseId, normalizedReason);
+        }
         report.setStatus("REJECTED");
         reportRepository.save(report);
         // Return updated report info
@@ -117,6 +130,17 @@ public class TaskService {
 
         User collector = userRepository.findById(request.getCollectorUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Collector", "id", request.getCollectorUserId()));
+        if (collector.getRole() != User.Role.COLLECTOR) {
+            throw new BadRequestException("Selected user is not a collector");
+        }
+
+        List<TaskAssignment> activeAssignments = assignmentRepository
+                .findAllByTask_TaskIdAndStatusIn(taskId, ACTIVE_ASSIGNMENT_STATUSES);
+        for (TaskAssignment active : activeAssignments) {
+            active.setStatus("UNASSIGNED");
+            active.setUnassignedAt(LocalDateTime.now());
+            assignmentRepository.save(active);
+        }
 
         TaskAssignment assignment = TaskAssignment.builder()
                 .task(task)
@@ -150,9 +174,10 @@ public class TaskService {
     @Transactional(readOnly = true)
     public PageResponse<TaskDto> getTasksForCollector(UUID collectorId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("assignedAt").descending());
-        Page<TaskAssignment> assignments = assignmentRepository.findByCollector_UserId(collectorId, pageable);
+        Page<TaskAssignment> assignments = assignmentRepository
+                .findByCollector_UserIdAndStatusIn(collectorId, COLLECTOR_VISIBLE_ASSIGNMENT_STATUSES, pageable);
         List<TaskDto> dtos = assignments.getContent().stream()
-                .map(a -> mapToDto(a.getTask()))
+                .map(a -> mapToDto(a.getTask(), a))
                 .toList();
         return new PageResponse<>(dtos, assignments.getNumber(), assignments.getSize(),
                 assignments.getTotalElements(), assignments.getTotalPages(), assignments.isLast());
@@ -163,17 +188,27 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
 
-        TaskAssignment assignment = assignmentRepository
-                .findByTask_TaskIdAndStatusIn(taskId, List.of("ASSIGNED", "ACCEPTED", "ON_THE_WAY"))
-                .orElseThrow(() -> new ResourceNotFoundException("TaskAssignment", "taskId", taskId));
-
-        if (!assignment.getCollector().getUserId().equals(collectorId)) {
-            throw new ForbiddenException("This task is not assigned to you");
+        String normalized = newStatus == null ? "" : newStatus.trim().toUpperCase(Locale.ROOT);
+        if (!List.of("ACCEPTED", "ON_THE_WAY", "IN_PROGRESS").contains(normalized)) {
+            throw new BadRequestException("Unsupported collector status: " + newStatus);
         }
 
-        assignment.setStatus(newStatus);
+        TaskAssignment assignment = assignmentRepository
+                .findByTask_TaskIdAndCollector_UserIdAndStatusIn(taskId, collectorId, ACTIVE_ASSIGNMENT_STATUSES)
+                .orElseThrow(() -> new ResourceNotFoundException("TaskAssignment", "taskId", taskId));
+
+        if ("ACCEPTED".equals(normalized)) {
+            assignment.setAcceptedAt(LocalDateTime.now());
+            assignment.setStatus("ACCEPTED");
+        } else {
+            assignment.setStatus("ON_THE_WAY");
+            task.setStatus("ON_THE_WAY");
+            if (task.getReport() != null) {
+                task.getReport().setStatus("ON_THE_WAY");
+                reportRepository.save(task.getReport());
+            }
+        }
         assignmentRepository.save(assignment);
-        task.setStatus("IN_PROGRESS");
         taskRepository.save(task);
 
         return mapToDto(task);
@@ -185,12 +220,9 @@ public class TaskService {
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
 
         TaskAssignment assignment = assignmentRepository
-                .findByTask_TaskIdAndStatusIn(taskId, List.of("ASSIGNED", "ACCEPTED", "ON_THE_WAY", "IN_PROGRESS"))
+                .findByTask_TaskIdAndCollector_UserIdAndStatusIn(taskId, collectorId, ACTIVE_ASSIGNMENT_STATUSES)
                 .orElseThrow(() -> new ResourceNotFoundException("TaskAssignment", "taskId", taskId));
-
-        if (!assignment.getCollector().getUserId().equals(collectorId)) {
-            throw new ForbiddenException("This task is not assigned to you");
-        }
+        assignment.setCollectorNote(request.getCollectorNote());
 
         CollectionVisit visit = CollectionVisit.builder()
                 .task(task)
@@ -257,6 +289,26 @@ public class TaskService {
     }
 
     @Transactional(readOnly = true)
+    public TaskDto getTaskForEnterprise(UUID taskId, UUID enterpriseId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
+        if (!task.getEnterprise().getUserId().equals(enterpriseId)) {
+            throw new ForbiddenException("This task does not belong to your enterprise");
+        }
+        return mapToDto(task);
+    }
+
+    @Transactional(readOnly = true)
+    public TaskDto getTaskForCollector(UUID taskId, UUID collectorId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
+        TaskAssignment assignment = assignmentRepository
+                .findByTask_TaskIdAndCollector_UserIdAndStatusIn(taskId, collectorId, COLLECTOR_VISIBLE_ASSIGNMENT_STATUSES)
+                .orElseThrow(() -> new ForbiddenException("This task is not assigned to you"));
+        return mapToDto(task, assignment);
+    }
+
+    @Transactional(readOnly = true)
     public TaskDto getTask(UUID taskId) {
         return mapToDto(taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId)));
@@ -312,12 +364,22 @@ public class TaskService {
     }
 
     public TaskDto mapToDto(Task t) {
+        TaskAssignment latestAssignment = assignmentRepository
+                .findTopByTask_TaskIdOrderByAssignedAtDesc(t.getTaskId())
+                .orElse(null);
+        return mapToDto(t, latestAssignment);
+    }
+
+    private TaskDto mapToDto(Task t, TaskAssignment assignment) {
         return TaskDto.builder()
                 .taskId(t.getTaskId())
                 .reportId(t.getReport() != null ? t.getReport().getReportId() : null)
                 .enterpriseUserId(t.getEnterprise().getUserId())
                 .enterpriseName(t.getEnterprise().getDisplayName())
                 .createdByUserId(t.getCreatedBy().getUserId())
+                .collectorUserId(assignment != null ? assignment.getCollector().getUserId() : null)
+                .collectorName(assignment != null ? assignment.getCollector().getDisplayName() : null)
+                .assignmentStatus(assignment != null ? assignment.getStatus() : null)
                 .areaId(t.getArea() != null ? t.getArea().getAreaId() : null)
                 .areaName(t.getArea() != null ? t.getArea().getName() : null)
                 .status(t.getStatus())
@@ -327,6 +389,22 @@ public class TaskService {
                 .createdAt(t.getCreatedAt())
                 .updatedAt(t.getUpdatedAt())
                 .build();
+    }
+
+    private void ensureEnterpriseCanHandleReport(WasteReport report, UUID enterpriseId) {
+        if (report.getArea() == null || report.getWasteType() == null) {
+            throw new ForbiddenException("Report is missing area or waste type for capability matching");
+        }
+
+        boolean canHandle = capabilityRepository.findByEnterprise_UserId(enterpriseId).stream()
+                .anyMatch(capability ->
+                        capability.getServiceArea() != null
+                                && capability.getWasteType() != null
+                                && report.getArea().getAreaId().equals(capability.getServiceArea().getAreaId())
+                                && report.getWasteType().getWasteTypeId().equals(capability.getWasteType().getWasteTypeId()));
+        if (!canHandle) {
+            throw new ForbiddenException("Your enterprise does not have capability to process this report");
+        }
     }
 
     private PageResponse<TaskDto> toPageResponse(Page<Task> page) {

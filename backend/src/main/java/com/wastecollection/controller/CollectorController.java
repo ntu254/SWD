@@ -5,6 +5,7 @@ import com.wastecollection.common.PageResponse;
 import com.wastecollection.dto.enterprise.KpiConfigDto;
 import com.wastecollection.dto.task.*;
 import com.wastecollection.security.SecurityUtils;
+import com.wastecollection.service.CloudinaryService;
 import com.wastecollection.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -25,6 +27,7 @@ public class CollectorController {
 
     private final TaskService taskService;
     private final SecurityUtils securityUtils;
+    private final CloudinaryService cloudinaryService;
 
     @GetMapping("/tasks")
     @Operation(summary = "Get assigned tasks for the authenticated collector")
@@ -38,11 +41,12 @@ public class CollectorController {
     @GetMapping("/tasks/{taskId}")
     @Operation(summary = "Get a specific task detail")
     public ResponseEntity<ApiResponse<TaskDto>> getTask(@PathVariable UUID taskId) {
-        return ResponseEntity.ok(ApiResponse.success(taskService.getTask(taskId)));
+        return ResponseEntity.ok(ApiResponse.success(
+                taskService.getTaskForCollector(taskId, securityUtils.getCurrentUserId())));
     }
 
     @PutMapping("/tasks/{taskId}/status")
-    @Operation(summary = "Update task status (ON_THE_WAY, IN_PROGRESS)")
+    @Operation(summary = "Update task status (ACCEPTED, ON_THE_WAY)")
     public ResponseEntity<ApiResponse<TaskDto>> updateStatus(
             @PathVariable UUID taskId,
             @RequestParam String status) {
@@ -57,6 +61,13 @@ public class CollectorController {
             @Valid @RequestBody CompleteVisitRequest request) {
         TaskDto dto = taskService.completeVisit(taskId, securityUtils.getCurrentUserId(), request);
         return ResponseEntity.ok(ApiResponse.success("Task completed", dto));
+    }
+
+    @PostMapping("/evidence/upload")
+    @Operation(summary = "Upload collector evidence photo")
+    public ResponseEntity<ApiResponse<String>> uploadEvidence(@RequestParam("file") MultipartFile file) {
+        String url = cloudinaryService.uploadImage(file, "collector-evidence");
+        return ResponseEntity.ok(ApiResponse.success("Evidence uploaded", url));
     }
 
     @GetMapping("/kpi/today")
