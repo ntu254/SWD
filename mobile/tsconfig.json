@@ -1,0 +1,38 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    "jsx": "react-native",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "bundler",
+    "paths": {
+      "@/constants/*": [
+        "./components/constants/*"
+      ],
+      "@/data/*": [
+        "./components/data/*"
+      ],
+      "@/store/*": [
+        "./components/store/*"
+      ],
+      "@/types": [
+        "./components/types"
+      ],
+      "@/types/*": [
+        "./components/types/*"
+      ],
+      "@/*": [
+        "./*",
+        "./components/*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ]
+}

@@ -136,6 +136,10 @@ const UnauthorizedPage = lazyPage(
   () => import("./pages/UnauthorizedPage"),
   "UnauthorizedPage",
 );
+const MobileStyleLabPage = lazyPage(
+  () => import("./pages/demo/MobileStyleLabPage"),
+  "MobileStyleLabPage",
+);
 
 const LayoutWrapper = () => <AppLayout />;
 
@@ -171,6 +175,10 @@ function App() {
           <Route
             path="/unauthorized"
             element={withSuspense(<UnauthorizedPage />)}
+          />
+          <Route
+            path="/mobile-app"
+            element={withSuspense(<MobileStyleLabPage />)}
           />
 
           <Route element={<ProtectedRoute allowedRoles={["CITIZEN"]} />}>
