@@ -31,6 +31,13 @@ export default function ReportWasteScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { accessToken, user } = useAppStore();
+  const safeBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/(citizen)/home');
+  }, [router]);
 
   const [selectedWasteType, setSelectedWasteType] = useState<WasteType | null>(null);
   const [description, setDescription] = useState('');
@@ -116,7 +123,7 @@ export default function ReportWasteScreen() {
       ]);
 
       Alert.alert('Thành công', 'Báo cáo của bạn đã được gửi.', [
-        { text: 'OK', onPress: () => router.back() },
+        { text: 'OK', onPress: safeBack },
       ]);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Không thể gửi báo cáo';
@@ -131,7 +138,7 @@ export default function ReportWasteScreen() {
     location.lat,
     location.lng,
     queryClient,
-    router,
+    safeBack,
     selectedArea?.areaId,
     selectedWasteType,
     user?.userId,
@@ -140,7 +147,7 @@ export default function ReportWasteScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
+        <TouchableOpacity onPress={safeBack} style={styles.closeButton}>
           <X size={24} color={Colors.neutral[700]} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Báo cáo rác</Text>

@@ -12,14 +12,22 @@ import {
 } from "react-native";
 
 export default function ModalScreen() {
+  const handleClose = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace("/");
+  };
+
   return (
     <Modal
       animationType="fade"
       transparent={true}
       visible={true}
-      onRequestClose={() => router.back()}
+      onRequestClose={handleClose}
     >
-      <Pressable style={styles.overlay} onPress={() => router.back()}>
+      <Pressable style={styles.overlay} onPress={handleClose}>
         <View style={styles.modalContent}>
           <Text style={styles.title}>Modal</Text>
           <Text style={styles.description}>
@@ -29,7 +37,7 @@ export default function ModalScreen() {
 
           <TouchableOpacity
             style={styles.closeButton}
-            onPress={() => router.back()}
+            onPress={handleClose}
           >
             <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>

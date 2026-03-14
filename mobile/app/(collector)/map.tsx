@@ -15,6 +15,13 @@ const { width, height } = Dimensions.get('window');
 export default function CollectorMapScreen() {
   const router = useRouter();
   const { accessToken } = useAppStore();
+  const safeBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/(collector)/tasks');
+  };
 
   const tasksQuery = useQuery({
     queryKey: ['collector', 'tasks', 'map'],
@@ -30,7 +37,7 @@ export default function CollectorMapScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={safeBack} style={styles.backButton}>
           <ArrowLeft size={24} color={Colors.neutral[800]} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Tuyến đường thu gom</Text>

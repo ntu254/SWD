@@ -1,26 +1,17 @@
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { useRouter, useSegments } from 'expo-router';
+import { Redirect, useRootNavigationState } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { useAppStore } from '@/store/useAppStore';
 import { syncRoleSession } from '@/components/api/backend';
 
 export default function Index() {
-  const router = useRouter();
-  const segments = useSegments();
-  const [isNavigationReady, setIsNavigationReady] = useState(false);
+  const rootNavigationState = useRootNavigationState();
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const { currentRole } = useAppStore();
 
   useEffect(() => {
-    // Wait for navigation to be ready
-    if (segments && !isNavigationReady) {
-      setIsNavigationReady(true);
-    }
-  }, [segments, isNavigationReady]);
-
-  useEffect(() => {
-    if (!isNavigationReady) return;
+    if (!rootNavigationState?.key) return;
 
     let cancelled = false;
 
@@ -42,35 +33,29 @@ export default function Index() {
     return () => {
       cancelled = true;
     };
-  }, [isNavigationReady, currentRole]);
+  }, [rootNavigationState?.key, currentRole]);
 
-  useEffect(() => {
-    if (!isNavigationReady || isBootstrapping) return;
+  if (!rootNavigationState?.key || isBootstrapping) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color={Colors.primary[600]} />
+      </View>
+    );
+  }
 
-    const activeRole = useAppStore.getState().currentRole;
-    switch (activeRole) {
-      case 'CITIZEN':
-        router.replace('/(citizen)/home');
-        break;
-      case 'COLLECTOR':
-        router.replace('/(collector)/tasks');
-        break;
-      case 'ENTERPRISE':
-        router.replace('/(enterprise)/dashboard');
-        break;
-      case 'ADMIN':
-        router.replace('/(admin)/analytics');
-        break;
-      default:
-        router.replace('/(citizen)/home');
-    }
-  }, [isNavigationReady, isBootstrapping, router]);
-
-  return (
-    <View style={styles.container}>
-      <ActivityIndicator size="large" color={Colors.primary[600]} />
-    </View>
-  );
+  const activeRole = useAppStore.getState().currentRole;
+  switch (activeRole) {
+    case 'CITIZEN':
+      return <Redirect href="/(citizen)/home" />;
+    case 'COLLECTOR':
+      return <Redirect href="/(collector)/tasks" />;
+    case 'ENTERPRISE':
+      return <Redirect href="/(enterprise)/dashboard" />;
+    case 'ADMIN':
+      return <Redirect href="/(admin)/analytics" />;
+    default:
+      return <Redirect href="/(citizen)/home" />;
+  }
 }
 
 const styles = StyleSheet.create({
