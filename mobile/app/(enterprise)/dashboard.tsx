@@ -15,6 +15,7 @@ const statusColors: Record<ReportStatus, string> = {
   PENDING: Colors.status.pending,
   ACCEPTED: Colors.status.info,
   ASSIGNED: Colors.accent[500],
+  ON_THE_WAY: Colors.secondary[500],
   COLLECTED: Colors.status.success,
   REJECTED: Colors.status.error,
 };
@@ -23,6 +24,7 @@ const statusLabels: Record<ReportStatus, string> = {
   PENDING: 'Chờ duyệt',
   ACCEPTED: 'Đã duyệt',
   ASSIGNED: 'Đã gán',
+  ON_THE_WAY: 'Đang di chuyển',
   COLLECTED: 'Đã thu gom',
   REJECTED: 'Từ chối',
 };
@@ -419,3 +421,4 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
 });
+

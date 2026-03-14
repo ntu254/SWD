@@ -4,8 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Trophy, Target, TrendingUp, Calendar, CheckCircle2, Clock } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
-import { collectorKpis } from '@/data/mockData';
 import { useAppStore } from '@/store/useAppStore';
+import { useQuery } from '@tanstack/react-query';
+import { fetchCollectorKpiToday } from '@/components/api/backend';
+import type { CollectorKpiDaily } from '@/types';
 
 const { width: _width } = Dimensions.get('window');
 
@@ -15,7 +17,7 @@ const CircularProgress = ({
   size = 120,
   strokeWidth = 10,
   color = Colors.primary[600],
-  label
+  label,
 }: {
   value: number;
   max: number;
@@ -24,10 +26,8 @@ const CircularProgress = ({
   color?: string;
   label: string;
 }) => {
-  const percentage = Math.min((value / max) * 100, 100);
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const _strokeDashoffset = circumference - (percentage / 100) * circumference;
+  const safeMax = Math.max(max, 1);
+  const percentage = Math.min((value / safeMax) * 100, 100);
 
   return (
     <View style={[styles.progressContainer, { width: size }]}>
@@ -42,8 +42,7 @@ const CircularProgress = ({
               borderRadius: size / 2,
               borderWidth: strokeWidth,
               borderColor: color,
-              transform: [{ rotate: '-90deg' }],
-            }
+            },
           ]}
         />
         <View style={styles.circleContent}>
@@ -51,28 +50,41 @@ const CircularProgress = ({
           <Text style={styles.progressLabel}>{label}</Text>
         </View>
       </View>
-      <Text style={styles.progressDetail}>{value}/{max}</Text>
+      <Text style={styles.progressDetail}>
+        {value}/{safeMax}
+      </Text>
     </View>
   );
 };
 
 export default function KpiScreen() {
-  const { user } = useAppStore();
-  const myKpis = collectorKpis.filter(k => k.collectorUserId === user?.userId);
+  const { accessToken } = useAppStore();
 
-  const todayKpi = myKpis[0] || {
-    actualVisits: 4,
-    minVisits: 5,
-    actualWeightKg: 42,
-    minWeightKg: 50,
-    status: 'PENDING'
+  const kpiQuery = useQuery({
+    queryKey: ['collector', 'kpi', 'today'],
+    queryFn: () => fetchCollectorKpiToday(accessToken ?? ''),
+    enabled: !!accessToken,
+  });
+
+  const fallbackKpi: CollectorKpiDaily = {
+    kpiId: 'fallback-kpi',
+    collectorUserId: '',
+    areaId: '',
+    kpiDate: new Date().toISOString(),
+    actualVisits: 0,
+    minVisits: 1,
+    actualWeightKg: 0,
+    minWeightKg: 1,
+    status: 'PENDING',
   };
 
+  const todayKpi = kpiQuery.data ?? fallbackKpi;
+
   const weeklyStats = {
-    completed: 24,
-    target: 25,
-    weight: 1250,
-    bonus: 1500,
+    completed: todayKpi.actualVisits,
+    target: todayKpi.minVisits,
+    weight: todayKpi.actualWeightKg,
+    bonus: Math.round(todayKpi.actualWeightKg * 10),
   };
 
   return (
@@ -83,7 +95,6 @@ export default function KpiScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Today's Progress */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Calendar size={20} color={Colors.primary[600]} />
@@ -94,23 +105,22 @@ export default function KpiScreen() {
             <CircularProgress
               value={todayKpi.actualVisits}
               max={todayKpi.minVisits}
-              label="Chuyến"
+              label='Chuyến'
               color={Colors.primary[600]}
             />
             <CircularProgress
               value={todayKpi.actualWeightKg}
               max={todayKpi.minWeightKg}
-              label="Kg"
+              label='Kg'
               color={Colors.secondary[600]}
             />
           </View>
         </View>
 
-        {/* Weekly Stats */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <TrendingUp size={20} color={Colors.accent[600]} />
-            <Text style={styles.sectionTitle}>Tuần này</Text>
+            <Text style={styles.sectionTitle}>Tổng quan</Text>
           </View>
 
           <View style={styles.statsGrid}>
@@ -119,7 +129,7 @@ export default function KpiScreen() {
                 <CheckCircle2 size={20} color={Colors.primary[600]} />
               </View>
               <Text style={styles.statValue}>{weeklyStats.completed}</Text>
-              <Text style={styles.statLabel}>Chuyến hoàn thành</Text>
+              <Text style={styles.statLabel}>Chuyến đã làm</Text>
             </View>
 
             <View style={styles.statCard}>
@@ -135,52 +145,56 @@ export default function KpiScreen() {
                 <Trophy size={20} color={Colors.secondary[600]} />
               </View>
               <Text style={styles.statValue}>{weeklyStats.bonus.toLocaleString()}</Text>
-              <Text style={styles.statLabel}>Điểm thưởng</Text>
+              <Text style={styles.statLabel}>Điểm dự kiến</Text>
             </View>
           </View>
         </View>
 
-        {/* KPI History */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Clock size={20} color={Colors.neutral[600]} />
-            <Text style={styles.sectionTitle}>Lịch sử KPI</Text>
+            <Text style={styles.sectionTitle}>Trạng thái KPI</Text>
           </View>
 
-          {myKpis.map((kpi) => (
-            <View key={kpi.kpiId} style={styles.kpiItem}>
-              <View style={styles.kpiDate}>
-                <Text style={styles.kpiDateDay}>
-                  {new Date(kpi.kpiDate).getDate()}
-                </Text>
-                <Text style={styles.kpiDateMonth}>
-                  T{new Date(kpi.kpiDate).getMonth() + 1}
+          <View style={styles.kpiItem}>
+            <View style={styles.kpiDate}>
+              <Text style={styles.kpiDateDay}>{new Date(todayKpi.kpiDate).getDate()}</Text>
+              <Text style={styles.kpiDateMonth}>T{new Date(todayKpi.kpiDate).getMonth() + 1}</Text>
+            </View>
+
+            <View style={styles.kpiContent}>
+              <View style={styles.kpiRow}>
+                <Text style={styles.kpiLabel}>Chuyến thu gom:</Text>
+                <Text style={styles.kpiValue}>
+                  {todayKpi.actualVisits}/{todayKpi.minVisits}
                 </Text>
               </View>
-
-              <View style={styles.kpiContent}>
-                <View style={styles.kpiRow}>
-                  <Text style={styles.kpiLabel}>Chuyến thu gom:</Text>
-                  <Text style={styles.kpiValue}>{kpi.actualVisits}/{kpi.minVisits}</Text>
-                </View>
-                <View style={styles.kpiRow}>
-                  <Text style={styles.kpiLabel}>Khối lượng:</Text>
-                  <Text style={styles.kpiValue}>{kpi.actualWeightKg}kg/{kpi.minWeightKg}kg</Text>
-                </View>
-              </View>
-
-              <View style={[
-                styles.kpiStatus,
-                { backgroundColor: kpi.status === 'MET' ? Colors.status.success + '20' : Colors.status.pending + '20' }
-              ]}>
-                {kpi.status === 'MET' ? (
-                  <CheckCircle2 size={20} color={Colors.status.success} />
-                ) : (
-                  <Clock size={20} color={Colors.status.pending} />
-                )}
+              <View style={styles.kpiRow}>
+                <Text style={styles.kpiLabel}>Khối lượng:</Text>
+                <Text style={styles.kpiValue}>
+                  {todayKpi.actualWeightKg}kg/{todayKpi.minWeightKg}kg
+                </Text>
               </View>
             </View>
-          ))}
+
+            <View
+              style={[
+                styles.kpiStatus,
+                {
+                  backgroundColor:
+                    todayKpi.status === 'MET'
+                      ? Colors.status.success + '20'
+                      : Colors.status.pending + '20',
+                },
+              ]}
+            >
+              {todayKpi.status === 'MET' ? (
+                <CheckCircle2 size={20} color={Colors.status.success} />
+              ) : (
+                <Clock size={20} color={Colors.status.pending} />
+              )}
+            </View>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

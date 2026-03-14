@@ -1,18 +1,32 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+﻿import React, { useMemo, useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  RefreshControl,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ClipboardList, Clock, MapPin, Package, CheckCircle2, Navigation } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
-import { taskAssignments } from '@/data/mockData';
 import { useAppStore } from '@/store/useAppStore';
 import type { TaskAssignment, AssignmentStatus } from '@/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  completeCollectorTask,
+  fetchCollectorTasks,
+  updateCollectorTaskStatus,
+} from '@/components/api/backend';
 
 const statusConfig: Record<AssignmentStatus, { label: string; color: string; bgColor: string; icon: React.ElementType }> = {
   ASSIGNED: { label: 'Được gán', color: Colors.accent[600], bgColor: Colors.accent[50], icon: ClipboardList },
   ACCEPTED: { label: 'Đã nhận', color: Colors.secondary[600], bgColor: Colors.secondary[50], icon: CheckCircle2 },
   ON_THE_WAY: { label: 'Đang đi', color: Colors.primary[600], bgColor: Colors.primary[50], icon: Navigation },
+  IN_PROGRESS: { label: 'Đang xử lý', color: Colors.primary[600], bgColor: Colors.primary[50], icon: Navigation },
   COLLECTED: { label: 'Đã thu gom', color: Colors.status.success, bgColor: '#E8F5E9', icon: Package },
   COMPLETED: { label: 'Hoàn thành', color: Colors.status.success, bgColor: '#E8F5E9', icon: CheckCircle2 },
   FAILED: { label: 'Thất bại', color: Colors.status.error, bgColor: '#FFEBEE', icon: Clock },
@@ -23,55 +37,113 @@ const statusConfig: Record<AssignmentStatus, { label: string; color: string; bgC
 
 export default function CollectorTasksScreen() {
   const router = useRouter();
-  const { user } = useAppStore();
+  const queryClient = useQueryClient();
+  const { accessToken } = useAppStore();
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'COMPLETED'>('ACTIVE');
 
-  const myAssignments = taskAssignments.filter(a => a.collectorUserId === user?.userId);
+  const tasksQuery = useQuery({
+    queryKey: ['collector', 'tasks'],
+    queryFn: () => fetchCollectorTasks(accessToken ?? ''),
+    enabled: !!accessToken,
+  });
 
-  const activeAssignments = myAssignments.filter(a =>
-    ['ASSIGNED', 'ACCEPTED', 'ON_THE_WAY'].includes(a.status)
+  const changeStatusMutation = useMutation({
+    mutationFn: ({ taskId, status }: { taskId: string; status: 'ACCEPTED' | 'ON_THE_WAY' }) =>
+      updateCollectorTaskStatus(accessToken ?? '', taskId, status),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['collector', 'tasks'] });
+    },
+  });
+
+  const completeTaskMutation = useMutation({
+    mutationFn: ({ taskId }: { taskId: string }) =>
+      completeCollectorTask(accessToken ?? '', taskId, 'Completed from collector mobile'),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['collector', 'tasks'] });
+      Alert.alert('Thành công', 'Đã hoàn thành nhiệm vụ.');
+    },
+  });
+
+  const assignments = tasksQuery.data ?? [];
+
+  const activeAssignments = useMemo(
+    () => assignments.filter((a) => ['ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'IN_PROGRESS'].includes(a.status)),
+    [assignments]
   );
 
-  const completedAssignments = myAssignments.filter(a =>
-    ['COLLECTED', 'COMPLETED'].includes(a.status)
+  const completedAssignments = useMemo(
+    () => assignments.filter((a) => ['COLLECTED', 'COMPLETED'].includes(a.status)),
+    [assignments]
   );
 
   const displayedAssignments = activeTab === 'ACTIVE' ? activeAssignments : completedAssignments;
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+    try {
+      await tasksQuery.refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [tasksQuery]);
 
   const handleTaskPress = (assignment: TaskAssignment) => {
     console.log('Task pressed:', assignment.taskId);
   };
 
+  const handleAccept = async (taskId: string) => {
+    try {
+      await changeStatusMutation.mutateAsync({ taskId, status: 'ACCEPTED' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Không thể nhận nhiệm vụ';
+      Alert.alert('Cập nhật thất bại', message);
+    }
+  };
+
+  const handleStartMoving = async (taskId: string) => {
+    try {
+      await changeStatusMutation.mutateAsync({ taskId, status: 'ON_THE_WAY' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Không thể cập nhật trạng thái';
+      Alert.alert('Cập nhật thất bại', message);
+    }
+  };
+
+  const handleComplete = async (taskId: string) => {
+    try {
+      await completeTaskMutation.mutateAsync({ taskId });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Không thể hoàn thành nhiệm vụ';
+      Alert.alert('Cập nhật thất bại', message);
+    }
+  };
+
   const renderTaskItem = ({ item }: { item: TaskAssignment }) => {
-    const status = statusConfig[item.status];
+    const status = statusConfig[item.status] ?? statusConfig.ASSIGNED;
     const StatusIcon = status.icon;
 
     return (
-      <TouchableOpacity
-        style={styles.taskCard}
-        onPress={() => handleTaskPress(item)}
-        activeOpacity={0.8}
-      >
+      <TouchableOpacity style={styles.taskCard} onPress={() => handleTaskPress(item)} activeOpacity={0.8}>
         <View style={styles.taskHeader}>
           <View style={[styles.statusBadge, { backgroundColor: status.bgColor }]}>
             <StatusIcon size={14} color={status.color} />
             <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
           </View>
           <Text style={styles.taskTime}>
-            {new Date(item.assignedAt || '').toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+            {new Date(item.assignedAt || '').toLocaleTimeString('vi-VN', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
           </Text>
         </View>
 
         <View style={styles.taskBody}>
-          <Text style={styles.wasteType}>{item.task?.report?.wasteTypeName || 'Rác thải'}</Text>
+          <Text style={styles.wasteType}>{item.task?.status ?? 'Nhiệm vụ thu gom'}</Text>
           <Text style={styles.description} numberOfLines={2}>
-            {item.task?.report?.description || 'Không có mô tả'}
+            {item.task?.enterpriseName
+              ? `Đơn vị xử lý: ${item.task.enterpriseName}`
+              : 'Không có mô tả chi tiết'}
           </Text>
 
           <View style={styles.locationRow}>
@@ -82,25 +154,23 @@ export default function CollectorTasksScreen() {
 
         <View style={styles.taskFooter}>
           {item.status === 'ASSIGNED' && (
-            <View style={styles.actionButtons}>
-              <TouchableOpacity style={[styles.actionBtn, styles.rejectBtn]}>
-                <Text style={styles.rejectBtnText}>Từ chối</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.actionBtn, styles.acceptBtn]}>
-                <Text style={styles.acceptBtnText}>Nhận nhiệm vụ</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.acceptBtn]}
+              onPress={() => void handleAccept(item.taskId)}
+            >
+              <Text style={styles.acceptBtnText}>Nhận nhiệm vụ</Text>
+            </TouchableOpacity>
           )}
 
           {item.status === 'ACCEPTED' && (
-            <TouchableOpacity style={styles.primaryBtn}>
+            <TouchableOpacity style={styles.primaryBtn} onPress={() => void handleStartMoving(item.taskId)}>
               <Navigation size={16} color={Colors.neutral.white} />
               <Text style={styles.primaryBtnText}>Bắt đầu di chuyển</Text>
             </TouchableOpacity>
           )}
 
-          {item.status === 'ON_THE_WAY' && (
-            <TouchableOpacity style={styles.primaryBtn}>
+          {(item.status === 'ON_THE_WAY' || item.status === 'IN_PROGRESS') && (
+            <TouchableOpacity style={styles.primaryBtn} onPress={() => void handleComplete(item.taskId)}>
               <CheckCircle2 size={16} color={Colors.neutral.white} />
               <Text style={styles.primaryBtnText}>Xác nhận thu gom</Text>
             </TouchableOpacity>
@@ -117,10 +187,7 @@ export default function CollectorTasksScreen() {
           <Text style={styles.greeting}>Nhiệm vụ hôm nay</Text>
           <Text style={styles.subtitle}>{activeAssignments.length} đang chờ xử lý</Text>
         </View>
-        <TouchableOpacity
-          style={styles.mapButton}
-          onPress={() => router.push('/(collector)/map')}
-        >
+        <TouchableOpacity style={styles.mapButton} onPress={() => router.push('/(collector)/map')}>
           <MapPin size={20} color={Colors.neutral.white} />
         </TouchableOpacity>
       </View>
@@ -149,9 +216,7 @@ export default function CollectorTasksScreen() {
         keyExtractor={(item) => item.assignmentId}
         renderItem={renderTaskItem}
         contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <ClipboardList size={48} color={Colors.neutral[300]} />
@@ -284,23 +349,11 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.neutral[100],
     paddingTop: 12,
   },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
   actionBtn: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
-  },
-  rejectBtn: {
-    backgroundColor: Colors.neutral[100],
-  },
-  rejectBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.neutral[600],
   },
   acceptBtn: {
     backgroundColor: Colors.secondary[600],

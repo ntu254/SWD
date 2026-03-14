@@ -20,7 +20,13 @@ export interface ServiceArea {
 }
 
 // Waste Reports
-export type ReportStatus = 'PENDING' | 'ACCEPTED' | 'ASSIGNED' | 'COLLECTED' | 'REJECTED';
+export type ReportStatus =
+  | 'PENDING'
+  | 'ACCEPTED'
+  | 'ASSIGNED'
+  | 'ON_THE_WAY'
+  | 'COLLECTED'
+  | 'REJECTED';
 
 export interface WasteReport {
   reportId: string;
@@ -47,6 +53,7 @@ export type TaskStatus =
   | 'PENDING'
   | 'PENDING_ENTERPRISE_APPROVAL'
   | 'ASSIGNED'
+  | 'ON_THE_WAY'
   | 'IN_PROGRESS'
   | 'COLLECTED'
   | 'FAILED'
@@ -76,6 +83,7 @@ export type AssignmentStatus =
   | 'ASSIGNED'
   | 'ACCEPTED'
   | 'ON_THE_WAY'
+  | 'IN_PROGRESS'
   | 'COLLECTED'
   | 'COMPLETED'
   | 'FAILED'

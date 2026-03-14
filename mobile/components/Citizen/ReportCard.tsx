@@ -10,10 +10,14 @@ interface ReportCardProps {
   onPress?: (report: WasteReport) => void;
 }
 
-const statusConfig = {
+const statusConfig: Record<
+  WasteReport['status'],
+  { label: string; color: string; bgColor: string }
+> = {
   PENDING: { label: 'Chờ duyệt', color: Colors.status.pending, bgColor: Colors.neutral[100] },
   ACCEPTED: { label: 'Đã duyệt', color: Colors.status.info, bgColor: Colors.secondary[50] },
   ASSIGNED: { label: 'Đã gán', color: Colors.accent[500], bgColor: Colors.accent[50] },
+  ON_THE_WAY: { label: 'Đang di chuyển', color: Colors.secondary[600], bgColor: Colors.secondary[50] },
   COLLECTED: { label: 'Đã thu gom', color: Colors.status.success, bgColor: Colors.primary[50] },
   REJECTED: { label: 'Từ chối', color: Colors.status.error, bgColor: '#FFEBEE' },
 };
@@ -142,3 +146,4 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
+

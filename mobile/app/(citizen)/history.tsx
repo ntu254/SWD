@@ -1,12 +1,13 @@
-import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
-import { wasteReports } from '@/data/mockData';
 import { useAppStore } from '@/store/useAppStore';
 import { ReportCard } from '@/components/Citizen/ReportCard';
 import type { WasteReport, ReportStatus } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { fetchMyReports } from '@/components/api/backend';
 
 type FilterType = 'ALL' | ReportStatus;
 
@@ -20,28 +21,39 @@ const filters: { key: FilterType; label: string }[] = [
 
 export default function HistoryScreen() {
   const _router = useRouter();
-  const { user } = useAppStore();
+  const { user, accessToken } = useAppStore();
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
   const [refreshing, setRefreshing] = useState(false);
 
-  const myReports = wasteReports.filter(r => r.reporterUserId === user?.userId);
+  const reportsQuery = useQuery({
+    queryKey: ['reports', 'mine', 'history', user?.userId],
+    queryFn: () => fetchMyReports(accessToken ?? ''),
+    enabled: !!accessToken,
+  });
+
+  const myReports = reportsQuery.data ?? [];
 
   const filteredReports = activeFilter === 'ALL'
     ? myReports
-    : myReports.filter(r => r.status === activeFilter);
+    : myReports.filter((r) => r.status === activeFilter);
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+    try {
+      await reportsQuery.refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [reportsQuery]);
 
   const handleReportPress = useCallback((report: WasteReport) => {
     console.log('Report pressed:', report.reportId);
   }, []);
 
-  const renderItem = useCallback(({ item }: { item: WasteReport }) => (
-    <ReportCard report={item} onPress={handleReportPress} />
-  ), [handleReportPress]);
+  const renderItem = useCallback(
+    ({ item }: { item: WasteReport }) => <ReportCard report={item} onPress={handleReportPress} />,
+    [handleReportPress]
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -50,7 +62,6 @@ export default function HistoryScreen() {
         <Text style={styles.subtitle}>{myReports.length} báo cáo</Text>
       </View>
 
-      {/* Filters */}
       <View style={styles.filterContainer}>
         <FlatList
           horizontal
@@ -79,15 +90,12 @@ export default function HistoryScreen() {
         />
       </View>
 
-      {/* Reports List */}
       <FlatList
         data={filteredReports}
         keyExtractor={(item) => item.reportId}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>Không có báo cáo nào</Text>

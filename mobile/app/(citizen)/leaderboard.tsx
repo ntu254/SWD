@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Crown, Trophy, Users } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
-import { leaderboard } from '@/data/mockData';
 import { useAppStore } from '@/store/useAppStore';
 import { LeaderboardItem } from '@/components/Citizen/LeaderboardItem';
 import type { LeaderboardEntry } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { fetchLeaderboard } from '@/components/api/backend';
 
 type FilterType = 'GLOBAL' | 'AREA' | 'MONTHLY';
 
@@ -20,55 +21,67 @@ export default function LeaderboardScreen() {
   const { user } = useAppStore();
   const [activeFilter, setActiveFilter] = useState<FilterType>('GLOBAL');
 
-  const renderTopThree = () => {
-    const topThree = leaderboard.slice(0, 3);
+  const leaderboardQuery = useQuery({
+    queryKey: ['rewards', 'leaderboard', activeFilter],
+    queryFn: () => fetchLeaderboard(100),
+  });
 
-    return (
-      <View style={styles.topThreeContainer}>
-        {/* 2nd Place */}
-        {topThree[1] && (
-          <View style={styles.secondPlace}>
-            <View style={[styles.podiumAvatar, { backgroundColor: Colors.neutral[300] }]}>
-              <Text style={styles.podiumRank}>2</Text>
-            </View>
-            <Text style={styles.podiumName} numberOfLines={1}>{topThree[1].displayName}</Text>
-            <Text style={styles.podiumPoints}>{topThree[1].points.toLocaleString()}</Text>
-          </View>
-        )}
+  const leaderboard = leaderboardQuery.data ?? [];
 
-        {/* 1st Place */}
-        {topThree[0] && (
-          <View style={styles.firstPlace}>
-            <View style={styles.crownContainer}>
-              <Crown size={24} color={Colors.accent[500]} />
-            </View>
-            <View style={[styles.podiumAvatar, { backgroundColor: Colors.accent[500], width: 72, height: 72 }]}>
-              <Text style={[styles.podiumRank, { fontSize: 28 }]}>1</Text>
-            </View>
-            <Text style={[styles.podiumName, { fontSize: 16 }]} numberOfLines={1}>{topThree[0].displayName}</Text>
-            <Text style={[styles.podiumPoints, { color: Colors.accent[600], fontSize: 16 }]}>{topThree[0].points.toLocaleString()}</Text>
-          </View>
-        )}
+  const topThree = useMemo(() => leaderboard.slice(0, 3), [leaderboard]);
 
-        {/* 3rd Place */}
-        {topThree[2] && (
-          <View style={styles.thirdPlace}>
-            <View style={[styles.podiumAvatar, { backgroundColor: Colors.accent[700] }]}>
-              <Text style={styles.podiumRank}>3</Text>
-            </View>
-            <Text style={styles.podiumName} numberOfLines={1}>{topThree[2].displayName}</Text>
-            <Text style={styles.podiumPoints}>{topThree[2].points.toLocaleString()}</Text>
+  const renderTopThree = () => (
+    <View style={styles.topThreeContainer}>
+      {topThree[1] && (
+        <View style={styles.secondPlace}>
+          <View style={[styles.podiumAvatar, { backgroundColor: Colors.neutral[300] }]}>
+            <Text style={styles.podiumRank}>2</Text>
           </View>
-        )}
-      </View>
-    );
-  };
+          <Text style={styles.podiumName} numberOfLines={1}>
+            {topThree[1].displayName}
+          </Text>
+          <Text style={styles.podiumPoints}>{topThree[1].points.toLocaleString()}</Text>
+        </View>
+      )}
+
+      {topThree[0] && (
+        <View style={styles.firstPlace}>
+          <View style={styles.crownContainer}>
+            <Crown size={24} color={Colors.accent[500]} />
+          </View>
+          <View
+            style={[
+              styles.podiumAvatar,
+              { backgroundColor: Colors.accent[500], width: 72, height: 72 },
+            ]}
+          >
+            <Text style={[styles.podiumRank, { fontSize: 28 }]}>1</Text>
+          </View>
+          <Text style={[styles.podiumName, { fontSize: 16 }]} numberOfLines={1}>
+            {topThree[0].displayName}
+          </Text>
+          <Text style={[styles.podiumPoints, { color: Colors.accent[600], fontSize: 16 }]}>
+            {topThree[0].points.toLocaleString()}
+          </Text>
+        </View>
+      )}
+
+      {topThree[2] && (
+        <View style={styles.thirdPlace}>
+          <View style={[styles.podiumAvatar, { backgroundColor: Colors.accent[700] }]}>
+            <Text style={styles.podiumRank}>3</Text>
+          </View>
+          <Text style={styles.podiumName} numberOfLines={1}>
+            {topThree[2].displayName}
+          </Text>
+          <Text style={styles.podiumPoints}>{topThree[2].points.toLocaleString()}</Text>
+        </View>
+      )}
+    </View>
+  );
 
   const renderItem = ({ item }: { item: LeaderboardEntry }) => (
-    <LeaderboardItem
-      entry={item}
-      isCurrentUser={item.userId === user?.userId}
-    />
+    <LeaderboardItem entry={item} isCurrentUser={item.userId === user?.userId} />
   );
 
   return (
@@ -80,11 +93,10 @@ export default function LeaderboardScreen() {
         </View>
         <View style={styles.participantsBadge}>
           <Users size={16} color={Colors.neutral[600]} />
-          <Text style={styles.participantsText}>3,500+ người</Text>
+          <Text style={styles.participantsText}>{leaderboard.length} người</Text>
         </View>
       </View>
 
-      {/* Filters */}
       <View style={styles.filterContainer}>
         {filters.map((filter) => (
           <View
@@ -107,10 +119,8 @@ export default function LeaderboardScreen() {
         ))}
       </View>
 
-      {/* Top 3 Podium */}
       {renderTopThree()}
 
-      {/* Rest of Leaderboard */}
       <FlatList
         data={leaderboard.slice(3)}
         keyExtractor={(item) => item.userId}

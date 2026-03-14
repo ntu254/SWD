@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -6,25 +6,60 @@ import { Bell } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
 import { useAppStore } from '@/store/useAppStore';
-import { wasteReports } from '@/data/mockData';
 import { PointsCard } from '@/components/Citizen/PointsCard';
 import { QuickActions } from '@/components/Citizen/QuickActions';
 import { ReportCard } from '@/components/Citizen/ReportCard';
 import { NearbyReportsMap } from '@/components/Citizen/NearbyReportsMap';
 import type { WasteReport } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { fetchLeaderboard, fetchMyReports, fetchRewardBalance } from '@/components/api/backend';
 
 export default function CitizenHomeScreen() {
   const router = useRouter();
-  const { user, points } = useAppStore();
+  const { user, accessToken } = useAppStore();
   const [refreshing, setRefreshing] = React.useState(false);
 
-  const myReports = wasteReports.filter(r => r.reporterUserId === user?.userId);
+  const reportsQuery = useQuery({
+    queryKey: ['reports', 'mine', user?.userId],
+    queryFn: () => fetchMyReports(accessToken ?? ''),
+    enabled: !!accessToken,
+  });
+
+  const balanceQuery = useQuery({
+    queryKey: ['rewards', 'balance', user?.userId],
+    queryFn: () => fetchRewardBalance(accessToken ?? ''),
+    enabled: !!accessToken,
+  });
+
+  const leaderboardQuery = useQuery({
+    queryKey: ['rewards', 'leaderboard', 'home'],
+    queryFn: () => fetchLeaderboard(100),
+  });
+
+  const myReports = reportsQuery.data ?? [];
   const recentReports = myReports.slice(0, 3);
 
-  const onRefresh = React.useCallback(() => {
+  const myRank = React.useMemo(() => {
+    if (!user || !leaderboardQuery.data) {
+      return 0;
+    }
+
+    const found = leaderboardQuery.data.findIndex((entry) => entry.userId === user.userId);
+    return found >= 0 ? found + 1 : 0;
+  }, [leaderboardQuery.data, user]);
+
+  const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+    try {
+      await Promise.all([
+        reportsQuery.refetch(),
+        balanceQuery.refetch(),
+        leaderboardQuery.refetch(),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [balanceQuery, leaderboardQuery, reportsQuery]);
 
   const handleReportPress = (report: WasteReport) => {
     console.log('Report pressed:', report.reportId);
@@ -35,7 +70,7 @@ export default function CitizenHomeScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Xin chào,</Text>
-          <Text style={styles.userName}>{user?.firstName || 'NgườI dùng'}</Text>
+          <Text style={styles.userName}>{user?.firstName || 'Người dùng'}</Text>
         </View>
         <View style={styles.notificationButton}>
           <Bell size={24} color={Colors.neutral[700]} />
@@ -45,13 +80,11 @@ export default function CitizenHomeScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <PointsCard
-          points={points || 9800}
-          rank={3}
+          points={balanceQuery.data ?? 0}
+          rank={myRank || 1}
           reportsCount={myReports.length}
         />
 
@@ -63,33 +96,26 @@ export default function CitizenHomeScreen() {
         />
 
         <NearbyReportsMap
-          reports={wasteReports}
-          userLocation={{ latitude: 10.7758, longitude: 106.7000 }}
+          reports={myReports}
+          userLocation={{ latitude: 10.7758, longitude: 106.7 }}
         />
 
         <View style={styles.reportsSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Báo cáo gần đây</Text>
-            <Text
-              style={styles.seeAll}
-              onPress={() => router.push('/(citizen)/history')}
-            >
+            <Text style={styles.seeAll} onPress={() => router.push('/(citizen)/history')}>
               Xem tất cả
             </Text>
           </View>
 
           {recentReports.map((report) => (
-            <ReportCard
-              key={report.reportId}
-              report={report}
-              onPress={handleReportPress}
-            />
+            <ReportCard key={report.reportId} report={report} onPress={handleReportPress} />
           ))}
 
           {recentReports.length === 0 && (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>Chưa có báo cáo nào</Text>
-              <Text style={styles.emptySubtext}>Bắt đầu báo cáo rác để nhận điểm thưởng!</Text>
+              <Text style={styles.emptySubtext}>Bắt đầu báo cáo rác để tích điểm nhé!</Text>
             </View>
           )}
         </View>

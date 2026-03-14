@@ -1,26 +1,65 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
+﻿import React, { useMemo, useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  Alert,
+} from 'react-native';
 import type { TextStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Camera, MapPin, Sparkles, Send, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
-import { wasteTypes } from '@/data/mockData';
 import { WasteTypeSelector } from '@/components/Citizen/WasteTypeSelector';
 import { useAppStore } from '@/store/useAppStore';
 import type { WasteType } from '@/types';
+import {
+  createWasteReport,
+  fetchServiceAreas,
+  fetchWasteTypes,
+  uploadReportPhoto,
+} from '@/components/api/backend';
 
 export default function ReportWasteScreen() {
   const router = useRouter();
-  const { addPoints } = useAppStore();
+  const queryClient = useQueryClient();
+  const { accessToken, user } = useAppStore();
+
   const [selectedWasteType, setSelectedWasteType] = useState<WasteType | null>(null);
   const [description, setDescription] = useState('');
   const [image, setImage] = useState<string | null>(null);
-  const [aiResult, setAiResult] = useState<{wasteType: WasteType; confidence: number} | null>(null);
+  const [aiResult, setAiResult] = useState<{ wasteType: WasteType; confidence: number } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [location] = useState({ lat: 10.7758, lng: 106.7000 });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [location] = useState({ lat: 10.7758, lng: 106.7 });
+
+  const wasteTypesQuery = useQuery({
+    queryKey: ['waste-types'],
+    queryFn: fetchWasteTypes,
+  });
+
+  const serviceAreasQuery = useQuery({
+    queryKey: ['service-areas'],
+    queryFn: fetchServiceAreas,
+  });
+
+  const wasteTypes = wasteTypesQuery.data ?? [];
+  const selectedArea = serviceAreasQuery.data?.[0];
+
+  const randomWasteType = useMemo(() => {
+    if (!wasteTypes.length) {
+      return null;
+    }
+
+    return wasteTypes[Math.floor(Math.random() * wasteTypes.length)];
+  }, [wasteTypes]);
 
   const pickImage = useCallback(async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -32,31 +71,71 @@ export default function ReportWasteScreen() {
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
-      // Simulate AI analysis
+
       setIsAnalyzing(true);
       setTimeout(() => {
-        const randomType = wasteTypes[Math.floor(Math.random() * wasteTypes.length)];
-        setAiResult({ wasteType: randomType, confidence: 0.87 });
-        setSelectedWasteType(randomType);
+        if (randomWasteType) {
+          setAiResult({ wasteType: randomWasteType, confidence: 0.87 });
+          setSelectedWasteType(randomWasteType);
+        }
         setIsAnalyzing(false);
       }, 1500);
     }
-  }, []);
+  }, [randomWasteType]);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!selectedWasteType || !image) {
       Alert.alert('Lỗi', 'Vui lòng chọn loại rác và chụp ảnh');
       return;
     }
 
-    // Add points for report
-    addPoints(500);
-    Alert.alert(
-      'Thành công!',
-      'Báo cáo của bạn đã được gửi. Bạn nhận được 500 điểm!',
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
-  }, [selectedWasteType, image, addPoints, router]);
+    if (!accessToken) {
+      Alert.alert('Phiên đăng nhập hết hạn', 'Vui lòng mở lại ứng dụng để đồng bộ phiên mới.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const uploadedPhotoUrl = image.startsWith('http')
+        ? image
+        : await uploadReportPhoto(accessToken, image);
+
+      await createWasteReport(accessToken, {
+        latitude: location.lat,
+        longitude: location.lng,
+        description,
+        wasteTypeId: selectedWasteType.wasteTypeId,
+        areaId: selectedArea?.areaId,
+        reportPhotoUrl: uploadedPhotoUrl,
+      });
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['reports', 'mine'] }),
+        queryClient.invalidateQueries({ queryKey: ['reports', 'mine', user?.userId] }),
+      ]);
+
+      Alert.alert('Thành công', 'Báo cáo của bạn đã được gửi.', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Không thể gửi báo cáo';
+      Alert.alert('Gửi báo cáo thất bại', message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    accessToken,
+    description,
+    image,
+    location.lat,
+    location.lng,
+    queryClient,
+    router,
+    selectedArea?.areaId,
+    selectedWasteType,
+    user?.userId,
+  ]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -69,7 +148,6 @@ export default function ReportWasteScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Image Upload */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Chụp ảnh rác</Text>
           <TouchableOpacity style={styles.imageUpload} onPress={pickImage}>
@@ -83,7 +161,6 @@ export default function ReportWasteScreen() {
             )}
           </TouchableOpacity>
 
-          {/* AI Result */}
           {isAnalyzing && (
             <View style={styles.aiAnalyzing}>
               <Sparkles size={20} color={Colors.accent[500]} />
@@ -95,9 +172,7 @@ export default function ReportWasteScreen() {
             <View style={[styles.aiResult, { borderColor: aiResult.wasteType.color }]}>
               <Sparkles size={20} color={aiResult.wasteType.color} />
               <View style={styles.aiResultText}>
-                <Text style={styles.aiResultTitle}>
-                  AI gợi ý: {aiResult.wasteType.name}
-                </Text>
+                <Text style={styles.aiResultTitle}>AI gợi ý: {aiResult.wasteType.name}</Text>
                 <Text style={styles.aiResultConfidence}>
                   Độ chính xác: {Math.round(aiResult.confidence * 100)}%
                 </Text>
@@ -106,7 +181,6 @@ export default function ReportWasteScreen() {
           )}
         </View>
 
-        {/* Waste Type Selector */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Loại rác</Text>
           <WasteTypeSelector
@@ -116,13 +190,12 @@ export default function ReportWasteScreen() {
           />
         </View>
 
-        {/* Location */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Vị trí</Text>
           <View style={styles.locationCard}>
             <MapPin size={20} color={Colors.primary[600]} />
             <View style={styles.locationInfo}>
-              <Text style={styles.locationAddress}>Quận 1, TP.HCM</Text>
+              <Text style={styles.locationAddress}>{selectedArea?.name ?? 'Chưa có khu vực'}</Text>
               <Text style={styles.locationCoords}>
                 {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
               </Text>
@@ -130,28 +203,29 @@ export default function ReportWasteScreen() {
           </View>
         </View>
 
-        {/* Description */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Mô tả (tùy chọn)</Text>
           <TextInput
             style={styles.descriptionInput}
             multiline
             numberOfLines={4}
-            placeholder="Mô tả thêm về loại rác, số lượng, tình trạng..."
+            placeholder='Mô tả thêm về loại rác, số lượng, tình trạng...'
             value={description}
             onChangeText={setDescription}
-            textAlignVertical="top"
+            textAlignVertical='top'
           />
         </View>
 
-        {/* Submit Button */}
         <TouchableOpacity
-          style={[styles.submitButton, (!selectedWasteType || !image) && styles.submitButtonDisabled]}
-          onPress={handleSubmit}
-          disabled={!selectedWasteType || !image}
+          style={[
+            styles.submitButton,
+            (!selectedWasteType || !image || isSubmitting) && styles.submitButtonDisabled,
+          ]}
+          onPress={() => void handleSubmit()}
+          disabled={!selectedWasteType || !image || isSubmitting}
         >
           <Send size={20} color={Colors.neutral.white} />
-          <Text style={styles.submitText}>Gửi báo cáo</Text>
+          <Text style={styles.submitText}>{isSubmitting ? 'Đang gửi...' : 'Gửi báo cáo'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
