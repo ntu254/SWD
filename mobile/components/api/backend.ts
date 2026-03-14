@@ -132,6 +132,13 @@ export const API_BASE_URL = normalizeBaseUrl(
   process.env.EXPO_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL
 );
 
+const DEFAULT_REQUEST_TIMEOUT_MS = 12000;
+const rawRequestTimeout = Number.parseInt(process.env.EXPO_PUBLIC_API_TIMEOUT_MS ?? '', 10);
+const REQUEST_TIMEOUT_MS =
+  Number.isFinite(rawRequestTimeout) && rawRequestTimeout > 0
+    ? rawRequestTimeout
+    : DEFAULT_REQUEST_TIMEOUT_MS;
+
 export class ApiError extends Error {
   status: number;
   details?: unknown;
@@ -181,11 +188,33 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     requestBody = JSON.stringify(body);
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: finalHeaders,
-    body: requestBody,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method,
+      headers: finalHeaders,
+      body: requestBody,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new ApiError(
+        `Request timeout after ${REQUEST_TIMEOUT_MS}ms on ${method} ${path}`,
+        408,
+        error
+      );
+    }
+
+    const message = error instanceof Error ? error.message : 'Unknown network error';
+    throw new ApiError(`Network error on ${method} ${path}: ${message}`, 0, error);
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   const rawText = await response.text();
   let payload: unknown = null;

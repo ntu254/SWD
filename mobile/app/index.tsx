@@ -5,10 +5,12 @@ import { Colors } from '@/constants/colors';
 import { useAppStore } from '@/store/useAppStore';
 import { syncRoleSession } from '@/components/api/backend';
 
+const BOOTSTRAP_TIMEOUT_MS = 15000;
+
 export default function Index() {
   const rootNavigationState = useRootNavigationState();
   const [isBootstrapping, setIsBootstrapping] = useState(true);
-  const { currentRole } = useAppStore();
+  const currentRole = useAppStore((state) => state.currentRole);
 
   useEffect(() => {
     if (!rootNavigationState?.key) return;
@@ -16,12 +18,24 @@ export default function Index() {
     let cancelled = false;
 
     const bootstrap = async () => {
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
       try {
         const roleToSync = currentRole || 'CITIZEN';
-        await syncRoleSession(roleToSync);
+        await Promise.race([
+          syncRoleSession(roleToSync),
+          new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(() => {
+              reject(new Error(`Bootstrap timeout after ${BOOTSTRAP_TIMEOUT_MS}ms`));
+            }, BOOTSTRAP_TIMEOUT_MS);
+          }),
+        ]);
       } catch (error) {
         console.warn('Role session bootstrap failed:', error);
       } finally {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+
         if (!cancelled) {
           setIsBootstrapping(false);
         }
