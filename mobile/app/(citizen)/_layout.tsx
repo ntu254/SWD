@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Home, Camera, History, Trophy, User } from 'lucide-react-native';
+import { Camera, History, Home, Trophy, User } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 
 export default function CitizenTabLayout() {
@@ -39,7 +39,7 @@ export default function CitizenTabLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: 'Lịch sử',
+          title: 'Theo dõi',
           tabBarIcon: ({ color }) => <History size={24} color={color} />,
         }}
       />
@@ -55,6 +55,21 @@ export default function CitizenTabLayout() {
         options={{
           title: 'Tài khoản',
           tabBarIcon: ({ color }) => <User size={24} color={color} />,
+        }}
+      />
+
+      <Tabs.Screen
+        name="points-history"
+        options={{
+          href: null,
+          title: 'Lịch sử điểm',
+        }}
+      />
+      <Tabs.Screen
+        name="complaints"
+        options={{
+          href: null,
+          title: 'Khiếu nại',
         }}
       />
     </Tabs>

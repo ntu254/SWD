@@ -23,7 +23,7 @@ const iconMap: Record<string, React.ElementType> = {
 export const WasteTypeSelector: React.FC<WasteTypeSelectorProps> = ({
   selectedId,
   onSelect,
-  wasteTypes
+  wasteTypes,
 }) => {
   return (
     <ScrollView
@@ -41,22 +41,21 @@ export const WasteTypeSelector: React.FC<WasteTypeSelectorProps> = ({
             style={[
               styles.item,
               isSelected && {
-                backgroundColor: type.color + '20',
+                backgroundColor: type.color + '12',
                 borderColor: type.color,
-                borderWidth: 2,
-              }
+              },
             ]}
             onPress={() => onSelect(type)}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
-            <View style={[styles.iconContainer, { backgroundColor: type.color + '20' }]}>
-              <Icon size={24} color={type.color} />
+            <View style={[styles.iconContainer, { backgroundColor: type.color + '1F' }]}>
+              <Icon size={22} color={type.color} />
             </View>
-            <Text style={[styles.name, isSelected && { color: type.color, fontWeight: '700' }]}>
+            <Text style={[styles.name, isSelected && { color: type.color }]} numberOfLines={1}>
               {type.name}
             </Text>
             <Text style={styles.description} numberOfLines={1}>
-              {type.isRecyclable ? '♻️ Tái chế' : '🗑️ Xử lý'}
+              {type.isRecyclable ? 'Có thể tái chế' : 'Cần xử lý riêng'}
             </Text>
           </TouchableOpacity>
         );
@@ -67,18 +66,20 @@ export const WasteTypeSelector: React.FC<WasteTypeSelectorProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 2,
+    paddingVertical: 6,
     gap: 10,
   },
   item: {
-    width: 100,
+    width: 118,
+    minHeight: 128,
     backgroundColor: Colors.neutral.white,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 12,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#E6ECE8',
   },
   iconContainer: {
     width: 48,
@@ -86,18 +87,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   name: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
     color: Colors.neutral[800],
     textAlign: 'center',
-    marginBottom: 4,
   },
   description: {
-    fontSize: 10,
+    fontSize: 11,
     color: Colors.neutral[500],
+    marginTop: 6,
     textAlign: 'center',
   },
 });

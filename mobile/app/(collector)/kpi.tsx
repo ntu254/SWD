@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Trophy, Target, TrendingUp, Calendar, CheckCircle2, Clock } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
@@ -8,8 +8,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { useQuery } from '@tanstack/react-query';
 import { fetchCollectorKpiToday } from '@/components/api/backend';
 import type { CollectorKpiDaily } from '@/types';
-
-const { width: _width } = Dimensions.get('window');
+import Svg, { Circle } from 'react-native-svg';
 
 const CircularProgress = ({
   value,
@@ -27,24 +26,37 @@ const CircularProgress = ({
   label: string;
 }) => {
   const safeMax = Math.max(max, 1);
-  const percentage = Math.min((value / safeMax) * 100, 100);
+  const progress = Math.max(0, Math.min(value / safeMax, 1));
+  const percentage = progress * 100;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference * (1 - progress);
 
   return (
     <View style={[styles.progressContainer, { width: size }]}>
       <View style={{ width: size, height: size }}>
-        <View style={[styles.circleBackground, { width: size, height: size, borderRadius: size / 2 }]} />
-        <View
-          style={[
-            styles.circleProgress,
-            {
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              borderWidth: strokeWidth,
-              borderColor: color,
-            },
-          ]}
-        />
+        <Svg width={size} height={size}>
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={Colors.neutral[100]}
+            strokeWidth={strokeWidth}
+            fill="none"
+          />
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={`${circumference} ${circumference}`}
+            strokeDashoffset={strokeDashoffset}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          />
+        </Svg>
         <View style={styles.circleContent}>
           <Text style={styles.progressValue}>{Math.round(percentage)}%</Text>
           <Text style={styles.progressLabel}>{label}</Text>
@@ -245,16 +257,6 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     alignItems: 'center',
-  },
-  circleBackground: {
-    backgroundColor: Colors.neutral[100],
-  },
-  circleProgress: {
-    borderColor: Colors.primary[600],
-    borderRightColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: 'transparent',
-    transform: [{ rotate: '-90deg' }],
   },
   circleContent: {
     position: 'absolute',

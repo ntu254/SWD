@@ -5,13 +5,22 @@ import {
   Bell, Shield, Globe, Moon, ChevronRight,
   Smartphone, Mail, LogOut
 } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { useAppStore } from '@/store/useAppStore';
+import { logoutSession } from '@/components/api/backend';
 
 export default function EnterpriseSettingsScreen() {
-  const { logout } = useAppStore();
+  const router = useRouter();
+  const { logout, accessToken } = useAppStore();
   const [notifications, setNotifications] = React.useState(true);
   const [darkMode, setDarkMode] = React.useState(false);
+
+  const handleLogout = async () => {
+    await logoutSession(accessToken);
+    logout();
+    router.replace('/');
+  };
 
   type SettingItem = {
     icon: typeof Shield;
@@ -83,7 +92,7 @@ export default function EnterpriseSettingsScreen() {
           </View>
         ))}
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+        <TouchableOpacity style={styles.logoutBtn} onPress={() => void handleLogout()}>
           <LogOut size={20} color={Colors.status.error} />
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>

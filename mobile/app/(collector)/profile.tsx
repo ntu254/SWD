@@ -1,19 +1,18 @@
-﻿import { Colors } from '@/constants/colors';
+import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
+import type { AssignmentStatus } from '@/types';
 import type { UserRole } from '@/store/useAppStore';
 import { useAppStore } from '@/store/useAppStore';
 import { useRouter } from 'expo-router';
 import {
-  Award,
   ChevronRight,
-  FileText,
+  ClipboardCheck,
   HelpCircle,
   LogOut,
-  MapPin,
-  MessageSquareWarning,
   Settings,
   Shield,
-  Star,
+  Truck,
+  Weight,
 } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import {
@@ -28,10 +27,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import {
-  fetchLeaderboard,
+  fetchCollectorKpiToday,
+  fetchCollectorTasks,
   fetchMyProfile,
-  fetchMyReports,
-  fetchRewardBalance,
   logoutSession,
   syncRoleSession,
 } from '@/components/api/backend';
@@ -51,46 +49,46 @@ const roleColors: Record<UserRole, string> = {
 };
 
 const roleOptions: UserRole[] = ['CITIZEN', 'COLLECTOR', 'ENTERPRISE', 'ADMIN'];
+const activeStatuses: AssignmentStatus[] = ['ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'IN_PROGRESS'];
+const doneStatuses: AssignmentStatus[] = ['COLLECTED', 'COMPLETED'];
 
-export default function ProfileScreen() {
+export default function CollectorProfileScreen() {
   const router = useRouter();
   const { user, logout, accessToken, currentRole } = useAppStore();
   const [switchingRole, setSwitchingRole] = useState<UserRole | null>(null);
 
   const profileQuery = useQuery({
-    queryKey: ['profile', 'me', currentRole],
+    queryKey: ['collector', 'profile', 'me', currentRole],
     queryFn: () => fetchMyProfile(accessToken ?? ''),
     enabled: !!accessToken,
   });
 
-  const balanceQuery = useQuery({
-    queryKey: ['rewards', 'balance', currentRole],
-    queryFn: () => fetchRewardBalance(accessToken ?? ''),
+  const tasksQuery = useQuery({
+    queryKey: ['collector', 'tasks', 'profile'],
+    queryFn: () => fetchCollectorTasks(accessToken ?? ''),
     enabled: !!accessToken,
   });
 
-  const reportsQuery = useQuery({
-    queryKey: ['reports', 'mine', currentRole],
-    queryFn: () => fetchMyReports(accessToken ?? ''),
-    enabled: !!accessToken,
-  });
-
-  const leaderboardQuery = useQuery({
-    queryKey: ['rewards', 'leaderboard', 'profile'],
-    queryFn: () => fetchLeaderboard(100, accessToken),
+  const kpiQuery = useQuery({
+    queryKey: ['collector', 'kpi', 'profile'],
+    queryFn: () => fetchCollectorKpiToday(accessToken ?? ''),
     enabled: !!accessToken,
   });
 
   const profileUser = profileQuery.data ?? user;
+  const assignments = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
 
-  const myRank = useMemo(() => {
-    if (!profileUser || !leaderboardQuery.data) {
-      return 0;
-    }
+  const activeCount = useMemo(
+    () => assignments.filter((assignment) => activeStatuses.includes(assignment.status)).length,
+    [assignments]
+  );
 
-    const foundIndex = leaderboardQuery.data.findIndex((entry) => entry.userId === profileUser.userId);
-    return foundIndex >= 0 ? foundIndex + 1 : 0;
-  }, [leaderboardQuery.data, profileUser]);
+  const completedCount = useMemo(
+    () => assignments.filter((assignment) => doneStatuses.includes(assignment.status)).length,
+    [assignments]
+  );
+
+  const todayWeight = kpiQuery.data?.actualWeightKg ?? 0;
 
   const handleLogout = () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc muốn đăng xuất?', [
@@ -131,7 +129,7 @@ export default function ProfileScreen() {
           break;
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Không thể đồng bộ vai trò với backend';
+      const message = error instanceof Error ? error.message : 'Không thể đồng bộ vai trò';
       Alert.alert('Lỗi chuyển vai trò', message);
     } finally {
       setSwitchingRole(null);
@@ -139,12 +137,9 @@ export default function ProfileScreen() {
   };
 
   const menuItems = [
-    { icon: Award, label: 'Phần thưởng của tôi', onPress: () => router.push('/(citizen)/leaderboard') },
-    { icon: FileText, label: 'Lịch sử điểm', onPress: () => router.push('/(citizen)/points-history') },
-    { icon: MapPin, label: 'Khu vực hoạt động', onPress: () => {} },
-    { icon: MessageSquareWarning, label: 'Phản hồi khiếu nại', onPress: () => router.push('/(citizen)/complaints') },
-    { icon: Star, label: 'Đánh giá ứng dụng', onPress: () => {} },
-    { icon: HelpCircle, label: 'Trung tâm trợ giúp', onPress: () => router.push('/(citizen)/complaints') },
+    { icon: ClipboardCheck, label: 'Lịch sử nhiệm vụ', onPress: () => router.push('/(collector)/tasks') },
+    { icon: Truck, label: 'KPI hôm nay', onPress: () => router.push('/(collector)/kpi') },
+    { icon: HelpCircle, label: 'Trung tâm hỗ trợ', onPress: () => {} },
     { icon: Shield, label: 'Chính sách bảo mật', onPress: () => {} },
     { icon: Settings, label: 'Cài đặt', onPress: () => {} },
   ];
@@ -154,31 +149,30 @@ export default function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Tài khoản</Text>
+          <Text style={styles.headerSubtitle}>Thông tin collector và hiệu suất</Text>
         </View>
 
         <View style={styles.profileCard}>
           <Image
-            source={{ uri: profileUser?.avatarUrl || 'https://i.pravatar.cc/150' }}
+            source={{ uri: profileUser?.avatarUrl || 'https://i.pravatar.cc/150?u=collector' }}
             style={styles.avatar}
           />
           <View style={styles.profileInfo}>
-            <Text style={styles.name}>{profileUser?.displayName || 'Người dùng'}</Text>
-            <Text style={styles.email}>{profileUser?.email || 'user@example.com'}</Text>
+            <Text style={styles.name}>{profileUser?.displayName || 'Collector'}</Text>
+            <Text style={styles.email}>{profileUser?.email || 'collector@example.com'}</Text>
             <View
               style={[
                 styles.roleBadge,
-                {
-                  backgroundColor: roleColors[(profileUser?.role || 'CITIZEN') as UserRole] + '20',
-                },
+                { backgroundColor: roleColors[(profileUser?.role || 'COLLECTOR') as UserRole] + '20' },
               ]}
             >
               <Text
                 style={[
                   styles.roleText,
-                  { color: roleColors[(profileUser?.role || 'CITIZEN') as UserRole] },
+                  { color: roleColors[(profileUser?.role || 'COLLECTOR') as UserRole] },
                 ]}
               >
-                {roleLabels[(profileUser?.role || 'CITIZEN') as UserRole]}
+                {roleLabels[(profileUser?.role || 'COLLECTOR') as UserRole]}
               </Text>
             </View>
           </View>
@@ -186,18 +180,21 @@ export default function ProfileScreen() {
 
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{(balanceQuery.data ?? 0).toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Điểm</Text>
+            <Text style={styles.statValue}>{activeCount}</Text>
+            <Text style={styles.statLabel}>Đang xử lý</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{myRank > 0 ? `#${myRank}` : '--'}</Text>
-            <Text style={styles.statLabel}>Xếp hạng</Text>
+            <Text style={styles.statValue}>{completedCount}</Text>
+            <Text style={styles.statLabel}>Đã hoàn thành</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{(reportsQuery.data?.length ?? 0).toString()}</Text>
-            <Text style={styles.statLabel}>Báo cáo</Text>
+            <View style={styles.weightRow}>
+              <Weight size={14} color={Colors.secondary[600]} />
+              <Text style={styles.statValue}>{todayWeight}</Text>
+            </View>
+            <Text style={styles.statLabel}>Kg hôm nay</Text>
           </View>
         </View>
 
@@ -234,14 +231,11 @@ export default function ProfileScreen() {
             return (
               <TouchableOpacity
                 key={item.label}
-                style={[
-                  styles.menuItem,
-                  index === menuItems.length - 1 && styles.menuItemLast,
-                ]}
+                style={[styles.menuItem, index === menuItems.length - 1 && styles.menuItemLast]}
                 onPress={item.onPress}
               >
-                <View style={[styles.menuIcon, { backgroundColor: Colors.primary[50] }]}>
-                  <Icon size={20} color={Colors.primary[600]} />
+                <View style={[styles.menuIcon, { backgroundColor: Colors.secondary[50] }]}>
+                  <Icon size={20} color={Colors.secondary[600]} />
                 </View>
                 <Text style={styles.menuText}>{item.label}</Text>
                 <ChevronRight size={20} color={Colors.neutral[400]} />
@@ -274,6 +268,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: Colors.neutral[800],
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: Colors.neutral[500],
+    marginTop: 4,
   },
   profileCard: {
     flexDirection: 'row',
@@ -340,6 +339,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.neutral[500],
     marginTop: 4,
+  },
+  weightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   section: {
     marginTop: 24,
@@ -417,3 +421,4 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
 });
+

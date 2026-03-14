@@ -2,9 +2,16 @@ import { Platform } from 'react-native';
 import { Colors } from '@/constants/colors';
 import type {
   AssignmentStatus,
+  CitizenRewardRule,
+  Complaint,
   CollectorKpiDaily,
+  EnterpriseCapability,
   LeaderboardEntry,
+  Notification,
+  RewardItem,
+  RewardTransaction,
   ServiceArea,
+  SystemSetting,
   Task,
   TaskAssignment,
   WasteReport,
@@ -96,6 +103,116 @@ interface KpiDto {
   status?: string;
 }
 
+interface UserDto {
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  phone?: string;
+  avatarUrl?: string;
+  role: string;
+  accountStatus?: User['accountStatus'];
+}
+
+interface DashboardStatsDto {
+  totalUsers: number;
+  totalCitizens: number;
+  totalCollectors: number;
+  totalEnterprises: number;
+  totalReports: number;
+  pendingReports: number;
+  activeTasks: number;
+  completedTasksToday: number;
+  openComplaints: number;
+  totalRewardPointsIssued: number;
+}
+
+interface EnterpriseCapabilityDto {
+  capabilityId: string;
+  enterpriseUserId: string;
+  serviceAreaId: string;
+  serviceAreaName?: string;
+  wasteTypeId: string;
+  wasteTypeName?: string;
+  dailyCapacityKg?: number;
+  usedCapacityKg?: number;
+  effectiveFrom?: string;
+  effectiveTo?: string;
+}
+
+interface RewardRuleDto {
+  ruleId: string;
+  wasteTypeId: string;
+  wasteTypeName?: string;
+  sortingLevel?: string;
+  pointsFixed?: number;
+  pointsPerKg?: number;
+  effectiveFrom?: string;
+  effectiveTo?: string;
+  isActive?: boolean;
+}
+
+interface ComplaintDto {
+  complaintId: string;
+  createdByUserId: string;
+  createdByName?: string;
+  reportId?: string;
+  visitId?: string;
+  title?: string;
+  content: string;
+  category: string;
+  priority?: string;
+  status?: string;
+  adminResponse?: string;
+  createdAt?: string;
+  resolvedAt?: string;
+}
+
+interface RewardTransactionDto {
+  transactionId: string;
+  citizenUserId: string;
+  citizenName?: string;
+  pointsDelta: number;
+  reasonCode?: string;
+  visitId?: string;
+  complaintId?: string;
+  createdByAdminId?: string;
+  createdAt?: string;
+}
+
+interface RewardItemDto {
+  itemId: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  pointsCost: number;
+  stock: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface NotificationDto {
+  id: string;
+  title: string;
+  content: string;
+  type?: string;
+  targetAudience?: string;
+  priority?: string;
+  isActive?: boolean;
+  startDate?: string;
+  endDate?: string;
+  createdAt?: string;
+}
+
+interface SystemSettingDto {
+  settingKey: string;
+  settingValue: string;
+  dataType?: string;
+  description?: string;
+}
+
 interface WasteTypeEntity {
   wasteTypeId: string;
   name: string;
@@ -119,6 +236,35 @@ interface RequestOptions {
   headers?: Record<string, string>;
   body?: unknown;
   formData?: FormData;
+}
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface RegisterPayload {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  displayName?: string;
+  role: Exclude<UserRole, 'ADMIN'>;
+  enterpriseUserId?: string;
+}
+
+export interface AdminDashboardStats {
+  totalUsers: number;
+  totalCitizens: number;
+  totalCollectors: number;
+  totalEnterprises: number;
+  totalReports: number;
+  pendingReports: number;
+  activeTasks: number;
+  completedTasksToday: number;
+  openComplaints: number;
+  totalRewardPointsIssued: number;
 }
 
 const DEMO_PASSWORD = process.env.EXPO_PUBLIC_DEMO_PASSWORD ?? 'Test1234!';
@@ -372,6 +518,20 @@ function toUserFromAuth(auth: AuthResponseDto): User {
   };
 }
 
+function toUserFromDto(dto: UserDto): User {
+  return {
+    userId: dto.userId,
+    email: dto.email,
+    firstName: dto.firstName,
+    lastName: dto.lastName,
+    displayName: dto.displayName,
+    phone: dto.phone,
+    avatarUrl: dto.avatarUrl,
+    role: normalizeRole(dto.role),
+    accountStatus: dto.accountStatus ?? 'ACTIVE',
+  };
+}
+
 function toWasteType(entity: WasteTypeEntity): WasteType {
   const { color, icon } = colorAndIconForWaste(entity.name, entity.wasteTypeId);
 
@@ -429,6 +589,9 @@ function toTaskAssignment(dto: TaskDto): TaskAssignment {
     enterpriseUserId: dto.enterpriseUserId,
     enterpriseName: dto.enterpriseName,
     createdByUserId: dto.createdByUserId,
+    collectorUserId: dto.collectorUserId,
+    collectorName: dto.collectorName,
+    assignmentStatus: dto.assignmentStatus,
     areaId: dto.areaId,
     areaName: dto.areaName,
     status: (dto.status ?? 'ASSIGNED') as Task['status'],
@@ -447,6 +610,27 @@ function toTaskAssignment(dto: TaskDto): TaskAssignment {
     status: assignmentStatus,
     assignedAt: dto.updatedAt ?? dto.createdAt,
     task,
+  };
+}
+
+function toTask(dto: TaskDto): Task {
+  return {
+    taskId: dto.taskId,
+    reportId: dto.reportId,
+    enterpriseUserId: dto.enterpriseUserId,
+    enterpriseName: dto.enterpriseName,
+    createdByUserId: dto.createdByUserId,
+    collectorUserId: dto.collectorUserId,
+    collectorName: dto.collectorName,
+    assignmentStatus: dto.assignmentStatus,
+    areaId: dto.areaId,
+    areaName: dto.areaName,
+    status: (dto.status ?? 'PENDING') as Task['status'],
+    priority: dto.priority,
+    scheduledDate: dto.scheduledDate,
+    rejectionReason: dto.rejectionReason,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
   };
 }
 
@@ -481,6 +665,106 @@ function toCollectorKpi(dto: KpiDto): CollectorKpiDaily {
     minWeightKg: dto.minWeightKg ?? 0,
     actualWeightKg: dto.actualWeightKg ?? 0,
     status: (dto.status ?? 'PENDING') as CollectorKpiDaily['status'],
+  };
+}
+
+function toEnterpriseCapability(dto: EnterpriseCapabilityDto): EnterpriseCapability {
+  return {
+    capabilityId: dto.capabilityId,
+    enterpriseUserId: dto.enterpriseUserId,
+    wasteTypeId: dto.wasteTypeId,
+    wasteTypeName: dto.wasteTypeName,
+    serviceAreaId: dto.serviceAreaId,
+    serviceAreaName: dto.serviceAreaName,
+    dailyCapacityKg: dto.dailyCapacityKg ?? 0,
+    usedCapacityKg: dto.usedCapacityKg ?? 0,
+    effectiveFrom: dto.effectiveFrom,
+    effectiveTo: dto.effectiveTo,
+  };
+}
+
+function toRewardRule(dto: RewardRuleDto): CitizenRewardRule {
+  return {
+    ruleId: dto.ruleId,
+    wasteTypeId: dto.wasteTypeId,
+    wasteTypeName: dto.wasteTypeName,
+    pointsPerKg: dto.pointsPerKg ?? 0,
+    pointsFixed: dto.pointsFixed,
+    sortingLevel: dto.sortingLevel ?? 'GOOD',
+    isActive: dto.isActive ?? true,
+    effectiveFrom: dto.effectiveFrom,
+    effectiveTo: dto.effectiveTo,
+  };
+}
+
+function toComplaint(dto: ComplaintDto): Complaint {
+  return {
+    complaintId: dto.complaintId,
+    createdByUserId: dto.createdByUserId,
+    createdByName: dto.createdByName,
+    reportId: dto.reportId,
+    visitId: dto.visitId,
+    category: (dto.category as Complaint['category']) ?? 'OTHER',
+    priority: (dto.priority as Complaint['priority']) ?? 'Normal',
+    status: (dto.status as Complaint['status']) ?? 'Pending',
+    title: dto.title,
+    content: dto.content,
+    adminResponse: dto.adminResponse,
+    createdAt: dto.createdAt ?? new Date().toISOString(),
+    resolvedAt: dto.resolvedAt,
+  };
+}
+
+function toRewardTransaction(dto: RewardTransactionDto): RewardTransaction {
+  return {
+    transactionId: dto.transactionId,
+    citizenUserId: dto.citizenUserId,
+    citizenName: dto.citizenName,
+    pointsDelta: dto.pointsDelta,
+    reasonCode: dto.reasonCode,
+    visitId: dto.visitId,
+    complaintId: dto.complaintId,
+    createdByAdminId: dto.createdByAdminId,
+    createdAt: dto.createdAt,
+  };
+}
+
+function toRewardItem(dto: RewardItemDto): RewardItem {
+  return {
+    itemId: dto.itemId,
+    name: dto.name,
+    description: dto.description,
+    pointsCost: dto.pointsCost ?? 0,
+    stock: dto.stock ?? 0,
+    imageUrl: dto.imageUrl,
+    isActive: dto.isActive ?? true,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+  };
+}
+
+function toNotification(dto: NotificationDto): Notification {
+  return {
+    id: dto.id,
+    title: dto.title,
+    content: dto.content,
+    type: (dto.type as Notification['type']) ?? 'General',
+    priority: (dto.priority as Notification['priority']) ?? 'Normal',
+    targetAudience: (dto.targetAudience as Notification['targetAudience']) ?? 'All',
+    isActive: dto.isActive ?? true,
+    startDate: dto.startDate,
+    endDate: dto.endDate,
+    createdBy: '',
+    createdAt: dto.createdAt,
+  };
+}
+
+function toSystemSetting(dto: SystemSettingDto): SystemSetting {
+  return {
+    settingKey: dto.settingKey,
+    settingValue: dto.settingValue,
+    dataType: dto.dataType,
+    description: dto.description,
   };
 }
 
@@ -661,6 +945,74 @@ export async function syncRoleSession(role: UserRole) {
   return user;
 }
 
+export async function loginWithPassword(payload: LoginPayload) {
+  const email = payload.email.trim().toLowerCase();
+  const auth = await login(email, payload.password);
+  const role = normalizeRole(auth.role);
+  const user = toUserFromAuth(auth);
+
+  const store = useAppStore.getState();
+  store.upsertRoleCredential(role, {
+    email,
+    password: payload.password,
+    userId: auth.userId,
+  });
+  store.setAuthenticatedSession({
+    user,
+    accessToken: auth.accessToken,
+    refreshToken: auth.refreshToken,
+    role,
+  });
+
+  return user;
+}
+
+export async function registerWithPassword(payload: RegisterPayload) {
+  const email = payload.email.trim().toLowerCase();
+  const firstName = payload.firstName.trim();
+  const lastName = payload.lastName.trim();
+  const displayName =
+    payload.displayName?.trim() || `${firstName} ${lastName}`.trim();
+  const normalizedEnterpriseUserId = payload.enterpriseUserId?.trim();
+
+  if (payload.role === 'COLLECTOR' && !normalizedEnterpriseUserId) {
+    throw new ApiError('Enterprise user ID is required for COLLECTOR role', 400);
+  }
+
+  const auth = await request<AuthResponseDto>('/auth/register', {
+    method: 'POST',
+    body: {
+      email,
+      password: payload.password,
+      firstName,
+      lastName,
+      phone: payload.phone?.trim() || undefined,
+      displayName,
+      role: payload.role,
+      enterpriseUserId:
+        payload.role === 'COLLECTOR' ? normalizedEnterpriseUserId : undefined,
+    },
+  });
+
+  const role = normalizeRole(auth.role);
+  const user = toUserFromAuth(auth);
+
+  const store = useAppStore.getState();
+  store.upsertRoleCredential(role, {
+    email,
+    password: payload.password,
+    userId: auth.userId,
+  });
+  store.setAuthenticatedSession({
+    user,
+    accessToken: auth.accessToken,
+    refreshToken: auth.refreshToken,
+    role,
+  });
+
+  return user;
+}
+
 export async function logoutSession(token: string | null) {
   if (!token) {
     return;
@@ -738,7 +1090,14 @@ export async function fetchRewardBalance(token: string) {
   return request<number>('/rewards/balance', { token });
 }
 
-export async function fetchLeaderboard(limit = 20) {
+export async function fetchRewardItems(token?: string | null) {
+  const authToken = token ?? useAppStore.getState().accessToken;
+  const data = await request<RewardItemDto[]>('/rewards/items', { token: authToken });
+  return data.map(toRewardItem);
+}
+
+export async function fetchLeaderboard(limit = 20, token?: string | null) {
+  const authToken = token ?? useAppStore.getState().accessToken;
   const data = await request<
     {
       rank: number;
@@ -747,37 +1106,25 @@ export async function fetchLeaderboard(limit = 20) {
       avatarUrl?: string;
       points: number;
     }[]
-  >(`/rewards/leaderboard?limit=${limit}`);
+  >(`/rewards/leaderboard?limit=${limit}`, { token: authToken });
 
   return data.map(toLeaderboardEntry);
 }
 
+export async function redeemRewardItem(itemId: string, token?: string | null) {
+  const authToken = token ?? useAppStore.getState().accessToken;
+  const dto = await request<RewardTransactionDto>('/rewards/redeem', {
+    method: 'POST',
+    token: authToken,
+    body: { itemId },
+  });
+
+  return toRewardTransaction(dto);
+}
+
 export async function fetchMyProfile(token: string) {
-  const dto = await request<{
-    userId: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    displayName: string;
-    phone?: string;
-    avatarUrl?: string;
-    role: string;
-    accountStatus: User['accountStatus'];
-  }>('/users/me', { token });
-
-  const user: User = {
-    userId: dto.userId,
-    email: dto.email,
-    firstName: dto.firstName,
-    lastName: dto.lastName,
-    displayName: dto.displayName,
-    phone: dto.phone,
-    avatarUrl: dto.avatarUrl,
-    role: normalizeRole(dto.role),
-    accountStatus: dto.accountStatus ?? 'ACTIVE',
-  };
-
-  return user;
+  const dto = await request<UserDto>('/users/me', { token });
+  return toUserFromDto(dto);
 }
 
 export async function fetchCollectorTasks(token: string, size = 50) {
@@ -804,15 +1151,56 @@ export async function updateCollectorTaskStatus(
   return toTaskAssignment(dto);
 }
 
-export async function completeCollectorTask(token: string, taskId: string, note?: string) {
+export async function uploadCollectorEvidence(token: string, localUri: string) {
+  const filename = localUri.split('/').pop() ?? `evidence-${Date.now()}.jpg`;
+  const formData = new FormData();
+
+  formData.append(
+    'file',
+    {
+      uri: localUri,
+      name: filename,
+      type: 'image/jpeg',
+    } as unknown as Blob
+  );
+
+  return request<string>('/collector/evidence/upload', {
+    method: 'POST',
+    token,
+    formData,
+  });
+}
+
+export async function completeCollectorTask(
+  token: string,
+  taskId: string,
+  payloadOrNote?:
+    | string
+    | {
+        visitStatus?: string;
+        note?: string;
+        photoUrls?: string[];
+        wasteItems?: {
+          wasteTypeId?: string;
+          weightKg?: number;
+          sortingLevel?: string;
+          contaminationNote?: string;
+        }[];
+      }
+) {
+  const payload =
+    typeof payloadOrNote === 'string'
+      ? { note: payloadOrNote }
+      : (payloadOrNote ?? {});
+
   const dto = await request<TaskDto>(`/collector/tasks/${taskId}/complete`, {
     method: 'POST',
     token,
     body: {
-      visitStatus: 'SUCCESS',
-      collectorNote: note ?? 'Completed from mobile app',
-      photoUrls: [],
-      wasteItems: [],
+      visitStatus: payload.visitStatus ?? 'SUCCESS',
+      collectorNote: payload.note ?? 'Completed from mobile app',
+      photoUrls: payload.photoUrls ?? [],
+      wasteItems: payload.wasteItems ?? [],
     },
   });
 
@@ -822,4 +1210,549 @@ export async function completeCollectorTask(token: string, taskId: string, note?
 export async function fetchCollectorKpiToday(token: string) {
   const dto = await request<KpiDto>('/collector/kpi/today', { token });
   return toCollectorKpi(dto);
+}
+
+export async function fetchReports(
+  token: string,
+  options?: { page?: number; size?: number; status?: string }
+) {
+  const page = options?.page ?? 0;
+  const size = options?.size ?? 50;
+  const status = options?.status ? `&status=${encodeURIComponent(options.status)}` : '';
+  const response = await request<PageResponse<ReportDto>>(
+    `/reports?page=${page}&size=${size}${status}`,
+    { token }
+  );
+
+  return response.content.map(toWasteReport);
+}
+
+export async function fetchMyComplaints(
+  token: string,
+  options?: { page?: number; size?: number }
+) {
+  const page = options?.page ?? 0;
+  const size = options?.size ?? 50;
+  const response = await request<PageResponse<ComplaintDto>>(
+    `/complaints/mine?page=${page}&size=${size}`,
+    { token }
+  );
+
+  return response.content.map(toComplaint);
+}
+
+export async function createComplaint(
+  token: string,
+  payload: {
+    content: string;
+    title?: string;
+    category?: Complaint['category'];
+    priority?: Complaint['priority'];
+    reportId?: string;
+    visitId?: string;
+    rewardTransactionId?: string;
+  }
+) {
+  const fallbackTitle = payload.category
+    ? `Phan hoi ${payload.category.toLowerCase()}`
+    : 'Phan hoi tu mobile';
+  const dto = await request<ComplaintDto>('/complaints', {
+    method: 'POST',
+    token,
+    body: {
+      ...payload,
+      title: payload.title?.trim() || fallbackTitle,
+      category: payload.category ?? 'OTHER',
+      priority: payload.priority ?? 'Normal',
+    },
+  });
+
+  return toComplaint(dto);
+}
+
+export async function fetchRewardTransactions(
+  token: string,
+  options?: { page?: number; size?: number }
+) {
+  const page = options?.page ?? 0;
+  const size = options?.size ?? 50;
+  const response = await request<PageResponse<RewardTransactionDto>>(
+    `/rewards/transactions?page=${page}&size=${size}`,
+    { token }
+  );
+
+  return response.content.map(toRewardTransaction);
+}
+
+export async function fetchAdminDashboard(token: string): Promise<AdminDashboardStats> {
+  const dto = await request<DashboardStatsDto>('/admin/dashboard', { token });
+  return {
+    totalUsers: dto.totalUsers ?? 0,
+    totalCitizens: dto.totalCitizens ?? 0,
+    totalCollectors: dto.totalCollectors ?? 0,
+    totalEnterprises: dto.totalEnterprises ?? 0,
+    totalReports: dto.totalReports ?? 0,
+    pendingReports: dto.pendingReports ?? 0,
+    activeTasks: dto.activeTasks ?? 0,
+    completedTasksToday: dto.completedTasksToday ?? 0,
+    openComplaints: dto.openComplaints ?? 0,
+    totalRewardPointsIssued: dto.totalRewardPointsIssued ?? 0,
+  };
+}
+
+export async function fetchAdminUsers(
+  token: string,
+  options?: { page?: number; size?: number; role?: UserRole; status?: User['accountStatus'] }
+) {
+  const page = options?.page ?? 0;
+  const size = options?.size ?? 100;
+  const role = options?.role ? `&role=${encodeURIComponent(options.role)}` : '';
+  const status = options?.status ? `&status=${encodeURIComponent(options.status)}` : '';
+  const response = await request<PageResponse<UserDto>>(
+    `/admin/users?page=${page}&size=${size}${role}${status}`,
+    { token }
+  );
+
+  return response.content.map(toUserFromDto);
+}
+
+export async function updateAdminUserStatus(
+  token: string,
+  userId: string,
+  status: User['accountStatus']
+) {
+  const dto = await request<UserDto>(
+    `/admin/users/${userId}/status?status=${encodeURIComponent(status)}`,
+    {
+      method: 'PUT',
+      token,
+    }
+  );
+
+  return toUserFromDto(dto);
+}
+
+export async function updateAdminUserRole(
+  token: string,
+  userId: string,
+  role: UserRole
+) {
+  const dto = await request<UserDto>(
+    `/admin/users/${userId}/role?role=${encodeURIComponent(role)}`,
+    {
+      method: 'PUT',
+      token,
+    }
+  );
+
+  return toUserFromDto(dto);
+}
+
+export async function deleteAdminUser(token: string, userId: string) {
+  await request<void>(`/admin/users/${userId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export async function fetchAdminComplaints(
+  token: string,
+  options?: { page?: number; size?: number; status?: string }
+) {
+  const page = options?.page ?? 0;
+  const size = options?.size ?? 100;
+  const status = options?.status ? `&status=${encodeURIComponent(options.status)}` : '';
+  const response = await request<PageResponse<ComplaintDto>>(
+    `/complaints?page=${page}&size=${size}${status}`,
+    { token }
+  );
+
+  return response.content.map(toComplaint);
+}
+
+export async function resolveAdminComplaint(
+  token: string,
+  complaintId: string,
+  payload: {
+    decision: string;
+    note?: string;
+    isAccepted?: boolean;
+    adminResponse?: string;
+  }
+) {
+  const dto = await request<ComplaintDto>(`/complaints/${complaintId}/resolve`, {
+    method: 'PUT',
+    token,
+    body: payload,
+  });
+
+  return toComplaint(dto);
+}
+
+export async function fetchUserNotifications(
+  token: string,
+  options?: { page?: number; size?: number }
+) {
+  const page = options?.page ?? 0;
+  const size = options?.size ?? 20;
+  const response = await request<PageResponse<NotificationDto>>(
+    `/notifications?page=${page}&size=${size}`,
+    { token }
+  );
+  return response.content.map(toNotification);
+}
+
+export async function fetchAdminNotifications(
+  token: string,
+  options?: { page?: number; size?: number }
+) {
+  const page = options?.page ?? 0;
+  const size = options?.size ?? 100;
+  const response = await request<PageResponse<NotificationDto>>(
+    `/admin/notifications?page=${page}&size=${size}`,
+    { token }
+  );
+  return response.content.map(toNotification);
+}
+
+export async function createAdminNotification(
+  token: string,
+  payload: {
+    title: string;
+    content: string;
+    type?: Notification['type'];
+    targetAudience?: Notification['targetAudience'];
+    priority?: Complaint['priority'];
+    startDate?: string;
+    endDate?: string;
+  }
+) {
+  const dto = await request<NotificationDto>('/admin/notifications', {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+  return toNotification(dto);
+}
+
+export async function deactivateAdminNotification(token: string, notificationId: string) {
+  await request<void>(`/admin/notifications/${notificationId}/deactivate`, {
+    method: 'PUT',
+    token,
+  });
+}
+
+export async function fetchAdminRewardItems(
+  token: string,
+  options?: { page?: number; size?: number }
+) {
+  const page = options?.page ?? 0;
+  const size = options?.size ?? 100;
+  const response = await request<PageResponse<RewardItemDto>>(
+    `/admin/reward-items?page=${page}&size=${size}`,
+    { token }
+  );
+  return response.content.map(toRewardItem);
+}
+
+export async function createAdminRewardItem(
+  token: string,
+  payload: {
+    name: string;
+    description?: string;
+    imageUrl?: string;
+    pointsCost: number;
+    stock: number;
+    isActive?: boolean;
+  }
+) {
+  const dto = await request<RewardItemDto>('/admin/reward-items', {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+  return toRewardItem(dto);
+}
+
+export async function updateAdminRewardItem(
+  token: string,
+  itemId: string,
+  payload: {
+    name?: string;
+    description?: string;
+    imageUrl?: string;
+    pointsCost?: number;
+    stock?: number;
+    isActive?: boolean;
+  }
+) {
+  const dto = await request<RewardItemDto>(`/admin/reward-items/${itemId}`, {
+    method: 'PUT',
+    token,
+    body: payload,
+  });
+  return toRewardItem(dto);
+}
+
+export async function deactivateAdminRewardItem(token: string, itemId: string) {
+  await request<void>(`/admin/reward-items/${itemId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export async function fetchAdminSettings(token: string) {
+  const response = await request<SystemSettingDto[]>('/admin/settings', { token });
+  return response.map(toSystemSetting);
+}
+
+export async function createAdminSetting(
+  token: string,
+  payload: {
+    settingKey: string;
+    settingValue: string;
+    dataType?: string;
+    description?: string;
+  }
+) {
+  const dto = await request<SystemSettingDto>('/admin/settings', {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+  return toSystemSetting(dto);
+}
+
+export async function updateAdminSetting(
+  token: string,
+  key: string,
+  payload: { settingValue: string; description?: string }
+) {
+  const dto = await request<SystemSettingDto>(`/admin/settings/${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    token,
+    body: payload,
+  });
+  return toSystemSetting(dto);
+}
+
+export async function deleteAdminSetting(token: string, key: string) {
+  await request<void>(`/admin/settings/${encodeURIComponent(key)}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export async function fetchEnterprisePendingReports(
+  token: string,
+  options?: { page?: number; size?: number }
+) {
+  const page = options?.page ?? 0;
+  const size = options?.size ?? 50;
+  const response = await request<PageResponse<ReportDto>>(
+    `/enterprise/reports/pending?page=${page}&size=${size}`,
+    { token }
+  );
+
+  return response.content.map(toWasteReport);
+}
+
+export async function acceptEnterpriseReport(token: string, reportId: string) {
+  const dto = await request<TaskDto>(`/enterprise/reports/${reportId}/accept`, {
+    method: 'PUT',
+    token,
+  });
+
+  return toTask(dto);
+}
+
+export async function rejectEnterpriseReport(token: string, reportId: string, reason?: string) {
+  const query = reason ? `?reason=${encodeURIComponent(reason)}` : '';
+  await request<void>(`/enterprise/reports/${reportId}/reject${query}`, {
+    method: 'PUT',
+    token,
+  });
+}
+
+export async function fetchEnterpriseTasks(
+  token: string,
+  options?: { page?: number; size?: number; status?: Task['status'] }
+) {
+  const page = options?.page ?? 0;
+  const size = options?.size ?? 100;
+  const status = options?.status ? `&status=${encodeURIComponent(options.status)}` : '';
+  const response = await request<PageResponse<TaskDto>>(
+    `/enterprise/tasks?page=${page}&size=${size}${status}`,
+    { token }
+  );
+
+  return response.content.map(toTask);
+}
+
+export async function assignEnterpriseTask(
+  token: string,
+  taskId: string,
+  collectorUserId: string
+) {
+  const dto = await request<TaskDto>(`/enterprise/tasks/${taskId}/assign`, {
+    method: 'POST',
+    token,
+    body: { collectorUserId },
+  });
+
+  return toTask(dto);
+}
+
+export async function fetchEnterpriseCollectors(token: string) {
+  const data = await request<UserDto[]>('/enterprise/collectors', { token });
+  return data.map(toUserFromDto);
+}
+
+export async function fetchEnterpriseCollectorKpiHistory(token: string, collectorId: string) {
+  const data = await request<KpiDto[]>(`/enterprise/collectors/${collectorId}/kpi`, { token });
+  return data.map(toCollectorKpi);
+}
+
+export async function updateEnterpriseCollector(
+  token: string,
+  collectorId: string,
+  payload: {
+    firstName?: string;
+    lastName?: string;
+    displayName?: string;
+    phone?: string;
+    addressText?: string;
+  }
+) {
+  const dto = await request<UserDto>(`/enterprise/collectors/${collectorId}`, {
+    method: 'PUT',
+    token,
+    body: payload,
+  });
+  return toUserFromDto(dto);
+}
+
+export async function deactivateEnterpriseCollector(token: string, collectorId: string) {
+  await request<void>(`/enterprise/collectors/${collectorId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export async function setEnterpriseCollectorKpi(
+  token: string,
+  payload: {
+    collectorUserId: string;
+    areaId: string;
+    minVisits?: number;
+    minWeightKg?: number;
+    kpiDate?: string;
+  }
+) {
+  const dto = await request<KpiDto>('/enterprise/collectors/kpi', {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+  return toCollectorKpi(dto);
+}
+
+export async function setEnterpriseCollectorsKpi(
+  token: string,
+  payload: {
+    areaId: string;
+    minVisits?: number;
+    minWeightKg?: number;
+    kpiDate?: string;
+  }
+) {
+  const data = await request<KpiDto[]>('/enterprise/collectors/kpi/all', {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+  return data.map(toCollectorKpi);
+}
+
+export async function fetchEnterpriseCapabilities(token: string) {
+  const data = await request<EnterpriseCapabilityDto[]>('/enterprise/capabilities', { token });
+  return data.map(toEnterpriseCapability);
+}
+
+export async function createEnterpriseCapability(
+  token: string,
+  payload: {
+    serviceAreaId: string;
+    wasteTypeId: string;
+    dailyCapacityKg: number;
+    effectiveFrom?: string;
+    effectiveTo?: string;
+  }
+) {
+  const dto = await request<EnterpriseCapabilityDto>('/enterprise/capabilities', {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+  return toEnterpriseCapability(dto);
+}
+
+export async function deleteEnterpriseCapability(token: string, capabilityId: string) {
+  await request<void>(`/enterprise/capabilities/${capabilityId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export async function fetchEnterpriseRewardRules(token: string) {
+  const data = await request<RewardRuleDto[]>('/enterprise/reward-rules', { token });
+  return data.map(toRewardRule);
+}
+
+export async function createEnterpriseRewardRule(
+  token: string,
+  payload: {
+    wasteTypeId: string;
+    sortingLevel: string;
+    pointsFixed?: number;
+    pointsPerKg?: number;
+    effectiveFrom?: string;
+    effectiveTo?: string;
+    isActive?: boolean;
+  }
+) {
+  const dto = await request<RewardRuleDto>('/enterprise/reward-rules', {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+  return toRewardRule(dto);
+}
+
+export async function updateEnterpriseRewardRule(
+  token: string,
+  ruleId: string,
+  payload: {
+    wasteTypeId?: string;
+    sortingLevel?: string;
+    pointsFixed?: number;
+    pointsPerKg?: number;
+    effectiveFrom?: string;
+    effectiveTo?: string;
+    isActive?: boolean;
+  }
+) {
+  const dto = await request<RewardRuleDto>(`/enterprise/reward-rules/${ruleId}`, {
+    method: 'PUT',
+    token,
+    body: payload,
+  });
+  return toRewardRule(dto);
+}
+
+export async function deactivateEnterpriseRewardRule(token: string, ruleId: string) {
+  await request<void>(`/enterprise/reward-rules/${ruleId}`, {
+    method: 'DELETE',
+    token,
+  });
 }

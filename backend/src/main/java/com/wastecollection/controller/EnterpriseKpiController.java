@@ -61,6 +61,15 @@ public class EnterpriseKpiController {
         return ResponseEntity.ok(ApiResponse.success("KPI configured", dto));
     }
 
+    @PostMapping("/collectors/kpi/all")
+    @Operation(summary = "Set or update daily KPI targets for all collectors in this enterprise")
+    public ResponseEntity<ApiResponse<List<KpiConfigDto>>> setKpiForAllCollectors(
+            @Valid @RequestBody KpiConfigRequest request) {
+        List<KpiConfigDto> dtos = enterpriseService.setAllCollectorsKpi(
+                securityUtils.getCurrentUserId(), request);
+        return ResponseEntity.ok(ApiResponse.success("KPI configured for all collectors", dtos));
+    }
+
     @GetMapping("/collectors/{collectorId}/kpi")
     @Operation(summary = "View KPI history for a specific collector")
     public ResponseEntity<ApiResponse<List<KpiConfigDto>>> getKpiHistory(

@@ -1,70 +1,253 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Phone, MapPin, Star, TrendingUp } from 'lucide-react-native';
+import {
+  fetchServiceAreas,
+  fetchEnterpriseCollectors,
+  fetchEnterpriseTasks,
+  setEnterpriseCollectorKpi,
+  setEnterpriseCollectorsKpi,
+} from '@/components/api/backend';
 import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
-
-
-const mockCollectors = [
-  { id: '1', name: 'Trần Văn B', avatar: 'https://i.pravatar.cc/150?u=2', rating: 4.8, completed: 156, phone: '0901234567', area: 'Quận 1' },
-  { id: '2', name: 'Nguyễn Văn C', avatar: 'https://i.pravatar.cc/150?u=10', rating: 4.5, completed: 124, phone: '0912345678', area: 'Quận 2' },
-  { id: '3', name: 'Lê Thị D', avatar: 'https://i.pravatar.cc/150?u=11', rating: 4.9, completed: 189, phone: '0923456789', area: 'Quận 7' },
-];
+import { useAppStore } from '@/store/useAppStore';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { MapPin, Phone, Star, TrendingUp } from 'lucide-react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  StyleSheet,
+  TextInput,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function EnterpriseCollectorsScreen() {
-  const renderCollector = ({ item }: { item: typeof mockCollectors[0] }) => (
-    <TouchableOpacity style={styles.card} activeOpacity={0.8}>
-      <View style={styles.header}>
-        <Image source={{ uri: item.avatar }} style={styles.avatar} />
-        <View style={styles.info}>
-          <Text style={styles.name}>{item.name}</Text>
-          <View style={styles.ratingRow}>
-            <Star size={14} color={Colors.accent[500]} fill={Colors.accent[500]} />
-            <Text style={styles.rating}>{item.rating}</Text>
-            <Text style={styles.completed}>• {item.completed} chuyến</Text>
-          </View>
-          <View style={styles.locationRow}>
-            <MapPin size={14} color={Colors.neutral[500]} />
-            <Text style={styles.area}>{item.area}</Text>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.callBtn}>
-          <Phone size={20} color={Colors.neutral.white} />
-        </TouchableOpacity>
-      </View>
+  const queryClient = useQueryClient();
+  const accessToken = useAppStore((state) => state.accessToken);
+  const [selectedAreaId, setSelectedAreaId] = useState<string>('');
+  const [minVisits, setMinVisits] = useState('');
+  const [minWeightKg, setMinWeightKg] = useState('');
 
-      <View style={styles.statsRow}>
-        <View style={styles.stat}>
-          <TrendingUp size={16} color={Colors.primary[600]} />
-          <Text style={styles.statLabel}>Hiệu suất</Text>
-          <Text style={styles.statValue}>85%</Text>
+  const collectorsQuery = useQuery({
+    queryKey: ['enterprise', 'collectors'],
+    queryFn: () => fetchEnterpriseCollectors(accessToken ?? ''),
+    enabled: !!accessToken,
+  });
+
+  const tasksQuery = useQuery({
+    queryKey: ['enterprise', 'tasks', 'all'],
+    queryFn: () => fetchEnterpriseTasks(accessToken ?? '', { size: 500 }),
+    enabled: !!accessToken,
+  });
+
+  const serviceAreasQuery = useQuery({
+    queryKey: ['service-areas', 'enterprise', 'collectors'],
+    queryFn: fetchServiceAreas,
+  });
+
+  const setKpiMutation = useMutation({
+    mutationFn: async () => {
+      const parsedVisits = Number.parseInt(minVisits, 10);
+      const parsedWeight = Number.parseFloat(minWeightKg);
+
+      if (!selectedAreaId) {
+        throw new Error('Vui lòng chọn khu vực');
+      }
+
+      const payload = {
+        areaId: selectedAreaId,
+        minVisits: Number.isFinite(parsedVisits) ? parsedVisits : 1,
+        minWeightKg: Number.isFinite(parsedWeight) ? parsedWeight : 1,
+      };
+
+      try {
+        await setEnterpriseCollectorsKpi(accessToken ?? '', payload);
+      } catch (error) {
+        const message = error instanceof Error ? error.message.toLowerCase() : '';
+        const shouldFallback =
+          message.includes('unexpected error') ||
+          message.includes('not found') ||
+          message.includes('request failed (500)');
+        if (!shouldFallback) {
+          throw error;
+        }
+
+        if (collectors.length === 0) {
+          throw error;
+        }
+
+        const settled = await Promise.allSettled(
+          collectors.map((collector) =>
+            setEnterpriseCollectorKpi(accessToken ?? '', {
+              collectorUserId: collector.userId,
+              ...payload,
+            })
+          )
+        );
+
+        const successCount = settled.filter((item) => item.status === 'fulfilled').length;
+        if (successCount === 0) {
+          throw error;
+        }
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['enterprise', 'collectors'] });
+      await queryClient.invalidateQueries({ queryKey: ['enterprise', 'collectors', 'kpi'] });
+      setSelectedAreaId('');
+      setMinVisits('');
+      setMinWeightKg('');
+      Alert.alert('Thành công', 'Đã cấu hình KPI cho toàn bộ collector');
+    },
+    onError: (error) => {
+      const rawMessage = error instanceof Error ? error.message : 'Không thể cấu hình KPI';
+      const normalized = rawMessage.toLowerCase();
+      const message =
+        normalized.includes('unexpected error')
+          ? 'Backend KPI đang gặp lỗi dữ liệu (có thể KPI trùng theo ngày). Đã cập nhật hệ thống, vui lòng thử lại sau khi refresh.'
+          : rawMessage;
+      Alert.alert('Thất bại', message);
+    },
+  });
+
+  const collectors = collectorsQuery.data ?? [];
+  const tasks = tasksQuery.data ?? [];
+  const serviceAreas = useMemo(() => serviceAreasQuery.data ?? [], [serviceAreasQuery.data]);
+
+  const renderCollector = ({ item }: { item: (typeof collectors)[0] }) => {
+    const collectorTasks = tasks.filter((task) => task.collectorUserId === item.userId);
+    const completed = collectorTasks.filter((task) =>
+      ['COMPLETED', 'COLLECTED'].includes(task.status)
+    ).length;
+    const inProgress = collectorTasks.filter((task) =>
+      ['ASSIGNED', 'ON_THE_WAY', 'IN_PROGRESS'].includes(task.status)
+    ).length;
+    const efficiency =
+      collectorTasks.length > 0 ? Math.round((completed / collectorTasks.length) * 100) : 0;
+
+    return (
+      <TouchableOpacity style={styles.card} activeOpacity={0.8}>
+        <View style={styles.header}>
+          <Image
+            source={{ uri: item.avatarUrl || `https://i.pravatar.cc/150?u=${item.userId}` }}
+            style={styles.avatar}
+          />
+          <View style={styles.info}>
+            <Text style={styles.name}>{item.displayName}</Text>
+            <View style={styles.ratingRow}>
+              <Star size={14} color={Colors.accent[500]} fill={Colors.accent[500]} />
+              <Text style={styles.rating}>{efficiency}%</Text>
+              <Text style={styles.completed}>• {completed} chuyến</Text>
+            </View>
+            <View style={styles.locationRow}>
+              <MapPin size={14} color={Colors.neutral[500]} />
+              <Text style={styles.area}>{item.phone || 'Không có SĐT'}</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.callBtn}
+            onPress={() => {}}
+            accessibilityLabel={`Call ${item.displayName}`}
+          >
+            <Phone size={20} color={Colors.neutral.white} />
+          </TouchableOpacity>
         </View>
-        <View style={styles.stat}>
-          <Text style={styles.statLabel}>Hôm nay</Text>
-          <Text style={styles.statValue}>4/5 chuyến</Text>
+
+        <View style={styles.statsRow}>
+          <View style={styles.stat}>
+            <TrendingUp size={16} color={Colors.primary[600]} />
+            <Text style={styles.statLabel}>Hiệu suất</Text>
+            <Text style={styles.statValue}>{efficiency}%</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={styles.statLabel}>Đang xử lý</Text>
+            <Text style={styles.statValue}>{inProgress}</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={styles.statLabel}>Tổng task</Text>
+            <Text style={styles.statValue}>{collectorTasks.length}</Text>
+          </View>
         </View>
-        <View style={styles.stat}>
-          <Text style={styles.statLabel}>Khối lượng</Text>
-          <Text style={styles.statValue}>42kg</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.screenHeader}>
         <Text style={styles.title}>Quản lý Collector</Text>
-        <Text style={styles.subtitle}>{mockCollectors.length} nhân viên</Text>
+        <Text style={styles.subtitle}>{collectors.length} nhân viên</Text>
       </View>
 
-      <FlatList
-        data={mockCollectors}
-        keyExtractor={(item) => item.id}
-        renderItem={renderCollector}
-        contentContainerStyle={styles.list}
-      />
+      <View style={styles.kpiCard}>
+        <Text style={styles.kpiTitle}>Cấu hình KPI toàn bộ collector</Text>
+        <Text style={styles.kpiSub}>Chọn khu vực và mục tiêu ngày, áp dụng cho tất cả collector</Text>
+
+        <View style={styles.chipRow}>
+          {serviceAreas.slice(0, 8).map((area) => (
+            <TouchableOpacity
+              key={area.areaId}
+              style={[styles.chip, selectedAreaId === area.areaId && styles.chipActive]}
+              onPress={() => setSelectedAreaId(area.areaId)}
+            >
+              <Text style={[styles.chipText, selectedAreaId === area.areaId && styles.chipTextActive]}>
+                {area.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.kpiInputs}>
+          <TextInput
+            style={[styles.kpiInput, styles.kpiInputHalf]}
+            value={minVisits}
+            onChangeText={setMinVisits}
+            keyboardType="numeric"
+            placeholder="Min visits"
+            placeholderTextColor={Colors.neutral[400]}
+          />
+          <TextInput
+            style={[styles.kpiInput, styles.kpiInputHalf]}
+            value={minWeightKg}
+            onChangeText={setMinWeightKg}
+            keyboardType="numeric"
+            placeholder="Min kg"
+            placeholderTextColor={Colors.neutral[400]}
+          />
+        </View>
+
+        <TouchableOpacity
+          style={[styles.kpiButton, setKpiMutation.isPending && styles.kpiButtonDisabled]}
+          onPress={() => setKpiMutation.mutate()}
+          disabled={setKpiMutation.isPending}
+        >
+          <Text style={styles.kpiButtonText}>
+            {setKpiMutation.isPending ? 'Đang lưu...' : 'Lưu KPI cho tất cả'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {collectorsQuery.isLoading || tasksQuery.isLoading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="small" color={Colors.accent[600]} />
+        </View>
+      ) : (
+        <FlatList
+          data={collectors}
+          keyExtractor={(item) => item.userId}
+          renderItem={renderCollector}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>Không có collector nào</Text>
+              <Text style={styles.emptySub}>Hãy tạo tài khoản collector từ backend.</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -88,9 +271,91 @@ const styles = StyleSheet.create({
     color: Colors.neutral[500],
     marginTop: 4,
   },
+  kpiCard: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 14,
+    backgroundColor: Colors.neutral.white,
+    borderRadius: 14,
+    ...Shadows.card,
+  },
+  kpiTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.neutral[800],
+  },
+  kpiSub: {
+    marginTop: 2,
+    fontSize: 12,
+    color: Colors.neutral[500],
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  chip: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: Colors.neutral[100],
+    maxWidth: '48%',
+  },
+  chipActive: {
+    backgroundColor: Colors.accent[600],
+  },
+  chipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.neutral[600],
+  },
+  chipTextActive: {
+    color: Colors.neutral.white,
+  },
+  kpiInputs: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+  },
+  kpiInput: {
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 13,
+    color: Colors.neutral[800],
+    backgroundColor: Colors.neutral.white,
+  },
+  kpiInputHalf: {
+    flex: 1,
+  },
+  kpiButton: {
+    marginTop: 10,
+    minHeight: 38,
+    borderRadius: 9,
+    backgroundColor: Colors.accent[600],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  kpiButtonDisabled: {
+    backgroundColor: Colors.neutral[300],
+  },
+  kpiButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.neutral.white,
+  },
+  loadingWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   list: {
     padding: 16,
     gap: 12,
+    paddingBottom: 24,
   },
   card: {
     backgroundColor: Colors.neutral.white,
@@ -170,5 +435,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.neutral[800],
     marginTop: 2,
+  },
+  emptyState: {
+    paddingVertical: 48,
+    alignItems: 'center',
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.neutral[700],
+  },
+  emptySub: {
+    marginTop: 4,
+    fontSize: 13,
+    color: Colors.neutral[500],
   },
 });

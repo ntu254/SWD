@@ -1,19 +1,24 @@
-﻿import { Colors } from '@/constants/colors';
+import {
+  fetchEnterprisePendingReports,
+  fetchEnterpriseTasks,
+  fetchMyProfile,
+  logoutSession,
+  syncRoleSession,
+} from '@/components/api/backend';
+import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
 import type { UserRole } from '@/store/useAppStore';
 import { useAppStore } from '@/store/useAppStore';
 import { useRouter } from 'expo-router';
 import {
-  Award,
+  BarChart3,
   ChevronRight,
-  FileText,
-  HelpCircle,
+  Gauge,
+  Gift,
   LogOut,
-  MapPin,
-  MessageSquareWarning,
+  MessageSquare,
   Settings,
-  Shield,
-  Star,
+  Users,
 } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import {
@@ -27,14 +32,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
-import {
-  fetchLeaderboard,
-  fetchMyProfile,
-  fetchMyReports,
-  fetchRewardBalance,
-  logoutSession,
-  syncRoleSession,
-} from '@/components/api/backend';
 
 const roleLabels: Record<UserRole, string> = {
   CITIZEN: 'Người dùng',
@@ -52,45 +49,42 @@ const roleColors: Record<UserRole, string> = {
 
 const roleOptions: UserRole[] = ['CITIZEN', 'COLLECTOR', 'ENTERPRISE', 'ADMIN'];
 
-export default function ProfileScreen() {
+export default function EnterpriseProfileScreen() {
   const router = useRouter();
   const { user, logout, accessToken, currentRole } = useAppStore();
   const [switchingRole, setSwitchingRole] = useState<UserRole | null>(null);
 
   const profileQuery = useQuery({
-    queryKey: ['profile', 'me', currentRole],
+    queryKey: ['enterprise', 'profile', 'me', currentRole],
     queryFn: () => fetchMyProfile(accessToken ?? ''),
     enabled: !!accessToken,
   });
 
-  const balanceQuery = useQuery({
-    queryKey: ['rewards', 'balance', currentRole],
-    queryFn: () => fetchRewardBalance(accessToken ?? ''),
+  const tasksQuery = useQuery({
+    queryKey: ['enterprise', 'tasks', 'all'],
+    queryFn: () => fetchEnterpriseTasks(accessToken ?? '', { size: 200 }),
     enabled: !!accessToken,
   });
 
-  const reportsQuery = useQuery({
-    queryKey: ['reports', 'mine', currentRole],
-    queryFn: () => fetchMyReports(accessToken ?? ''),
-    enabled: !!accessToken,
-  });
-
-  const leaderboardQuery = useQuery({
-    queryKey: ['rewards', 'leaderboard', 'profile'],
-    queryFn: () => fetchLeaderboard(100, accessToken),
+  const pendingReportsQuery = useQuery({
+    queryKey: ['enterprise', 'reports', 'pending'],
+    queryFn: () => fetchEnterprisePendingReports(accessToken ?? '', { size: 100 }),
     enabled: !!accessToken,
   });
 
   const profileUser = profileQuery.data ?? user;
+  const enterpriseTasks = tasksQuery.data ?? [];
+  const pendingReports = pendingReportsQuery.data ?? [];
 
-  const myRank = useMemo(() => {
-    if (!profileUser || !leaderboardQuery.data) {
-      return 0;
-    }
+  const totalRequests = enterpriseTasks.length;
+  const inProgress = enterpriseTasks.filter((task) =>
+    ['PENDING_ENTERPRISE_APPROVAL', 'ASSIGNED', 'ON_THE_WAY', 'IN_PROGRESS'].includes(task.status)
+  ).length;
+  const completed = enterpriseTasks.filter((task) =>
+    ['COMPLETED', 'COLLECTED'].includes(task.status)
+  ).length;
 
-    const foundIndex = leaderboardQuery.data.findIndex((entry) => entry.userId === profileUser.userId);
-    return foundIndex >= 0 ? foundIndex + 1 : 0;
-  }, [leaderboardQuery.data, profileUser]);
+  const highlightCount = useMemo(() => pendingReports.length, [pendingReports.length]);
 
   const handleLogout = () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc muốn đăng xuất?', [
@@ -131,7 +125,7 @@ export default function ProfileScreen() {
           break;
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Không thể đồng bộ vai trò với backend';
+      const message = error instanceof Error ? error.message : 'Không thể đồng bộ vai trò';
       Alert.alert('Lỗi chuyển vai trò', message);
     } finally {
       setSwitchingRole(null);
@@ -139,46 +133,42 @@ export default function ProfileScreen() {
   };
 
   const menuItems = [
-    { icon: Award, label: 'Phần thưởng của tôi', onPress: () => router.push('/(citizen)/leaderboard') },
-    { icon: FileText, label: 'Lịch sử điểm', onPress: () => router.push('/(citizen)/points-history') },
-    { icon: MapPin, label: 'Khu vực hoạt động', onPress: () => {} },
-    { icon: MessageSquareWarning, label: 'Phản hồi khiếu nại', onPress: () => router.push('/(citizen)/complaints') },
-    { icon: Star, label: 'Đánh giá ứng dụng', onPress: () => {} },
-    { icon: HelpCircle, label: 'Trung tâm trợ giúp', onPress: () => router.push('/(citizen)/complaints') },
-    { icon: Shield, label: 'Chính sách bảo mật', onPress: () => {} },
-    { icon: Settings, label: 'Cài đặt', onPress: () => {} },
+    { icon: Users, label: 'Quản lý collector', onPress: () => router.push('/(enterprise)/collectors') },
+    { icon: Gauge, label: 'Năng lực xử lý', onPress: () => router.push('/(enterprise)/capacity') },
+    { icon: MessageSquare, label: 'Khiếu nại', onPress: () => router.push('/(enterprise)/complaints') },
+    { icon: Gift, label: 'Thưởng', onPress: () => router.push('/(enterprise)/rewards') },
+    { icon: Settings, label: 'Cài đặt', onPress: () => router.push('/(enterprise)/settings') },
   ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Tài khoản</Text>
+          <Text style={styles.headerTitle}>Enterprise Profile</Text>
+          <Text style={styles.headerSubtitle}>Tổng quan và điều hướng nhanh</Text>
         </View>
 
         <View style={styles.profileCard}>
           <Image
-            source={{ uri: profileUser?.avatarUrl || 'https://i.pravatar.cc/150' }}
+            source={{ uri: profileUser?.avatarUrl || 'https://i.pravatar.cc/150?u=enterprise' }}
             style={styles.avatar}
           />
           <View style={styles.profileInfo}>
-            <Text style={styles.name}>{profileUser?.displayName || 'Người dùng'}</Text>
-            <Text style={styles.email}>{profileUser?.email || 'user@example.com'}</Text>
+            <Text style={styles.name}>{profileUser?.displayName || 'Enterprise User'}</Text>
+            <Text style={styles.email}>{profileUser?.email || 'enterprise@example.com'}</Text>
             <View
               style={[
                 styles.roleBadge,
-                {
-                  backgroundColor: roleColors[(profileUser?.role || 'CITIZEN') as UserRole] + '20',
-                },
+                { backgroundColor: roleColors[(profileUser?.role || 'ENTERPRISE') as UserRole] + '20' },
               ]}
             >
               <Text
                 style={[
                   styles.roleText,
-                  { color: roleColors[(profileUser?.role || 'CITIZEN') as UserRole] },
+                  { color: roleColors[(profileUser?.role || 'ENTERPRISE') as UserRole] },
                 ]}
               >
-                {roleLabels[(profileUser?.role || 'CITIZEN') as UserRole]}
+                {roleLabels[(profileUser?.role || 'ENTERPRISE') as UserRole]}
               </Text>
             </View>
           </View>
@@ -186,19 +176,28 @@ export default function ProfileScreen() {
 
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{(balanceQuery.data ?? 0).toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Điểm</Text>
+            <Text style={styles.statValue}>{totalRequests}</Text>
+            <Text style={styles.statLabel}>Yêu cầu</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{myRank > 0 ? `#${myRank}` : '--'}</Text>
-            <Text style={styles.statLabel}>Xếp hạng</Text>
+            <Text style={styles.statValue}>{inProgress}</Text>
+            <Text style={styles.statLabel}>Đang xử lý</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{(reportsQuery.data?.length ?? 0).toString()}</Text>
-            <Text style={styles.statLabel}>Báo cáo</Text>
+            <Text style={styles.statValue}>{completed}</Text>
+            <Text style={styles.statLabel}>Hoàn thành</Text>
           </View>
+        </View>
+
+        <View style={styles.highlightCard}>
+          <View style={styles.highlightHeader}>
+            <BarChart3 size={18} color={Colors.accent[600]} />
+            <Text style={styles.highlightTitle}>Thống kê nhanh</Text>
+          </View>
+          <Text style={styles.highlightValue}>{highlightCount}</Text>
+          <Text style={styles.highlightSub}>Yêu cầu đang chờ duyệt</Text>
         </View>
 
         <View style={styles.section}>
@@ -228,20 +227,17 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tùy chọn</Text>
+          <Text style={styles.sectionTitle}>Điều hướng nhanh</Text>
           {menuItems.map((item, index) => {
             const Icon = item.icon;
             return (
               <TouchableOpacity
                 key={item.label}
-                style={[
-                  styles.menuItem,
-                  index === menuItems.length - 1 && styles.menuItemLast,
-                ]}
+                style={[styles.menuItem, index === menuItems.length - 1 && styles.menuItemLast]}
                 onPress={item.onPress}
               >
-                <View style={[styles.menuIcon, { backgroundColor: Colors.primary[50] }]}>
-                  <Icon size={20} color={Colors.primary[600]} />
+                <View style={[styles.menuIcon, { backgroundColor: Colors.accent[50] }]}>
+                  <Icon size={20} color={Colors.accent[600]} />
                 </View>
                 <Text style={styles.menuText}>{item.label}</Text>
                 <ChevronRight size={20} color={Colors.neutral[400]} />
@@ -255,7 +251,7 @@ export default function ProfileScreen() {
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
 
-        <Text style={styles.version}>EcoCollect v1.0.0</Text>
+        <Text style={styles.version}>EcoCollect Enterprise v1.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -274,6 +270,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: Colors.neutral[800],
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: Colors.neutral[500],
+    marginTop: 4,
   },
   profileCard: {
     flexDirection: 'row',
@@ -340,6 +341,35 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.neutral[500],
     marginTop: 4,
+  },
+  highlightCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: Colors.neutral.white,
+    borderRadius: 16,
+    ...Shadows.card,
+  },
+  highlightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  highlightTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.neutral[700],
+  },
+  highlightValue: {
+    marginTop: 10,
+    fontSize: 28,
+    fontWeight: '700',
+    color: Colors.accent[700],
+  },
+  highlightSub: {
+    marginTop: 2,
+    fontSize: 13,
+    color: Colors.neutral[500],
   },
   section: {
     marginTop: 24,

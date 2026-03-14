@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -20,6 +21,22 @@ public interface WasteReportRepository extends JpaRepository<WasteReport, UUID> 
 
     @Query("SELECT r FROM WasteReport r WHERE r.area.areaId IN :areaIds AND r.status = 'PENDING'")
     Page<WasteReport> findPendingInAreas(List<UUID> areaIds, Pageable pageable);
+
+    @Query("""
+            SELECT r FROM WasteReport r
+            WHERE r.status = 'PENDING'
+              AND r.wasteType IS NOT NULL
+              AND EXISTS (
+                SELECT c.capabilityId
+                FROM EnterpriseCapability c
+                WHERE c.enterprise.userId = :enterpriseId
+                  AND c.wasteType.wasteTypeId = r.wasteType.wasteTypeId
+              )
+            """)
+    Page<WasteReport> findPendingByEnterpriseCapabilities(
+            @Param("enterpriseId") UUID enterpriseId,
+            Pageable pageable
+    );
 
     @Query("SELECT COUNT(r) FROM WasteReport r WHERE r.status = :status")
     long countByStatus(String status);

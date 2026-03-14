@@ -43,17 +43,13 @@ public class WasteReportService {
                 .status("PENDING")
                 .build();
 
-        if (request.getWasteTypeId() != null) {
-            WasteType wasteType = wasteTypeRepository.findById(request.getWasteTypeId())
-                    .orElseThrow(() -> new ResourceNotFoundException("WasteType", "id", request.getWasteTypeId()));
-            report.setWasteType(wasteType);
-        }
+        WasteType wasteType = wasteTypeRepository.findById(request.getWasteTypeId())
+                .orElseThrow(() -> new ResourceNotFoundException("WasteType", "id", request.getWasteTypeId()));
+        report.setWasteType(wasteType);
 
-        if (request.getAreaId() != null) {
-            ServiceArea area = serviceAreaRepository.findById(request.getAreaId())
-                    .orElseThrow(() -> new ResourceNotFoundException("ServiceArea", "id", request.getAreaId()));
-            report.setArea(area);
-        }
+        ServiceArea area = serviceAreaRepository.findById(request.getAreaId())
+                .orElseThrow(() -> new ResourceNotFoundException("ServiceArea", "id", request.getAreaId()));
+        report.setArea(area);
 
         return mapToDto(reportRepository.save(report));
     }
@@ -82,10 +78,9 @@ public class WasteReportService {
 
     @Transactional(readOnly = true)
     public PageResponse<ReportDto> getPendingReportsForEnterprise(UUID enterpriseId, int page, int size) {
-        // Enterprise sees PENDING reports in their service areas
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        // For now, return all PENDING — area filtering done via area_id check in query
-        Page<WasteReport> reports = reportRepository.findByStatus("PENDING", pageable);
+        // Return only reports that match enterprise capability matrix (area + waste type).
+        Page<WasteReport> reports = reportRepository.findPendingByEnterpriseCapabilities(enterpriseId, pageable);
         return toPageResponse(reports);
     }
 

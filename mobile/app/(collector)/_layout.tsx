@@ -1,6 +1,6 @@
-﻿import { Tabs } from 'expo-router';
+import { Tabs } from 'expo-router';
 import React from 'react';
-import { ClipboardList, Map, BarChart3 } from 'lucide-react-native';
+import { ClipboardList, Map, BarChart3, User } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 
 export default function CollectorTabLayout() {
@@ -41,6 +41,13 @@ export default function CollectorTabLayout() {
         options={{
           title: 'KPI',
           tabBarIcon: ({ color }) => <BarChart3 size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Tài khoản',
+          tabBarIcon: ({ color }) => <User size={24} color={color} />,
         }}
       />
     </Tabs>

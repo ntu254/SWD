@@ -1,21 +1,26 @@
-﻿import { Colors } from '@/constants/colors';
+import {
+  fetchAdminDashboard,
+  fetchMyProfile,
+  logoutSession,
+  syncRoleSession,
+} from '@/components/api/backend';
+import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
 import type { UserRole } from '@/store/useAppStore';
 import { useAppStore } from '@/store/useAppStore';
 import { useRouter } from 'expo-router';
 import {
-  Award,
+  BarChart3,
+  Bell,
   ChevronRight,
-  FileText,
-  HelpCircle,
-  LogOut,
-  MapPin,
   MessageSquareWarning,
+  Gift,
+  LogOut,
   Settings,
   Shield,
-  Star,
+  Users,
 } from 'lucide-react-native';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   Image,
@@ -27,70 +32,44 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
-import {
-  fetchLeaderboard,
-  fetchMyProfile,
-  fetchMyReports,
-  fetchRewardBalance,
-  logoutSession,
-  syncRoleSession,
-} from '@/components/api/backend';
+
+const ADMIN_COLOR = Colors.status.error;
 
 const roleLabels: Record<UserRole, string> = {
   CITIZEN: 'Người dùng',
   COLLECTOR: 'Collector',
   ENTERPRISE: 'Doanh nghiệp',
-  ADMIN: 'Quản trị viên',
+  ADMIN: 'Admin',
 };
 
 const roleColors: Record<UserRole, string> = {
   CITIZEN: Colors.primary[600],
   COLLECTOR: Colors.secondary[600],
   ENTERPRISE: Colors.accent[600],
-  ADMIN: '#E91E63',
+  ADMIN: ADMIN_COLOR,
 };
 
 const roleOptions: UserRole[] = ['CITIZEN', 'COLLECTOR', 'ENTERPRISE', 'ADMIN'];
 
-export default function ProfileScreen() {
+export default function AdminProfileScreen() {
   const router = useRouter();
   const { user, logout, accessToken, currentRole } = useAppStore();
   const [switchingRole, setSwitchingRole] = useState<UserRole | null>(null);
 
   const profileQuery = useQuery({
-    queryKey: ['profile', 'me', currentRole],
+    queryKey: ['admin', 'profile', 'me', currentRole],
     queryFn: () => fetchMyProfile(accessToken ?? ''),
     enabled: !!accessToken,
   });
 
-  const balanceQuery = useQuery({
-    queryKey: ['rewards', 'balance', currentRole],
-    queryFn: () => fetchRewardBalance(accessToken ?? ''),
-    enabled: !!accessToken,
-  });
-
-  const reportsQuery = useQuery({
-    queryKey: ['reports', 'mine', currentRole],
-    queryFn: () => fetchMyReports(accessToken ?? ''),
-    enabled: !!accessToken,
-  });
-
-  const leaderboardQuery = useQuery({
-    queryKey: ['rewards', 'leaderboard', 'profile'],
-    queryFn: () => fetchLeaderboard(100, accessToken),
+  const dashboardQuery = useQuery({
+    queryKey: ['admin', 'dashboard'],
+    queryFn: () => fetchAdminDashboard(accessToken ?? ''),
     enabled: !!accessToken,
   });
 
   const profileUser = profileQuery.data ?? user;
-
-  const myRank = useMemo(() => {
-    if (!profileUser || !leaderboardQuery.data) {
-      return 0;
-    }
-
-    const foundIndex = leaderboardQuery.data.findIndex((entry) => entry.userId === profileUser.userId);
-    return foundIndex >= 0 ? foundIndex + 1 : 0;
-  }, [leaderboardQuery.data, profileUser]);
+  const dashboard = dashboardQuery.data;
 
   const handleLogout = () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc muốn đăng xuất?', [
@@ -131,7 +110,7 @@ export default function ProfileScreen() {
           break;
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Không thể đồng bộ vai trò với backend';
+      const message = error instanceof Error ? error.message : 'Không thể đồng bộ vai trò';
       Alert.alert('Lỗi chuyển vai trò', message);
     } finally {
       setSwitchingRole(null);
@@ -139,46 +118,44 @@ export default function ProfileScreen() {
   };
 
   const menuItems = [
-    { icon: Award, label: 'Phần thưởng của tôi', onPress: () => router.push('/(citizen)/leaderboard') },
-    { icon: FileText, label: 'Lịch sử điểm', onPress: () => router.push('/(citizen)/points-history') },
-    { icon: MapPin, label: 'Khu vực hoạt động', onPress: () => {} },
-    { icon: MessageSquareWarning, label: 'Phản hồi khiếu nại', onPress: () => router.push('/(citizen)/complaints') },
-    { icon: Star, label: 'Đánh giá ứng dụng', onPress: () => {} },
-    { icon: HelpCircle, label: 'Trung tâm trợ giúp', onPress: () => router.push('/(citizen)/complaints') },
-    { icon: Shield, label: 'Chính sách bảo mật', onPress: () => {} },
-    { icon: Settings, label: 'Cài đặt', onPress: () => {} },
+    { icon: BarChart3, label: 'Phân tích hệ thống', onPress: () => router.push('/(admin)/analytics') },
+    { icon: Users, label: 'Quản lý người dùng', onPress: () => router.push('/(admin)/users') },
+    { icon: MessageSquareWarning, label: 'Quản lý khiếu nại', onPress: () => router.push('/(admin)/complaints') },
+    { icon: Bell, label: 'Quản lý thông báo', onPress: () => router.push('/(admin)/notifications') },
+    { icon: Gift, label: 'Quản lý reward item', onPress: () => router.push('/(admin)/reward-items') },
+    { icon: Shield, label: 'Bảo mật hệ thống', onPress: () => router.push('/(admin)/settings') },
+    { icon: Settings, label: 'Cài đặt quản trị', onPress: () => router.push('/(admin)/settings') },
   ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Tài khoản</Text>
+          <Text style={styles.headerTitle}>Admin Profile</Text>
+          <Text style={styles.headerSubtitle}>Trung tâm quản trị hệ thống</Text>
         </View>
 
         <View style={styles.profileCard}>
           <Image
-            source={{ uri: profileUser?.avatarUrl || 'https://i.pravatar.cc/150' }}
+            source={{ uri: profileUser?.avatarUrl || 'https://i.pravatar.cc/150?u=admin' }}
             style={styles.avatar}
           />
           <View style={styles.profileInfo}>
-            <Text style={styles.name}>{profileUser?.displayName || 'Người dùng'}</Text>
-            <Text style={styles.email}>{profileUser?.email || 'user@example.com'}</Text>
+            <Text style={styles.name}>{profileUser?.displayName || 'Admin'}</Text>
+            <Text style={styles.email}>{profileUser?.email || 'admin@example.com'}</Text>
             <View
               style={[
                 styles.roleBadge,
-                {
-                  backgroundColor: roleColors[(profileUser?.role || 'CITIZEN') as UserRole] + '20',
-                },
+                { backgroundColor: roleColors[(profileUser?.role || 'ADMIN') as UserRole] + '20' },
               ]}
             >
               <Text
                 style={[
                   styles.roleText,
-                  { color: roleColors[(profileUser?.role || 'CITIZEN') as UserRole] },
+                  { color: roleColors[(profileUser?.role || 'ADMIN') as UserRole] },
                 ]}
               >
-                {roleLabels[(profileUser?.role || 'CITIZEN') as UserRole]}
+                {roleLabels[(profileUser?.role || 'ADMIN') as UserRole]}
               </Text>
             </View>
           </View>
@@ -186,18 +163,18 @@ export default function ProfileScreen() {
 
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{(balanceQuery.data ?? 0).toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Điểm</Text>
+            <Text style={styles.statValue}>{(dashboard?.totalUsers ?? 0).toLocaleString()}</Text>
+            <Text style={styles.statLabel}>Người dùng</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{myRank > 0 ? `#${myRank}` : '--'}</Text>
-            <Text style={styles.statLabel}>Xếp hạng</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{(reportsQuery.data?.length ?? 0).toString()}</Text>
+            <Text style={styles.statValue}>{(dashboard?.totalReports ?? 0).toLocaleString()}</Text>
             <Text style={styles.statLabel}>Báo cáo</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{(dashboard?.openComplaints ?? 0).toLocaleString()}</Text>
+            <Text style={styles.statLabel}>Khiếu nại</Text>
           </View>
         </View>
 
@@ -228,20 +205,17 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tùy chọn</Text>
+          <Text style={styles.sectionTitle}>Điều hướng nhanh</Text>
           {menuItems.map((item, index) => {
             const Icon = item.icon;
             return (
               <TouchableOpacity
                 key={item.label}
-                style={[
-                  styles.menuItem,
-                  index === menuItems.length - 1 && styles.menuItemLast,
-                ]}
+                style={[styles.menuItem, index === menuItems.length - 1 && styles.menuItemLast]}
                 onPress={item.onPress}
               >
-                <View style={[styles.menuIcon, { backgroundColor: Colors.primary[50] }]}>
-                  <Icon size={20} color={Colors.primary[600]} />
+                <View style={[styles.menuIcon, { backgroundColor: ADMIN_COLOR + '14' }]}>
+                  <Icon size={20} color={ADMIN_COLOR} />
                 </View>
                 <Text style={styles.menuText}>{item.label}</Text>
                 <ChevronRight size={20} color={Colors.neutral[400]} />
@@ -255,7 +229,7 @@ export default function ProfileScreen() {
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
 
-        <Text style={styles.version}>EcoCollect v1.0.0</Text>
+        <Text style={styles.version}>EcoCollect Admin v1.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -274,6 +248,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: Colors.neutral[800],
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: Colors.neutral[500],
+    marginTop: 4,
   },
   profileCard: {
     flexDirection: 'row',

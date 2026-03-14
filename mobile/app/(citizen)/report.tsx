@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,17 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import type { TextStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Camera, MapPin, Sparkles, Send, X } from 'lucide-react-native';
+import { Camera, ImagePlus, LocateFixed, MapPin, Send, Sparkles, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
@@ -27,17 +32,25 @@ import {
   uploadReportPhoto,
 } from '@/components/api/backend';
 
+type DetectLocationState = 'idle' | 'loading' | 'ready' | 'denied' | 'error';
+
+const fallbackLocation = {
+  lat: 10.7758,
+  lng: 106.7,
+};
+
+function formatAreaLabelFromGeocode(result?: Location.LocationGeocodedAddress) {
+  if (!result) {
+    return '';
+  }
+
+  return [result.street, result.subregion, result.city].filter(Boolean).join(', ');
+}
+
 export default function ReportWasteScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { accessToken, user } = useAppStore();
-  const safeBack = useCallback(() => {
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
-    router.replace('/(citizen)/home');
-  }, [router]);
 
   const [selectedWasteType, setSelectedWasteType] = useState<WasteType | null>(null);
   const [description, setDescription] = useState('');
@@ -45,7 +58,17 @@ export default function ReportWasteScreen() {
   const [aiResult, setAiResult] = useState<{ wasteType: WasteType; confidence: number } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [location] = useState({ lat: 10.7758, lng: 106.7 });
+  const [locationState, setLocationState] = useState<DetectLocationState>('idle');
+  const [locationLabel, setLocationLabel] = useState('Đang phát hiện vị trí...');
+  const [location, setLocation] = useState(fallbackLocation);
+
+  const safeBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/(citizen)/home');
+  }, [router]);
 
   const wasteTypesQuery = useQuery({
     queryKey: ['waste-types'],
@@ -57,7 +80,7 @@ export default function ReportWasteScreen() {
     queryFn: fetchServiceAreas,
   });
 
-  const wasteTypes = wasteTypesQuery.data ?? [];
+  const wasteTypes = useMemo(() => wasteTypesQuery.data ?? [], [wasteTypesQuery.data]);
   const selectedArea = serviceAreasQuery.data?.[0];
 
   const randomWasteType = useMemo(() => {
@@ -68,31 +91,117 @@ export default function ReportWasteScreen() {
     return wasteTypes[Math.floor(Math.random() * wasteTypes.length)];
   }, [wasteTypes]);
 
-  const pickImage = useCallback(async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+  const detectCurrentLocation = useCallback(async () => {
+    setLocationState('loading');
+    setLocationLabel('Đang phát hiện vị trí...');
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (permission.status !== 'granted') {
+        setLocationState('denied');
+        setLocationLabel(selectedArea?.name ?? 'Chưa cấp quyền vị trí');
+        return;
+      }
 
-      setIsAnalyzing(true);
-      setTimeout(() => {
-        if (randomWasteType) {
-          setAiResult({ wasteType: randomWasteType, confidence: 0.87 });
-          setSelectedWasteType(randomWasteType);
-        }
-        setIsAnalyzing(false);
-      }, 1500);
+      const current = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      setLocation({
+        lat: current.coords.latitude,
+        lng: current.coords.longitude,
+      });
+
+      try {
+        const geocode = await Location.reverseGeocodeAsync({
+          latitude: current.coords.latitude,
+          longitude: current.coords.longitude,
+        });
+        const label = formatAreaLabelFromGeocode(geocode[0]);
+        setLocationLabel(label || selectedArea?.name || 'Đã lấy vị trí hiện tại');
+      } catch {
+        setLocationLabel(selectedArea?.name ?? 'Đã lấy vị trí hiện tại');
+      }
+
+      setLocationState('ready');
+    } catch {
+      setLocationState('error');
+      setLocationLabel(selectedArea?.name ?? 'Không thể lấy vị trí tự động');
+      setLocation(fallbackLocation);
     }
+  }, [selectedArea?.name]);
+
+  useEffect(() => {
+    void detectCurrentLocation();
+  }, [detectCurrentLocation]);
+
+  const applyAiSuggestion = useCallback(() => {
+    if (!randomWasteType) {
+      return;
+    }
+
+    setAiResult({ wasteType: randomWasteType, confidence: 0.87 });
+    setSelectedWasteType(randomWasteType);
   }, [randomWasteType]);
+
+  const pickImage = useCallback(
+    async (source: 'camera' | 'library') => {
+      let result: ImagePicker.ImagePickerResult;
+
+      if (source === 'camera') {
+        const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!cameraPermission.granted) {
+          Alert.alert('Thiếu quyền camera', 'Vui lòng cho phép camera để chụp ảnh báo cáo.');
+          return;
+        }
+
+        result = await ImagePicker.launchCameraAsync({
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 1,
+        });
+      } else {
+        const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!mediaPermission.granted) {
+          Alert.alert('Thiếu quyền thư viện ảnh', 'Vui lòng cho phép truy cập ảnh để tải lên.');
+          return;
+        }
+
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 1,
+        });
+      }
+
+      if (result.canceled) {
+        return;
+      }
+
+      setImage(result.assets[0].uri);
+      setAiResult(null);
+      setIsAnalyzing(true);
+
+      setTimeout(() => {
+        applyAiSuggestion();
+        setIsAnalyzing(false);
+      }, 1000);
+    },
+    [applyAiSuggestion]
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!selectedWasteType || !image) {
-      Alert.alert('Lỗi', 'Vui lòng chọn loại rác và chụp ảnh');
+      Alert.alert('Thiếu thông tin', 'Vui lòng chọn ảnh và loại rác trước khi gửi báo cáo.');
+      return;
+    }
+
+    if (!selectedArea?.areaId) {
+      Alert.alert(
+        'Thiếu khu vực',
+        'Chưa xác định được service area. Vui lòng đợi đồng bộ khu vực rồi thử lại.'
+      );
       return;
     }
 
@@ -120,10 +229,11 @@ export default function ReportWasteScreen() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['reports', 'mine'] }),
         queryClient.invalidateQueries({ queryKey: ['reports', 'mine', user?.userId] }),
+        queryClient.invalidateQueries({ queryKey: ['reports', 'mine', 'history', user?.userId] }),
       ]);
 
-      Alert.alert('Thành công', 'Báo cáo của bạn đã được gửi.', [
-        { text: 'OK', onPress: safeBack },
+      Alert.alert('Gửi báo cáo thành công', 'Cảm ơn bạn đã góp phần giữ thành phố xanh sạch.', [
+        { text: 'Xong', onPress: safeBack },
       ]);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Không thể gửi báo cáo';
@@ -144,97 +254,174 @@ export default function ReportWasteScreen() {
     user?.userId,
   ]);
 
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={safeBack} style={styles.closeButton}>
-          <X size={24} color={Colors.neutral[700]} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Báo cáo rác</Text>
-        <View style={{ width: 40 }} />
-      </View>
+  const canSubmit = !!selectedWasteType && !!image && !!selectedArea?.areaId && !isSubmitting;
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Chụp ảnh rác</Text>
-          <TouchableOpacity style={styles.imageUpload} onPress={pickImage}>
-            {image ? (
-              <Image source={{ uri: image }} style={styles.uploadedImage} />
-            ) : (
-              <View style={styles.uploadPlaceholder}>
-                <Camera size={40} color={Colors.primary[500]} />
-                <Text style={styles.uploadText}>Chạm để chọn ảnh</Text>
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity onPress={safeBack} style={styles.closeButton} activeOpacity={0.8}>
+            <X size={20} color={Colors.neutral[700]} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Báo cáo rác thải</Text>
+          <View style={styles.closeButtonSpacer} />
+        </View>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <LinearGradient
+            colors={[Colors.primary[700], Colors.primary[500]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroCard}
+          >
+            <Text style={styles.heroTitle}>Báo cáo nhanh trong 1 phút</Text>
+            <Text style={styles.heroSubtitle}>
+              Ảnh rõ ràng + vị trí chính xác sẽ giúp đội thu gom xử lý nhanh hơn.
+            </Text>
+          </LinearGradient>
+
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionStep}>Bước 1</Text>
+              <Text style={styles.sectionTitle}>Ảnh hiện trường</Text>
+            </View>
+
+            <View style={styles.previewBox}>
+              {image ? (
+                <Image source={{ uri: image }} style={styles.previewImage} />
+              ) : (
+                <View style={styles.previewPlaceholder}>
+                  <Camera size={34} color={Colors.primary[500]} />
+                  <Text style={styles.previewTitle}>Chưa có ảnh báo cáo</Text>
+                  <Text style={styles.previewSub}>Chụp hoặc tải ảnh để tiếp tục</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.photoActionRow}>
+              <TouchableOpacity
+                style={styles.photoAction}
+                onPress={() => void pickImage('camera')}
+                activeOpacity={0.85}
+              >
+                <Camera size={18} color={Colors.primary[700]} />
+                <Text style={styles.photoActionText}>Chụp ảnh</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.photoAction}
+                onPress={() => void pickImage('library')}
+                activeOpacity={0.85}
+              >
+                <ImagePlus size={18} color={Colors.primary[700]} />
+                <Text style={styles.photoActionText}>Tải ảnh</Text>
+              </TouchableOpacity>
+            </View>
+
+            {isAnalyzing && (
+              <View style={styles.aiAnalyzing}>
+                <ActivityIndicator size="small" color={Colors.accent[600]} />
+                <Text style={styles.aiText}>AI đang gợi ý loại rác...</Text>
               </View>
             )}
-          </TouchableOpacity>
 
-          {isAnalyzing && (
-            <View style={styles.aiAnalyzing}>
-              <Sparkles size={20} color={Colors.accent[500]} />
-              <Text style={styles.aiText}>AI đang phân tích...</Text>
-            </View>
-          )}
-
-          {aiResult && (
-            <View style={[styles.aiResult, { borderColor: aiResult.wasteType.color }]}>
-              <Sparkles size={20} color={aiResult.wasteType.color} />
-              <View style={styles.aiResultText}>
-                <Text style={styles.aiResultTitle}>AI gợi ý: {aiResult.wasteType.name}</Text>
-                <Text style={styles.aiResultConfidence}>
-                  Độ chính xác: {Math.round(aiResult.confidence * 100)}%
+            {aiResult && (
+              <View style={[styles.aiResult, { borderColor: aiResult.wasteType.color }]}>
+                <Sparkles size={18} color={aiResult.wasteType.color} />
+                <Text style={styles.aiResultText}>
+                  AI đề xuất: {aiResult.wasteType.name} ({Math.round(aiResult.confidence * 100)}%)
                 </Text>
               </View>
+            )}
+          </View>
+
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionStep}>Bước 2</Text>
+              <Text style={styles.sectionTitle}>Chọn loại rác</Text>
             </View>
-          )}
-        </View>
+            <WasteTypeSelector
+              wasteTypes={wasteTypes}
+              selectedId={selectedWasteType?.wasteTypeId}
+              onSelect={setSelectedWasteType}
+            />
+          </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Loại rác</Text>
-          <WasteTypeSelector
-            wasteTypes={wasteTypes}
-            selectedId={selectedWasteType?.wasteTypeId}
-            onSelect={setSelectedWasteType}
-          />
-        </View>
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionStep}>Bước 3</Text>
+              <Text style={styles.sectionTitle}>Vị trí tự động</Text>
+            </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Vị trí</Text>
-          <View style={styles.locationCard}>
-            <MapPin size={20} color={Colors.primary[600]} />
-            <View style={styles.locationInfo}>
-              <Text style={styles.locationAddress}>{selectedArea?.name ?? 'Chưa có khu vực'}</Text>
-              <Text style={styles.locationCoords}>
-                {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-              </Text>
+            <View style={styles.locationCard}>
+              <View style={styles.locationIconWrap}>
+                {locationState === 'loading' ? (
+                  <ActivityIndicator size="small" color={Colors.primary[600]} />
+                ) : (
+                  <MapPin size={18} color={Colors.primary[700]} />
+                )}
+              </View>
+
+              <View style={styles.locationInfo}>
+                <Text style={styles.locationLabel}>{locationLabel}</Text>
+                <Text style={styles.locationCoords}>
+                  {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.refreshLocationButton}
+                onPress={() => void detectCurrentLocation()}
+                activeOpacity={0.85}
+              >
+                <LocateFixed size={16} color={Colors.primary[700]} />
+                <Text style={styles.refreshLocationText}>Làm mới</Text>
+              </TouchableOpacity>
             </View>
           </View>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Mô tả (tùy chọn)</Text>
-          <TextInput
-            style={styles.descriptionInput}
-            multiline
-            numberOfLines={4}
-            placeholder='Mô tả thêm về loại rác, số lượng, tình trạng...'
-            value={description}
-            onChangeText={setDescription}
-            textAlignVertical='top'
-          />
-        </View>
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionStep}>Bước 4</Text>
+              <Text style={styles.sectionTitle}>Mô tả thêm (tuỳ chọn)</Text>
+            </View>
+            <TextInput
+              style={styles.descriptionInput}
+              multiline
+              numberOfLines={5}
+              placeholder="Ví dụ: Có nhiều túi rác gần trạm xe buýt, có mùi hôi..."
+              placeholderTextColor={Colors.neutral[400]}
+              value={description}
+              onChangeText={setDescription}
+              textAlignVertical="top"
+            />
+          </View>
+        </ScrollView>
 
-        <TouchableOpacity
-          style={[
-            styles.submitButton,
-            (!selectedWasteType || !image || isSubmitting) && styles.submitButtonDisabled,
-          ]}
-          onPress={() => void handleSubmit()}
-          disabled={!selectedWasteType || !image || isSubmitting}
-        >
-          <Send size={20} color={Colors.neutral.white} />
-          <Text style={styles.submitText}>{isSubmitting ? 'Đang gửi...' : 'Gửi báo cáo'}</Text>
-        </TouchableOpacity>
-      </ScrollView>
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
+            onPress={() => void handleSubmit()}
+            disabled={!canSubmit}
+            activeOpacity={0.88}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color={Colors.neutral.white} />
+            ) : (
+              <Send size={18} color={Colors.neutral.white} />
+            )}
+            <Text style={styles.submitText}>
+              {isSubmitting ? 'Đang gửi báo cáo...' : 'Gửi báo cáo'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -242,149 +429,239 @@ export default function ReportWasteScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.neutral[50],
+    backgroundColor: '#F3FBF5',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 8,
+    paddingBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.neutral[100],
-    justifyContent: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.neutral.white,
     alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.soft,
+  },
+  closeButtonSpacer: {
+    width: 44,
+    height: 44,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: Colors.neutral[800],
   },
-  section: {
-    marginBottom: 20,
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+    gap: 14,
+  },
+  heroCard: {
+    borderRadius: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    ...Shadows.card,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: Colors.neutral.white,
+    marginBottom: 6,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.95)',
+    lineHeight: 20,
+  },
+  sectionCard: {
+    borderRadius: 18,
+    padding: 14,
+    backgroundColor: Colors.neutral.white,
+    borderWidth: 1,
+    borderColor: '#E2F2E6',
+    ...Shadows.card,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 8,
+  },
+  sectionStep: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.primary[700],
+    backgroundColor: Colors.primary[100],
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.neutral[800],
-    marginHorizontal: 16,
-    marginBottom: 12,
   },
-  imageUpload: {
-    marginHorizontal: 16,
-    height: 200,
-    borderRadius: 16,
+  previewBox: {
+    height: 185,
+    borderRadius: 14,
+    backgroundColor: '#EEF7F0',
+    borderWidth: 1,
+    borderColor: '#DAECDC',
     overflow: 'hidden',
-    backgroundColor: Colors.neutral[100],
   },
-  uploadPlaceholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: Colors.primary[300],
-    borderStyle: 'dashed',
-    borderRadius: 16,
-  },
-  uploadText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: Colors.primary[600],
-    fontWeight: '500',
-  },
-  uploadedImage: {
+  previewImage: {
     width: '100%',
     height: '100%',
   },
-  aiAnalyzing: {
-    flexDirection: 'row',
+  previewPlaceholder: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  previewTitle: {
+    marginTop: 8,
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.neutral[700],
+  },
+  previewSub: {
+    marginTop: 4,
+    fontSize: 12,
+    color: Colors.neutral[500],
+  },
+  photoActionRow: {
+    flexDirection: 'row',
+    gap: 10,
     marginTop: 12,
-    padding: 12,
+  },
+  photoAction: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: 12,
+    backgroundColor: Colors.primary[50],
+    borderWidth: 1,
+    borderColor: Colors.primary[200],
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  photoActionText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.primary[700],
+  },
+  aiAnalyzing: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   aiText: {
-    marginLeft: 8,
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.accent[600],
-    fontWeight: '500',
+    fontWeight: '600',
   },
   aiResult: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 12,
-    padding: 16,
-    backgroundColor: Colors.neutral.white,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    ...Shadows.card,
+    marginTop: 10,
+    borderLeftWidth: 3,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    backgroundColor: Colors.neutral[50],
+    borderRadius: 10,
   },
   aiResultText: {
-    marginLeft: 12,
-  },
-  aiResultTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.neutral[800],
-  },
-  aiResultConfidence: {
     fontSize: 13,
-    color: Colors.neutral[500],
-    marginTop: 2,
+    color: Colors.neutral[700],
+    fontWeight: '600',
   },
   locationCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#DFF0E2',
+    backgroundColor: '#F7FCF8',
+    padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    padding: 16,
-    backgroundColor: Colors.neutral.white,
-    borderRadius: 12,
-    ...Shadows.card,
+  },
+  locationIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary[100],
+    marginRight: 10,
   },
   locationInfo: {
-    marginLeft: 12,
+    flex: 1,
+    marginRight: 8,
   },
-  locationAddress: {
-    fontSize: 15,
-    fontWeight: '600',
+  locationLabel: {
+    fontSize: 14,
+    fontWeight: '700',
     color: Colors.neutral[800],
   },
   locationCoords: {
-    fontSize: 13,
-    color: Colors.neutral[500],
+    fontSize: 12,
+    color: Colors.neutral[600],
     marginTop: 2,
   },
+  refreshLocationButton: {
+    minHeight: 42,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    backgroundColor: Colors.primary[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  refreshLocationText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.primary[700],
+  },
   descriptionInput: {
-    marginHorizontal: 16,
-    padding: 16,
+    minHeight: 110,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
     backgroundColor: Colors.neutral.white,
-    borderRadius: 12,
+    padding: 14,
     fontSize: 15,
     color: Colors.neutral[800],
-    minHeight: 100,
   } as TextStyle,
+  footer: {
+    borderTopWidth: 1,
+    borderTopColor: '#DDEFE2',
+    backgroundColor: Colors.neutral.white,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 10,
+  },
   submitButton: {
+    minHeight: 52,
+    borderRadius: 14,
+    backgroundColor: Colors.primary[600],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 16,
-    marginVertical: 24,
-    paddingVertical: 16,
-    backgroundColor: Colors.primary[600],
-    borderRadius: 12,
     gap: 8,
+    ...Shadows.soft,
   },
   submitButtonDisabled: {
     backgroundColor: Colors.neutral[300],
   },
   submitText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.neutral.white,
   },
 });

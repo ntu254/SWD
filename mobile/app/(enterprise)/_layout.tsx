@@ -1,6 +1,11 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { ClipboardList, Users, Gauge, BarChart3, MessageSquare, Gift, Settings } from 'lucide-react-native';
+import {
+  BarChart3,
+  ClipboardList,
+  User,
+  Users,
+} from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 
 export default function EnterpriseTabLayout() {
@@ -26,49 +31,57 @@ export default function EnterpriseTabLayout() {
         name="dashboard"
         options={{
           title: 'Yêu cầu',
-          tabBarIcon: ({ color }) => <ClipboardList size={24} color={color} />,
+          tabBarIcon: ({ color }) => <ClipboardList size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="collectors"
         options={{
           title: 'Collector',
-          tabBarIcon: ({ color }) => <Users size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="capacity"
-        options={{
-          title: 'Năng lực',
-          tabBarIcon: ({ color }) => <Gauge size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Users size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="reports"
         options={{
           title: 'Báo cáo',
-          tabBarIcon: ({ color }) => <BarChart3 size={24} color={color} />,
+          tabBarIcon: ({ color }) => <BarChart3 size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <User size={22} color={color} />,
+        }}
+      />
+
+      <Tabs.Screen
+        name="settings"
+        options={{
+          href: null,
+          title: 'Cài đặt',
+        }}
+      />
+      <Tabs.Screen
+        name="capacity"
+        options={{
+          href: null,
+          title: 'Năng lực',
         }}
       />
       <Tabs.Screen
         name="complaints"
         options={{
+          href: null,
           title: 'Khiếu nại',
-          tabBarIcon: ({ color }) => <MessageSquare size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="rewards"
         options={{
+          href: null,
           title: 'Thưởng',
-          tabBarIcon: ({ color }) => <Gift size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Cài đặt',
-          tabBarIcon: ({ color }) => <Settings size={24} color={color} />,
         }}
       />
     </Tabs>

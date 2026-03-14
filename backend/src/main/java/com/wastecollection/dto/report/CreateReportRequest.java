@@ -19,8 +19,10 @@ public class CreateReportRequest {
 
     private String description;
 
+    @NotNull(message = "Waste type is required")
     private UUID wasteTypeId;
 
+    @NotNull(message = "Area is required")
     private UUID areaId;
 
     private LocalDateTime requestedPickupTime;

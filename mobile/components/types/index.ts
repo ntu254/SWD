@@ -67,6 +67,9 @@ export interface Task {
   enterpriseUserId: string;
   enterpriseName?: string;
   createdByUserId: string;
+  collectorUserId?: string;
+  collectorName?: string;
+  assignmentStatus?: string;
   areaId?: string;
   areaName?: string;
   status: TaskStatus;

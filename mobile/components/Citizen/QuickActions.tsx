@@ -23,7 +23,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
   onReport,
   onMap,
   onHistory,
-  onRewards
+  onRewards,
 }) => {
   const actions: QuickAction[] = [
     {
@@ -31,28 +31,28 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
       label: 'Báo cáo',
       color: Colors.primary[700],
       bgColor: Colors.primary[100],
-      onPress: onReport
+      onPress: onReport,
     },
     {
       icon: MapPin,
       label: 'Bản đồ',
       color: Colors.secondary[700],
       bgColor: Colors.secondary[100],
-      onPress: onMap
+      onPress: onMap,
     },
     {
       icon: History,
-      label: 'Lịch sử',
+      label: 'Theo dõi',
       color: Colors.accent[700],
       bgColor: Colors.accent[100],
-      onPress: onHistory
+      onPress: onHistory,
     },
     {
       icon: Gift,
       label: 'Phần thưởng',
       color: '#E91E63',
       bgColor: '#FCE4EC',
-      onPress: onRewards
+      onPress: onRewards,
     },
   ];
 
@@ -99,15 +99,14 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+    flexWrap: 'nowrap',
   },
   actionWrapper: {
-    width: '23%',
-    minWidth: 75,
+    width: '25%',
   },
   actionButton: {
     alignItems: 'center',
+    width: '100%',
   },
   iconContainer: {
     width: 56,

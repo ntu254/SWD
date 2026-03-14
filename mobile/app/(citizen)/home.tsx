@@ -33,7 +33,8 @@ export default function CitizenHomeScreen() {
 
   const leaderboardQuery = useQuery({
     queryKey: ['rewards', 'leaderboard', 'home'],
-    queryFn: () => fetchLeaderboard(100),
+    queryFn: () => fetchLeaderboard(100, accessToken),
+    enabled: !!accessToken,
   });
 
   const myReports = reportsQuery.data ?? [];

@@ -11,6 +11,11 @@ import java.util.UUID;
 public interface EnterpriseCapabilityRepository extends JpaRepository<EnterpriseCapability, UUID> {
     List<EnterpriseCapability> findByEnterprise_UserId(UUID enterpriseUserId);
     List<UUID> findAreaIdsByEnterprise_UserId(UUID enterpriseUserId);
+    boolean existsByEnterprise_UserIdAndServiceArea_AreaIdAndWasteType_WasteTypeId(
+            UUID enterpriseUserId,
+            UUID serviceAreaId,
+            UUID wasteTypeId
+    );
 
     default List<UUID> getServiceAreaIds(UUID enterpriseUserId) {
         return findByEnterprise_UserId(enterpriseUserId)

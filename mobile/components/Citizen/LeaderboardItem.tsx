@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
-import { Trophy, Medal, Award } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
 import type { LeaderboardEntry } from '@/types';
@@ -10,37 +9,51 @@ interface LeaderboardItemProps {
   isCurrentUser?: boolean;
 }
 
-const rankIcons = [Trophy, Medal, Award];
-const rankColors = [Colors.accent[500], Colors.neutral[400], Colors.accent[700]];
+function initialsOf(name: unknown) {
+  const safeName = typeof name === 'string' ? name : '';
+  const clean = safeName.trim();
+  if (!clean) {
+    return 'U';
+  }
 
-export const LeaderboardItem: React.FC<LeaderboardItemProps> = ({
-  entry,
-  isCurrentUser
-}) => {
-  const RankIcon = entry.rank <= 3 ? rankIcons[entry.rank - 1] : null;
-  const rankColor = entry.rank <= 3 ? rankColors[entry.rank - 1] : Colors.neutral[500];
+  const words = clean.split(/\s+/).slice(0, 2);
+  return words.map((word) => word[0]?.toUpperCase() ?? '').join('') || 'U';
+}
+
+export const LeaderboardItem: React.FC<LeaderboardItemProps> = ({ entry, isCurrentUser }) => {
+  const subtitle = entry.areaName || 'Toàn hệ thống';
+  const displayName =
+    typeof entry.displayName === 'string' && entry.displayName.trim().length > 0
+      ? entry.displayName
+      : 'Người dùng';
+  const avatarUri =
+    typeof entry.avatarUrl === 'string' && entry.avatarUrl.trim().length > 0
+      ? entry.avatarUrl
+      : '';
+  const hasAvatar = avatarUri.length > 0;
+  const avatarInitials = useMemo(() => initialsOf(displayName), [displayName]);
 
   return (
     <View style={[styles.container, isCurrentUser && styles.currentUserContainer]}>
-      <View style={styles.rankContainer}>
-        {RankIcon ? (
-          <RankIcon size={24} color={rankColor} />
-        ) : (
-          <Text style={[styles.rankText, { color: rankColor }]}>#{entry.rank}</Text>
-        )}
+      <View style={styles.rankColumn}>
+        <Text style={[styles.rankText, isCurrentUser && styles.rankTextCurrent]}>#{entry.rank}</Text>
       </View>
 
-      <Image
-        source={{ uri: entry.avatarUrl }}
-        style={styles.avatar}
-      />
+      {hasAvatar ? (
+        <Image source={{ uri: avatarUri }} style={styles.avatar} />
+      ) : (
+        <View style={styles.avatarFallback}>
+          <Text style={styles.avatarFallbackText}>{avatarInitials}</Text>
+        </View>
+      )}
 
       <View style={styles.info}>
-        <Text style={[styles.name, isCurrentUser && styles.currentUserName]}>
-          {entry.displayName}
-          {isCurrentUser && <Text style={styles.youBadge}> (Bạn)</Text>}
+        <Text style={[styles.name, isCurrentUser && styles.currentUserName]} numberOfLines={1}>
+          {displayName}
         </Text>
-        <Text style={styles.area}>{entry.areaName}</Text>
+        <Text style={styles.subtitle} numberOfLines={1}>
+          {subtitle}
+        </Text>
       </View>
 
       <View style={styles.stats}>
@@ -56,63 +69,79 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.neutral.white,
-    padding: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
     marginHorizontal: 16,
-    marginVertical: 4,
-    borderRadius: 12,
-    ...Shadows.soft,
+    marginVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E4ECE6',
+    ...Shadows.card,
   },
   currentUserContainer: {
-    backgroundColor: Colors.primary[50],
-    borderWidth: 2,
+    backgroundColor: '#EAF8ED',
     borderColor: Colors.primary[300],
   },
-  rankContainer: {
-    width: 40,
-    alignItems: 'center',
+  rankColumn: {
+    width: 42,
+    alignItems: 'flex-start',
   },
   rankText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
+    color: Colors.neutral[600],
+  },
+  rankTextCurrent: {
+    color: Colors.primary[800],
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginHorizontal: 12,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    marginRight: 10,
+  },
+  avatarFallback: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    marginRight: 10,
+    backgroundColor: Colors.primary[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarFallbackText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.primary[800],
   },
   info: {
     flex: 1,
+    marginRight: 10,
   },
   name: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.neutral[800],
   },
   currentUserName: {
     color: Colors.primary[800],
   },
-  youBadge: {
-    fontSize: 12,
-    color: Colors.primary[600],
-    fontWeight: '500',
-  },
-  area: {
+  subtitle: {
     fontSize: 12,
     color: Colors.neutral[500],
-    marginTop: 2,
+    marginTop: 3,
   },
   stats: {
     alignItems: 'flex-end',
   },
   points: {
     fontSize: 15,
-    fontWeight: '700',
-    color: Colors.accent[600],
+    fontWeight: '800',
+    color: Colors.accent[700],
   },
   reports: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.neutral[500],
-    marginTop: 2,
+    marginTop: 4,
   },
 });

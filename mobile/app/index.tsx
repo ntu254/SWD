@@ -3,58 +3,29 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Redirect, useRootNavigationState } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { useAppStore } from '@/store/useAppStore';
-import { syncRoleSession } from '@/components/api/backend';
-
-const BOOTSTRAP_TIMEOUT_MS = 15000;
 
 export default function Index() {
   const rootNavigationState = useRootNavigationState();
-  const [isBootstrapping, setIsBootstrapping] = useState(true);
-  const currentRole = useAppStore((state) => state.currentRole);
+  const [isReady, setIsReady] = useState(false);
+  const accessToken = useAppStore((state) => state.accessToken);
+  const user = useAppStore((state) => state.user);
 
   useEffect(() => {
-    if (!rootNavigationState?.key) return;
+    if (rootNavigationState?.key) {
+      setIsReady(true);
+    }
+  }, [rootNavigationState?.key]);
 
-    let cancelled = false;
-
-    const bootstrap = async () => {
-      let timeoutId: ReturnType<typeof setTimeout> | null = null;
-      try {
-        const roleToSync = currentRole || 'CITIZEN';
-        await Promise.race([
-          syncRoleSession(roleToSync),
-          new Promise<never>((_, reject) => {
-            timeoutId = setTimeout(() => {
-              reject(new Error(`Bootstrap timeout after ${BOOTSTRAP_TIMEOUT_MS}ms`));
-            }, BOOTSTRAP_TIMEOUT_MS);
-          }),
-        ]);
-      } catch (error) {
-        console.warn('Role session bootstrap failed:', error);
-      } finally {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
-
-        if (!cancelled) {
-          setIsBootstrapping(false);
-        }
-      }
-    };
-
-    void bootstrap();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [rootNavigationState?.key, currentRole]);
-
-  if (!rootNavigationState?.key || isBootstrapping) {
+  if (!isReady) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color={Colors.primary[600]} />
       </View>
     );
+  }
+
+  if (!accessToken || !user) {
+    return <Redirect href="/(auth)/login" />;
   }
 
   const activeRole = useAppStore.getState().currentRole;

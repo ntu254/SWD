@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Data
 public class KpiConfigRequest {
-    @NotNull(message = "Collector user ID is required")
+    /** Optional for bulk mode; if omitted system applies KPI to all collectors in this enterprise */
     private UUID collectorUserId;
 
     @NotNull(message = "Area ID is required")

@@ -317,8 +317,7 @@ public class TaskService {
     @Transactional(readOnly = true)
     public com.wastecollection.dto.enterprise.KpiConfigDto getTodayKpi(UUID collectorId) {
         java.time.LocalDate today = java.time.LocalDate.now();
-        CollectorKpiDaily kpi = kpiRepository
-                .findByCollector_UserIdAndKpiDate(collectorId, today)
+        CollectorKpiDaily kpi = getLatestCollectorKpiByDate(collectorId, today)
                 .orElse(CollectorKpiDaily.builder()
                         .actualVisits(0)
                         .actualWeightKg(0.0)
@@ -343,9 +342,7 @@ public class TaskService {
     void trackCollectorKpi(UUID collectorId, double weightKg) {
         try {
             LocalDate today = LocalDate.now();
-            CollectorKpiDaily kpi = kpiRepository
-                    .findByCollector_UserIdAndKpiDate(collectorId, today)
-                    .orElse(null);
+            CollectorKpiDaily kpi = getLatestCollectorKpiByDate(collectorId, today).orElse(null);
             if (kpi == null) return; // KPI not configured yet for this collector today
 
             kpi.setActualVisits(kpi.getActualVisits() + 1);
@@ -361,6 +358,12 @@ public class TaskService {
             // KPI tracking is non-critical; log and continue
             log.warn("KPI tracking failed for collector {}: {}", collectorId, e.getMessage());
         }
+    }
+
+    private java.util.Optional<CollectorKpiDaily> getLatestCollectorKpiByDate(UUID collectorId, LocalDate kpiDate) {
+        return kpiRepository.findAllByCollector_UserIdAndKpiDateOrderByUpdatedAtDesc(collectorId, kpiDate)
+                .stream()
+                .findFirst();
     }
 
     public TaskDto mapToDto(Task t) {
@@ -392,18 +395,16 @@ public class TaskService {
     }
 
     private void ensureEnterpriseCanHandleReport(WasteReport report, UUID enterpriseId) {
-        if (report.getArea() == null || report.getWasteType() == null) {
-            throw new ForbiddenException("Report is missing area or waste type for capability matching");
+        if (report.getWasteType() == null) {
+            throw new ForbiddenException("Report is missing waste type for capability matching");
         }
 
         boolean canHandle = capabilityRepository.findByEnterprise_UserId(enterpriseId).stream()
                 .anyMatch(capability ->
-                        capability.getServiceArea() != null
-                                && capability.getWasteType() != null
-                                && report.getArea().getAreaId().equals(capability.getServiceArea().getAreaId())
+                        capability.getWasteType() != null
                                 && report.getWasteType().getWasteTypeId().equals(capability.getWasteType().getWasteTypeId()));
         if (!canHandle) {
-            throw new ForbiddenException("Your enterprise does not have capability to process this report");
+            throw new ForbiddenException("Your enterprise does not have capability for this waste type");
         }
     }
 

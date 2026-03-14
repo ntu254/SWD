@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,8 +19,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   completeCollectorTask,
   fetchCollectorTasks,
+  uploadCollectorEvidence,
   updateCollectorTaskStatus,
 } from '@/components/api/backend';
+import * as ImagePicker from 'expo-image-picker';
 
 const statusConfig: Record<AssignmentStatus, { label: string; color: string; bgColor: string; icon: React.ElementType }> = {
   ASSIGNED: { label: 'Được gán', color: Colors.accent[600], bgColor: Colors.accent[50], icon: ClipboardList },
@@ -41,6 +43,7 @@ export default function CollectorTasksScreen() {
   const { accessToken } = useAppStore();
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'COMPLETED'>('ACTIVE');
+  const [processingTaskId, setProcessingTaskId] = useState<string | null>(null);
 
   const tasksQuery = useQuery({
     queryKey: ['collector', 'tasks'],
@@ -57,15 +60,32 @@ export default function CollectorTasksScreen() {
   });
 
   const completeTaskMutation = useMutation({
-    mutationFn: ({ taskId }: { taskId: string }) =>
-      completeCollectorTask(accessToken ?? '', taskId, 'Completed from collector mobile'),
+    mutationFn: async ({ taskId, photoUri }: { taskId: string; photoUri?: string }) => {
+      const photoUrls: string[] = [];
+      if (photoUri) {
+        const uploadedUrl = await uploadCollectorEvidence(accessToken ?? '', photoUri);
+        photoUrls.push(uploadedUrl);
+      }
+
+      return completeCollectorTask(accessToken ?? '', taskId, {
+        visitStatus: 'SUCCESS',
+        note: photoUri
+          ? 'Collected with photo evidence from collector mobile'
+          : 'Collected without photo evidence from collector mobile',
+        photoUrls,
+      });
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['collector', 'tasks'] });
       Alert.alert('Thành công', 'Đã hoàn thành nhiệm vụ.');
+      setProcessingTaskId(null);
+    },
+    onError: () => {
+      setProcessingTaskId(null);
     },
   });
 
-  const assignments = tasksQuery.data ?? [];
+  const assignments = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
 
   const activeAssignments = useMemo(
     () => assignments.filter((a) => ['ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'IN_PROGRESS'].includes(a.status)),
@@ -110,13 +130,57 @@ export default function CollectorTasksScreen() {
     }
   };
 
-  const handleComplete = async (taskId: string) => {
+  const completeTask = async (taskId: string, photoUri?: string) => {
     try {
-      await completeTaskMutation.mutateAsync({ taskId });
+      setProcessingTaskId(taskId);
+      await completeTaskMutation.mutateAsync({ taskId, photoUri });
     } catch (error) {
+      setProcessingTaskId(null);
       const message = error instanceof Error ? error.message : 'Không thể hoàn thành nhiệm vụ';
       Alert.alert('Cập nhật thất bại', message);
     }
+  };
+
+  const pickEvidenceAndComplete = async (taskId: string) => {
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Thiếu quyền camera', 'Vui lòng cho phép camera để chụp ảnh minh chứng.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      await completeTask(taskId, result.assets[0].uri);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Không thể chụp ảnh minh chứng';
+      Alert.alert('Lỗi camera', message);
+    }
+  };
+
+  const handleComplete = (taskId: string) => {
+    Alert.alert('Xác nhận thu gom', 'Bạn muốn hoàn tất với ảnh minh chứng không?', [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Không ảnh',
+        onPress: () => {
+          void completeTask(taskId);
+        },
+      },
+      {
+        text: 'Chụp ảnh',
+        onPress: () => {
+          void pickEvidenceAndComplete(taskId);
+        },
+      },
+    ]);
   };
 
   const renderTaskItem = ({ item }: { item: TaskAssignment }) => {
@@ -170,9 +234,15 @@ export default function CollectorTasksScreen() {
           )}
 
           {(item.status === 'ON_THE_WAY' || item.status === 'IN_PROGRESS') && (
-            <TouchableOpacity style={styles.primaryBtn} onPress={() => void handleComplete(item.taskId)}>
+            <TouchableOpacity
+              style={styles.primaryBtn}
+              onPress={() => handleComplete(item.taskId)}
+              disabled={completeTaskMutation.isPending}
+            >
               <CheckCircle2 size={16} color={Colors.neutral.white} />
-              <Text style={styles.primaryBtnText}>Xác nhận thu gom</Text>
+              <Text style={styles.primaryBtnText}>
+                {processingTaskId === item.taskId ? '?ang x? l?...' : 'Xác nhận thu gom'}
+              </Text>
             </TouchableOpacity>
           )}
         </View>
