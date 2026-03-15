@@ -16,11 +16,13 @@ import { buildReportDescription } from "../../lib/reportMetadata";
 
 const defaultCenter: [number, number] = [21.0285, 105.8542];
 
+const requiredSelect = (message: string) => z.string().trim().min(1, message);
+
 const reportSchema = z.object({
   description: z.string().optional(),
   estimatedWeightKg: z.number().positive("Khối lượng phải lớn hơn 0").max(10000).optional(),
-  wasteTypeId: z.string().uuid("Vui lòng chọn loại rác"),
-  areaId: z.string().uuid("Vui lòng chọn khu vực"),
+  wasteTypeId: requiredSelect("Vui lòng chọn loại rác"),
+  areaId: requiredSelect("Vui lòng chọn khu vực"),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
 });
@@ -282,7 +284,11 @@ export const CitizenReportPage: React.FC = () => {
                         id="waste-type"
                         value={field.value ?? ""}
                         onChange={(event) => {
-                          field.onChange(event.target.value);
+                          setValue("wasteTypeId", event.target.value, {
+                            shouldDirty: true,
+                            shouldTouch: true,
+                            shouldValidate: true,
+                          });
                           clearErrors("wasteTypeId");
                         }}
                         onBlur={field.onBlur}
@@ -321,7 +327,11 @@ export const CitizenReportPage: React.FC = () => {
                         id="service-area"
                         value={field.value ?? ""}
                         onChange={(event) => {
-                          field.onChange(event.target.value);
+                          setValue("areaId", event.target.value, {
+                            shouldDirty: true,
+                            shouldTouch: true,
+                            shouldValidate: true,
+                          });
                           clearErrors("areaId");
                         }}
                         onBlur={field.onBlur}

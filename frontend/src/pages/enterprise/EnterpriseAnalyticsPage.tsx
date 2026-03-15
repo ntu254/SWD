@@ -213,8 +213,8 @@ export function EnterpriseAnalyticsPage() {
                 title="Xu hướng nhiệm vụ"
                 description="So sánh số nhiệm vụ được tạo và hoàn thành trong các ngày gần nhất."
               />
-              <div className="h-[340px] px-3 pb-3 sm:px-6 sm:pb-6">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <div className="min-w-0 h-[340px] px-3 pb-3 sm:px-6 sm:pb-6">
+                <ResponsiveContainer width="100%" height={340} minWidth={0}>
                   <LineChart data={timelineData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(94,110,125,0.12)" />
                     <XAxis dataKey="label" stroke="#8c98a3" fontSize={12} />
@@ -253,8 +253,8 @@ export function EnterpriseAnalyticsPage() {
                 title="Phân bố trạng thái"
                 description="Cơ cấu trạng thái nhiệm vụ hiện tại trong hàng chờ của doanh nghiệp."
               />
-              <div className="h-[340px] px-3 pb-3 sm:px-6 sm:pb-6">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <div className="min-w-0 h-[340px] px-3 pb-3 sm:px-6 sm:pb-6">
+                <ResponsiveContainer width="100%" height={340} minWidth={0}>
                   <PieChart>
                     <Pie
                       data={statusData}
@@ -288,8 +288,8 @@ export function EnterpriseAnalyticsPage() {
                 title="Hiệu suất nhân viên thu gom"
                 description="Những nhân viên có khối lượng được giao và số nhiệm vụ hoàn thành cao nhất."
               />
-              <div className="h-[340px] px-3 pb-3 sm:px-6 sm:pb-6">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <div className="min-w-0 h-[340px] px-3 pb-3 sm:px-6 sm:pb-6">
+                <ResponsiveContainer width="100%" height={340} minWidth={0}>
                   <BarChart data={collectorData} layout="vertical" margin={{ left: 12 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(94,110,125,0.12)" />
                     <XAxis type="number" stroke="#8c98a3" fontSize={12} allowDecimals={false} />
@@ -320,8 +320,8 @@ export function EnterpriseAnalyticsPage() {
                 title="Nhiệm vụ theo khu vực"
                 description="Những khu vực phục vụ có khối lượng nhiệm vụ cao nhất hiện tại."
               />
-              <div className="h-[340px] px-3 pb-3 sm:px-6 sm:pb-6">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <div className="min-w-0 h-[340px] px-3 pb-3 sm:px-6 sm:pb-6">
+                <ResponsiveContainer width="100%" height={340} minWidth={0}>
                   <BarChart data={areaData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(94,110,125,0.12)" />
                     <XAxis dataKey="name" stroke="#8c98a3" fontSize={12} />

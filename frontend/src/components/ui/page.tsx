@@ -238,7 +238,7 @@ type SectionCardProps = {
 };
 
 export function SectionCard({ children, className }: SectionCardProps) {
-  return <div className={cn("shell-card", className)}>{children}</div>;
+  return <div className={cn("shell-card min-w-0", className)}>{children}</div>;
 }
 
 type SectionHeaderProps = {
