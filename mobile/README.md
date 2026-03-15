@@ -136,6 +136,34 @@ Ví dụ:
 EXPO_PUBLIC_API_BASE_URL=https://your-backend.slim.show/api
 ```
 
+### Lệnh mẫu đúng
+
+```powershell
+slim login
+slim share --port 8080 --subdomain swd392-api
+```
+
+Sau đó cập nhật:
+
+```env
+EXPO_PUBLIC_API_BASE_URL=https://swd392-api.slim.show/api
+```
+
+Rồi restart Expo:
+
+```powershell
+npm run start:tunnel
+```
+
+### Các lỗi sai thường gặp với mobile + Slim
+
+- dùng `http://localhost:8080/api` trên điện thoại thật
+- thiếu `/api` ở cuối `EXPO_PUBLIC_API_BASE_URL`
+- sửa `.env` nhưng không restart Expo
+- bật `--password` khi app cần fetch API trực tiếp
+- tưởng chỉ cần Expo tunnel là đủ
+- dùng `slim start` thay vì `slim share` khi mục tiêu là public backend cho điện thoại thật
+
 ## Bản đồ và vị trí
 
 - app có tích hợp Google Maps key qua `app.config.js`
@@ -179,4 +207,3 @@ npx tsc --noEmit
 
 - kiểm tra backend Cloudinary
 - kiểm tra quyền camera/photo library trên thiết bị
-

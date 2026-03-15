@@ -68,6 +68,34 @@ Ví dụ khi dùng Slim:
 VITE_API_BASE_URL=https://your-backend.slim.show
 ```
 
+## Dùng `slim.sh` cho frontend web
+
+### Trường hợp 1: chỉ public backend
+
+Khi đó frontend vẫn chạy local và chỉ cần đổi:
+
+```env
+VITE_API_BASE_URL=https://your-backend.slim.show
+```
+
+### Trường hợp 2: gom frontend và backend vào cùng local HTTPS domain
+
+```powershell
+slim start swd --port 5173 --route /api=8080
+```
+
+Khi đó:
+
+- `https://swd.test` -> frontend
+- `https://swd.test/api` -> backend
+
+### Các lỗi sai thường gặp
+
+- ghi `VITE_API_BASE_URL=https://your-backend.slim.show/api`
+- quên restart Vite sau khi đổi `.env`
+- public frontend bằng domain mới nhưng backend chưa thêm domain đó vào `CORS_ALLOWED_ORIGINS`
+- nhầm `slim start` với `slim share`
+
 ## Chạy dự án
 
 ```powershell
@@ -179,4 +207,3 @@ npm run lint
 
 - kiểm tra tile/map network
 - kiểm tra component map có nhận đúng lat/lng từ API
-

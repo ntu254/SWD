@@ -145,6 +145,74 @@ Nếu frontend web cũng cần gọi backend qua Slim:
 VITE_API_BASE_URL=https://your-backend.slim.show
 ```
 
+## Hướng dẫn dùng `slim.sh`
+
+`slim.sh` có hai kiểu dùng rất dễ nhầm:
+
+- `slim start`: tạo local HTTPS domain kiểu `https://myapp.test`
+- `slim share`: tạo public URL kiểu `https://demo.slim.show`
+
+### Dùng `slim start` khi nào
+
+Dùng khi bạn muốn có local domain đẹp và route nhiều service chung một domain.
+
+Ví dụ:
+
+```powershell
+slim start swd --port 5173 --route /api=8080
+```
+
+Khi đó:
+
+- `https://swd.test` -> frontend
+- `https://swd.test/api` -> backend
+
+### Dùng `slim share` khi nào
+
+Dùng khi bạn muốn điện thoại thật hoặc người khác truy cập backend local của bạn.
+
+Ví dụ:
+
+```powershell
+slim login
+slim share --port 8080 --subdomain swd392-api
+```
+
+Khi đó bạn sẽ có public URL như:
+
+```text
+https://swd392-api.slim.show
+```
+
+### Các lỗi sai thường gặp với `slim.sh`
+
+- dùng `localhost` trên điện thoại thật
+- mobile thiếu `/api` ở cuối `EXPO_PUBLIC_API_BASE_URL`
+- frontend lại thêm `/api` vào `VITE_API_BASE_URL`
+- quên `slim login` trước khi `slim share`
+- đổi `.env` xong nhưng không restart Expo hoặc Vite
+- nghĩ Expo tunnel sẽ tự public luôn backend API
+- public frontend bằng domain mới nhưng backend chưa thêm domain đó vào `CORS_ALLOWED_ORIGINS`
+
+### Mẫu `.slim.yaml`
+
+```yaml
+services:
+  - domain: swd
+    port: 5173
+    routes:
+      - path: /api
+        port: 8080
+log_mode: minimal
+```
+
+Chạy:
+
+```powershell
+slim up
+slim down
+```
+
 ## Tài liệu chi tiết từng app
 
 - [Backend README](./backend/README.md)
@@ -195,4 +263,3 @@ npx tsc --noEmit
 
 - Không nên commit secret thật vào repo dùng chung
 - Nên xoay vòng các khóa Cloudinary, JWT, database nếu repo đã lộ thông tin
-

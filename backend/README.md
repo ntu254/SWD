@@ -173,6 +173,33 @@ Mobile native không phụ thuộc CORS nhưng cần backend phải reachable t�
 EXPO_PUBLIC_API_BASE_URL=https://your-backend.slim.show/api
 ```
 
+## Dùng `slim.sh` với backend
+
+### Public backend local
+
+```powershell
+slim login
+slim share --port 8080 --subdomain swd392-api
+```
+
+Ví dụ URL thu được:
+
+```text
+https://swd392-api.slim.show
+```
+
+Khi đó:
+
+- mobile dùng `https://swd392-api.slim.show/api`
+- frontend dùng `https://swd392-api.slim.show`
+
+### Các lỗi sai thường gặp
+
+- public backend xong nhưng mobile vẫn để `http://localhost:8080/api`
+- public frontend bằng domain public nhưng quên thêm origin vào `CORS_ALLOWED_ORIGINS`
+- bật `--password` khi mobile/web cần gọi API trực tiếp
+- sửa `.env` backend nhưng không restart Spring Boot
+
 ## Troubleshooting
 
 ### Lỗi database/schema
@@ -195,4 +222,3 @@ EXPO_PUBLIC_API_BASE_URL=https://your-backend.slim.show/api
 
 - kiểm tra `JWT_SECRET`
 - kiểm tra access token gửi đúng header `Authorization: Bearer ...`
-
