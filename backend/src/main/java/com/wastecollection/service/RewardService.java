@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 public class RewardService {
     private static final String COLLECTION_REWARD_REASON = "COLLECTION_REWARD";
-    private static final String REDEMPTION_REASON_PREFIX = "REDEMPTION:";
+    private static final String REWARD_REDEEMED_REASON = "REWARD_REDEEMED";
 
     private final RewardTransactionRepository transactionRepository;
     private final RewardItemRepository itemRepository;
@@ -174,7 +174,7 @@ public class RewardService {
         RewardTransaction tx = RewardTransaction.builder()
                 .citizen(citizen.getUser())
                 .pointsDelta((double) -item.getPointsCost())
-                .reasonCode(REDEMPTION_REASON_PREFIX + itemId)
+                .reasonCode(REWARD_REDEEMED_REASON)
                 .build();
         return mapTxToDto(transactionRepository.save(tx));
     }

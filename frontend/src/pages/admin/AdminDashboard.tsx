@@ -187,7 +187,7 @@ export function AdminDashboard() {
             </div>
           </div>
           <div className="h-[320px] px-3 pb-3 sm:px-6 sm:pb-6">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <PieChart>
                 <Pie
                   data={userMixData}
@@ -226,7 +226,7 @@ export function AdminDashboard() {
             </div>
           </div>
           <div className="h-[320px] px-3 pb-3 sm:px-6 sm:pb-6">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={operationsData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(94,110,125,0.12)" />
                 <XAxis dataKey="name" stroke="#8c98a3" fontSize={12} />

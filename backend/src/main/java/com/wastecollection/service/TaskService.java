@@ -444,16 +444,21 @@ public class TaskService {
     }
 
     private void ensureEnterpriseCanHandleReport(WasteReport report, UUID enterpriseId) {
+        if (report.getArea() == null) {
+            throw new ForbiddenException("Report is missing service area for capability matching");
+        }
         if (report.getWasteType() == null) {
             throw new ForbiddenException("Report is missing waste type for capability matching");
         }
 
         boolean canHandle = capabilityRepository.findByEnterprise_UserId(enterpriseId).stream()
                 .anyMatch(capability ->
-                        capability.getWasteType() != null
+                        capability.getServiceArea() != null
+                                && report.getArea().getAreaId().equals(capability.getServiceArea().getAreaId())
+                                && capability.getWasteType() != null
                                 && report.getWasteType().getWasteTypeId().equals(capability.getWasteType().getWasteTypeId()));
         if (!canHandle) {
-            throw new ForbiddenException("Your enterprise does not have capability for this waste type");
+            throw new ForbiddenException("Your enterprise does not have capability for this area and waste type");
         }
     }
 

@@ -25,11 +25,13 @@ public interface WasteReportRepository extends JpaRepository<WasteReport, UUID> 
     @Query("""
             SELECT r FROM WasteReport r
             WHERE r.status = 'PENDING'
+              AND r.area IS NOT NULL
               AND r.wasteType IS NOT NULL
               AND EXISTS (
                 SELECT c.capabilityId
                 FROM EnterpriseCapability c
                 WHERE c.enterprise.userId = :enterpriseId
+                  AND c.serviceArea.areaId = r.area.areaId
                   AND c.wasteType.wasteTypeId = r.wasteType.wasteTypeId
               )
             """)

@@ -50,10 +50,19 @@ export function EnterpriseTaskDetail() {
   const queryClient = useQueryClient();
   const [selectedCollectorId, setSelectedCollectorId] = useState("");
 
+  const retryTaskDetailQuery = (
+    _failureCount: number,
+    error: unknown,
+  ) => {
+    const status = (error as { response?: { status?: number } })?.response?.status;
+    return status == null || status >= 500;
+  };
+
   const { data: taskResponse, isLoading } = useQuery({
     queryKey: ["enterprise-task-detail", taskId],
     queryFn: () => tasksApi.getEnterpriseTaskById(taskId!).then((response) => response.data),
     enabled: !!taskId,
+    retry: retryTaskDetailQuery,
   });
 
   const task: Task | undefined = taskResponse?.data;
@@ -67,6 +76,7 @@ export function EnterpriseTaskDetail() {
     queryKey: ["enterprise-task-detail", "report", task?.reportId],
     queryFn: () => reportsApi.getById(task!.reportId!).then((response) => response.data),
     enabled: !!task?.reportId,
+    retry: retryTaskDetailQuery,
   });
 
   const report: WasteReport | undefined = reportResponse?.data

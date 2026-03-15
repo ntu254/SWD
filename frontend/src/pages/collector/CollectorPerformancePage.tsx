@@ -76,7 +76,7 @@ export function CollectorPerformancePage() {
             description="Số nhiệm vụ hoàn thành mỗi ngày được hiển thị bằng biểu đồ vùng."
           />
           <div className="h-[320px] px-3 pb-3 sm:px-6 sm:pb-6">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <AreaChart data={weeklyTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(94,110,125,0.12)" />
                 <XAxis dataKey="day" stroke="#8c98a3" fontSize={12} />
@@ -107,7 +107,7 @@ export function CollectorPerformancePage() {
             description="Khối lượng công việc trong tuần tập trung nhiều ở nhóm nào."
           />
           <div className="h-[320px] px-3 pb-3 sm:px-6 sm:pb-6">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={categoryBreakdown}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(94,110,125,0.12)" />
                 <XAxis dataKey="label" stroke="#8c98a3" fontSize={12} />
