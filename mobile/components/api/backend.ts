@@ -238,6 +238,7 @@ interface RequestOptions {
   headers?: Record<string, string>;
   body?: unknown;
   formData?: FormData;
+  skipAuthRefresh?: boolean;
 }
 
 export interface LoginPayload {
@@ -303,6 +304,15 @@ function normalizeBaseUrl(rawUrl: string) {
   return rawUrl.trim().replace(/\/+$/, '');
 }
 
+function normalizeToken(token?: string | null) {
+  if (typeof token !== 'string') {
+    return null;
+  }
+
+  const value = token.trim();
+  return value.length > 0 ? value : null;
+}
+
 function extractMessage(payload: unknown, fallback: string) {
   if (
     payload &&
@@ -316,16 +326,25 @@ function extractMessage(payload: unknown, fallback: string) {
   return fallback;
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', token, headers = {}, body, formData } = options;
+let refreshSessionPromise: Promise<AuthResponseDto | null> | null = null;
+
+async function executeRequest(
+  path: string,
+  options: RequestOptions,
+  tokenOverride?: string | null
+) {
+  const { method = 'GET', headers = {}, body, formData } = options;
 
   const finalHeaders: Record<string, string> = {
     Accept: 'application/json',
     ...headers,
   };
 
-  if (token) {
-    finalHeaders.Authorization = `Bearer ${token}`;
+  const resolvedToken =
+    tokenOverride !== undefined ? normalizeToken(tokenOverride) : normalizeToken(options.token);
+
+  if (resolvedToken) {
+    finalHeaders.Authorization = `Bearer ${resolvedToken}`;
   }
 
   let requestBody: BodyInit | undefined;
@@ -373,6 +392,71 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     } catch {
       payload = rawText;
     }
+  }
+
+  return { response, payload, method };
+}
+
+async function refreshAccessToken() {
+  if (refreshSessionPromise) {
+    return refreshSessionPromise;
+  }
+
+  refreshSessionPromise = (async () => {
+    const store = useAppStore.getState();
+    const refreshToken = normalizeToken(store.refreshToken);
+
+    if (!refreshToken) {
+      return null;
+    }
+
+    try {
+      const auth = await request<AuthResponseDto>('/auth/refresh', {
+        method: 'POST',
+        body: { refreshToken },
+        skipAuthRefresh: true,
+      });
+
+      store.setAuthenticatedSession({
+        user: toUserFromAuth(auth),
+        accessToken: auth.accessToken,
+        refreshToken: auth.refreshToken,
+        role: normalizeRole(auth.role),
+      });
+
+      return auth;
+    } catch {
+      store.logout();
+      return null;
+    }
+  })();
+
+  try {
+    return await refreshSessionPromise;
+  } finally {
+    refreshSessionPromise = null;
+  }
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const { skipAuthRefresh = false } = options;
+  const initialToken = normalizeToken(options.token);
+
+  let { response, payload, method } = await executeRequest(path, options, initialToken);
+
+  if (
+    !response.ok &&
+    !skipAuthRefresh &&
+    initialToken &&
+    !path.startsWith('/auth/') &&
+    (response.status === 401 || response.status === 403)
+  ) {
+    const refreshedAuth = await refreshAccessToken();
+    if (!refreshedAuth?.accessToken) {
+      throw new ApiError('Session expired. Please sign in again.', 401, payload);
+    }
+
+    ({ response, payload, method } = await executeRequest(path, options, refreshedAuth.accessToken));
   }
 
   if (!response.ok) {
