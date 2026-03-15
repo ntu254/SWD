@@ -165,8 +165,9 @@ public class TaskService {
     @Transactional(readOnly = true)
     public PageResponse<TaskDto> getTasksForEnterprise(UUID enterpriseId, int page, int size, String status) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Task> tasks = status != null
-                ? taskRepository.findByEnterprise_UserIdAndStatus(enterpriseId, status, pageable)
+        String normalizedStatus = normalizeTaskFilterStatus(status);
+        Page<Task> tasks = normalizedStatus != null
+                ? taskRepository.findByEnterprise_UserIdAndStatus(enterpriseId, normalizedStatus, pageable)
                 : taskRepository.findByEnterprise_UserId(enterpriseId, pageable);
         return toPageResponse(tasks);
     }
@@ -202,7 +203,7 @@ public class TaskService {
             assignment.setStatus("ACCEPTED");
         } else {
             assignment.setStatus("ON_THE_WAY");
-            task.setStatus("ON_THE_WAY");
+            task.setStatus("IN_PROGRESS");
             if (task.getReport() != null) {
                 task.getReport().setStatus("ON_THE_WAY");
                 reportRepository.save(task.getReport());
@@ -374,6 +375,13 @@ public class TaskService {
     }
 
     private TaskDto mapToDto(Task t, TaskAssignment assignment) {
+        String taskStatus = t.getStatus();
+        if ("IN_PROGRESS".equals(taskStatus)
+                && assignment != null
+                && "ON_THE_WAY".equals(assignment.getStatus())) {
+            taskStatus = "ON_THE_WAY";
+        }
+
         return TaskDto.builder()
                 .taskId(t.getTaskId())
                 .reportId(t.getReport() != null ? t.getReport().getReportId() : null)
@@ -385,13 +393,26 @@ public class TaskService {
                 .assignmentStatus(assignment != null ? assignment.getStatus() : null)
                 .areaId(t.getArea() != null ? t.getArea().getAreaId() : null)
                 .areaName(t.getArea() != null ? t.getArea().getName() : null)
-                .status(t.getStatus())
+                .status(taskStatus)
                 .priority(t.getPriority())
                 .scheduledDate(t.getScheduledDate())
                 .rejectionReason(t.getRejectionReason())
                 .createdAt(t.getCreatedAt())
                 .updatedAt(t.getUpdatedAt())
                 .build();
+    }
+
+    private String normalizeTaskFilterStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+
+        String normalized = status.trim().toUpperCase(Locale.ROOT);
+        return switch (normalized) {
+            case "ON_THE_WAY" -> "IN_PROGRESS";
+            case "COLLECTED" -> "COMPLETED";
+            default -> normalized;
+        };
     }
 
     private void ensureEnterpriseCanHandleReport(WasteReport report, UUID enterpriseId) {

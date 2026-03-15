@@ -18,7 +18,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
             WHERE n.isActive = true
               AND (n.startDate IS NULL OR n.startDate <= :now)
               AND (n.endDate IS NULL OR n.endDate >= :now)
-              AND (n.targetAudience = 'All' OR n.targetAudience = :audience)
+              AND (LOWER(n.targetAudience) = 'all' OR LOWER(n.targetAudience) = LOWER(:audience))
             ORDER BY n.createdAt DESC
             """)
     Page<Notification> findActiveForAudience(String audience, LocalDateTime now, Pageable pageable);

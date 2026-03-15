@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -31,9 +32,9 @@ public class NotificationService {
                 .createdBy(admin)
                 .title(request.getTitle())
                 .content(request.getContent())
-                .type(request.getType() != null ? request.getType() : "General")
-                .targetAudience(request.getTargetAudience() != null ? request.getTargetAudience() : "All")
-                .priority(request.getPriority() != null ? request.getPriority() : "Normal")
+                .type(normalizeType(request.getType()))
+                .targetAudience(normalizeAudience(request.getTargetAudience()))
+                .priority(normalizePriority(request.getPriority()))
                 .isActive(true)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
@@ -83,5 +84,45 @@ public class NotificationService {
                 page.getContent().stream().map(this::mapToDto).toList(),
                 page.getNumber(), page.getSize(),
                 page.getTotalElements(), page.getTotalPages(), page.isLast());
+    }
+
+    private String normalizeAudience(String audience) {
+        if (audience == null || audience.isBlank()) {
+            return "All";
+        }
+
+        return switch (audience.trim().toUpperCase(Locale.ROOT)) {
+            case "CITIZEN" -> "Citizen";
+            case "COLLECTOR" -> "Collector";
+            case "ENTERPRISE" -> "Enterprise";
+            default -> "All";
+        };
+    }
+
+    private String normalizePriority(String priority) {
+        if (priority == null || priority.isBlank()) {
+            return "Normal";
+        }
+
+        return switch (priority.trim().toUpperCase(Locale.ROOT)) {
+            case "LOW" -> "Low";
+            case "HIGH" -> "High";
+            case "URGENT" -> "Urgent";
+            default -> "Normal";
+        };
+    }
+
+    private String normalizeType(String type) {
+        if (type == null || type.isBlank()) {
+            return "General";
+        }
+
+        return switch (type.trim().toUpperCase(Locale.ROOT)) {
+            case "MAINTENANCE" -> "Maintenance";
+            case "UPDATE" -> "Update";
+            case "PROMOTION" -> "Promotion";
+            case "ALERT" -> "Alert";
+            default -> "General";
+        };
     }
 }
