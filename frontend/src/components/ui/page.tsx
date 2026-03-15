@@ -352,12 +352,12 @@ export function PagePlaceholder({
         </div>
         <div className="rounded-[26px] border border-[var(--tone-border)] bg-[var(--tone-gradient)] p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-            Next release
+            Bản phát hành tiếp theo
           </p>
           <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
-            This surface is reserved for the next role-specific flow and now
-            matches the shared GreenLoop shell while backend behavior remains
-            untouched.
+            Khu vực này được giữ cho luồng tính năng tiếp theo theo từng vai trò
+            và hiện đã đồng bộ với giao diện chung của GreenLoop mà không thay đổi
+            hành vi backend.
           </p>
           {action ? <div className="mt-5">{action}</div> : null}
         </div>
@@ -452,7 +452,7 @@ export function ModalShell({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close dialog"
+            aria-label="Đóng hộp thoại"
             className="rounded-full border border-[var(--stroke-soft)] bg-white/70 p-2 text-[var(--text-secondary)] transition-colors hover:bg-white hover:text-[var(--text-primary)]"
           >
             <X className="h-4 w-4" />

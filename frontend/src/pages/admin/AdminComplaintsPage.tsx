@@ -15,6 +15,7 @@ import {
   SectionHeader,
   StatCard,
 } from "../../components/ui/page";
+import { formatPriorityLabel, formatStatusLabel } from "../../lib/labels";
 
 type Complaint = {
   complaintId: string;
@@ -29,7 +30,11 @@ type Complaint = {
   resolvedAt: string | null;
 };
 
-const STATUS_TABS = ["ALL", "OPEN", "RESOLVED"] as const;
+const STATUS_TABS = [
+  { label: "TẤT CẢ", value: "ALL" },
+  { label: "ĐANG MỞ", value: "OPEN" },
+  { label: "ĐÃ XỬ LÝ", value: "RESOLVED" },
+] as const;
 
 function getPriorityVariant(priority: string) {
   switch (priority) {
@@ -63,11 +68,11 @@ export function AdminComplaintsPage() {
     mutationFn: ({ id, body }: { id: string; body: object }) =>
       complaintsApi.resolve(id, body),
     onSuccess: () => {
-      toast.success("Complaint resolved.");
+      toast.success("Đã xử lý khiếu nại.");
       queryClient.invalidateQueries({ queryKey: ["admin-complaints"] });
       setResolveModal(null);
     },
-    onError: () => toast.error("Failed to resolve complaint."),
+    onError: () => toast.error("Xử lý khiếu nại thất bại."),
   });
 
   const complaints: Complaint[] = data?.data?.content ?? [];
@@ -89,9 +94,9 @@ export function AdminComplaintsPage() {
       id: resolveModal.complaintId,
       body: {
         decision: "RESOLVED",
-        note: adminResponse || "Issue reviewed and addressed.",
+        note: adminResponse || "Vấn đề đã được xem xét và xử lý.",
         isAccepted,
-        adminResponse: adminResponse || "Thank you for your report.",
+        adminResponse: adminResponse || "Cảm ơn bạn đã gửi phản ánh.",
       },
     });
   };
@@ -100,18 +105,18 @@ export function AdminComplaintsPage() {
     <div className="space-y-4 lg:space-y-5">
       {resolveModal ? (
         <ModalShell
-          title="Resolve complaint"
-          description="Document the admin response and confirm the final outcome."
+          title="Xử lý khiếu nại"
+          description="Ghi lại phản hồi từ quản trị và xác nhận kết quả cuối cùng."
           icon={ShieldCheck}
           onClose={() => setResolveModal(null)}
           widthClassName="max-w-xl"
           footer={
             <>
               <Button variant="outline" onClick={() => setResolveModal(null)}>
-                Cancel
+                Hủy
               </Button>
               <Button onClick={submitResolve} disabled={resolveComplaint.isPending}>
-                {resolveComplaint.isPending ? "Submitting..." : "Submit response"}
+                {resolveComplaint.isPending ? "Đang gửi..." : "Gửi phản hồi"}
               </Button>
             </>
           }
@@ -128,7 +133,7 @@ export function AdminComplaintsPage() {
 
             <div>
               <label htmlFor="complaint-response" className="field-label">
-                Admin response
+                Phản hồi từ quản trị
               </label>
               <textarea
                 id="complaint-response"
@@ -136,7 +141,7 @@ export function AdminComplaintsPage() {
                 onChange={(event) => setAdminResponse(event.target.value)}
                 rows={4}
                 className="shell-textarea"
-                placeholder="Write the response that will be stored with this complaint."
+                placeholder="Nhập phản hồi sẽ được lưu cùng khiếu nại này."
               />
             </div>
 
@@ -149,7 +154,7 @@ export function AdminComplaintsPage() {
                     : "border-[var(--stroke-soft)] bg-white/80 text-[var(--text-secondary)]"
                   }`}
               >
-                Accept complaint
+                Chấp nhận khiếu nại
               </button>
               <button
                 type="button"
@@ -159,7 +164,7 @@ export function AdminComplaintsPage() {
                     : "border-[var(--stroke-soft)] bg-white/80 text-[var(--text-secondary)]"
                   }`}
               >
-                Reject complaint
+                Từ chối khiếu nại
               </button>
             </div>
           </div>
@@ -167,48 +172,50 @@ export function AdminComplaintsPage() {
       ) : null}
 
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Admin workspace</span>}
-        title="Complaint resolution"
-        description="Review user complaints, track their current state and close the loop with a documented admin response."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian quản trị</span>}
+        title="Xử lý khiếu nại"
+        description="Xem khiếu nại của người dùng, theo dõi trạng thái hiện tại và kết thúc quy trình với phản hồi từ quản trị."
       />
 
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           icon={AlertCircle}
-          label="Open"
+          label="Đang mở"
           value={openCount}
-          description="Complaints still awaiting a final response."
+          description="Các khiếu nại vẫn đang chờ phản hồi cuối cùng."
           tone="sand"
           featured
         />
         <StatCard
           icon={CheckCircle2}
-          label="Resolved"
+          label="Đã xử lý"
           value={resolvedCount}
-          description="Issues already reviewed and closed."
+          description="Những vấn đề đã được xem xét và đóng lại."
           tone="mint"
         />
         <StatCard
           icon={MessageSquare}
-          label="Visible in filter"
+          label="Hiển thị theo bộ lọc"
           value={complaints.length}
-          description="Results matching the current status tab."
+          description="Kết quả khớp với tab trạng thái hiện tại."
           tone="sky"
         />
       </div>
 
       <SectionCard className="overflow-hidden">
         <SectionHeader
-          title="Complaint list"
-          description="Filter the queue by status and open any record to respond."
+          title="Danh sách khiếu nại"
+          description="Lọc hàng chờ theo trạng thái và mở bất kỳ mục nào để phản hồi."
         />
 
         <div className="space-y-5 p-5 sm:p-6">
           <div className="shell-toolbar">
             <FilterTabs
-              value={statusTab}
-              options={STATUS_TABS}
-              onChange={(value) => setStatusTab(value)}
+              value={STATUS_TABS.find((item) => item.value === statusTab)?.label ?? "TẤT CẢ"}
+              options={STATUS_TABS.map((item) => item.label)}
+              onChange={(value) =>
+                setStatusTab(STATUS_TABS.find((item) => item.label === value)?.value ?? "ALL")
+              }
             />
           </div>
 
@@ -221,8 +228,8 @@ export function AdminComplaintsPage() {
           ) : complaints.length === 0 ? (
             <EmptyState
               icon={MessageSquare}
-              title="No complaints in this view"
-              description="Try another status tab or check again after new issues are submitted."
+              title="Không có khiếu nại trong chế độ xem này"
+              description="Hãy thử tab trạng thái khác hoặc kiểm tra lại sau khi có vấn đề mới được gửi."
               tone="slate"
             />
           ) : (
@@ -239,7 +246,7 @@ export function AdminComplaintsPage() {
                           {complaint.title}
                         </p>
                         <Badge variant={getPriorityVariant(complaint.priority)}>
-                          {complaint.priority}
+                          {formatPriorityLabel(complaint.priority)}
                         </Badge>
                         <Badge
                           variant={
@@ -248,7 +255,7 @@ export function AdminComplaintsPage() {
                               : "pending"
                           }
                         >
-                          {complaint.status}
+                          {formatStatusLabel(complaint.status)}
                         </Badge>
                       </div>
 
@@ -265,7 +272,7 @@ export function AdminComplaintsPage() {
                       {complaint.adminResponse ? (
                         <div className="rounded-[18px] border border-[rgba(31,93,78,0.14)] bg-[var(--primary-50)] px-4 py-3 text-sm leading-6 text-[var(--text-secondary)]">
                           <span className="font-semibold text-[var(--text-primary)]">
-                            Admin response:
+                            Phản hồi quản trị:
                           </span>{" "}
                           {complaint.adminResponse}
                         </div>
@@ -275,7 +282,7 @@ export function AdminComplaintsPage() {
                     {complaint.status === "OPEN" ? (
                       <Button onClick={() => openResolveModal(complaint)}>
                         <CheckCircle2 className="mr-2 h-4 w-4" />
-                        Resolve
+                        Xử lý
                       </Button>
                     ) : null}
                   </div>

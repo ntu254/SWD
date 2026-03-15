@@ -8,6 +8,11 @@ import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import {
+  formatNotificationAudienceLabel,
+  formatNotificationTypeLabel,
+  formatPriorityLabel,
+} from "../../lib/labels";
+import {
   EmptyState,
   ModalShell,
   PageHeader,
@@ -42,15 +47,16 @@ type NotificationForm = {
 const EMPTY_FORM: NotificationForm = {
   title: "",
   content: "",
-  type: "SYSTEM",
-  targetAudience: "ALL",
-  priority: "NORMAL",
+  type: "General",
+  targetAudience: "All",
+  priority: "Normal",
   startDate: "",
   endDate: "",
 };
 
 function getPriorityVariant(priority: string) {
-  switch (priority) {
+  switch (priority.toUpperCase()) {
+    case "URGENT":
     case "HIGH":
       return "destructive" as const;
     case "LOW":
@@ -74,24 +80,33 @@ export function AdminNotificationsPage() {
   });
 
   const createNotification = useMutation({
-    mutationFn: (body: object) => notificationsApi.create(body),
+    mutationFn: (body: NotificationForm) =>
+      notificationsApi.create({
+        title: body.title.trim(),
+        content: body.content.trim(),
+        type: body.type,
+        targetAudience: body.targetAudience,
+        priority: body.priority,
+        startDate: body.startDate ? `${body.startDate}T00:00:00` : undefined,
+        endDate: body.endDate ? `${body.endDate}T23:59:59` : undefined,
+      }),
     onSuccess: () => {
-      toast.success("Notification created.");
+      toast.success("Đã tạo thông báo.");
       queryClient.invalidateQueries({ queryKey: ["admin-notifications"] });
       setShowCreate(false);
       setForm(EMPTY_FORM);
     },
-    onError: () => toast.error("Failed to create notification."),
+    onError: () => toast.error("Tạo thông báo thất bại."),
   });
 
   const deactivateNotification = useMutation({
     mutationFn: (id: string) => notificationsApi.deactivate(id),
     onSuccess: () => {
-      toast.success("Notification deactivated.");
+      toast.success("Đã ngừng kích hoạt thông báo.");
       queryClient.invalidateQueries({ queryKey: ["admin-notifications"] });
       setDeactivateTarget(null);
     },
-    onError: () => toast.error("Failed to deactivate notification."),
+    onError: () => toast.error("Ngừng kích hoạt thông báo thất bại."),
   });
 
   const notifications: Notification[] = data?.data?.content ?? [];
@@ -110,15 +125,15 @@ export function AdminNotificationsPage() {
     <div className="space-y-4 lg:space-y-5">
       {showCreate ? (
         <ModalShell
-          title="Create notification"
-          description="Publish a system, reward or operations message to the selected audience."
+          title="Tạo thông báo"
+          description="Phát đi thông báo hệ thống, phần thưởng hoặc vận hành tới nhóm đối tượng đã chọn."
           icon={Plus}
           onClose={() => setShowCreate(false)}
           widthClassName="max-w-2xl"
           footer={
             <>
               <Button variant="outline" onClick={() => setShowCreate(false)}>
-                Cancel
+                Hủy
               </Button>
               <Button
                 onClick={() => createNotification.mutate(form)}
@@ -126,7 +141,7 @@ export function AdminNotificationsPage() {
                   createNotification.isPending || !form.title.trim() || !form.content.trim()
                 }
               >
-                {createNotification.isPending ? "Publishing..." : "Publish"}
+                {createNotification.isPending ? "Đang phát hành..." : "Phát hành"}
               </Button>
             </>
           }
@@ -134,7 +149,7 @@ export function AdminNotificationsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label htmlFor="notification-title" className="field-label">
-                Title
+                Tiêu đề
               </label>
               <Input
                 id="notification-title"
@@ -147,7 +162,7 @@ export function AdminNotificationsPage() {
 
             <div className="sm:col-span-2">
               <label htmlFor="notification-content" className="field-label">
-                Content
+                Nội dung
               </label>
               <textarea
                 id="notification-content"
@@ -162,7 +177,7 @@ export function AdminNotificationsPage() {
 
             <div>
               <label htmlFor="notification-type" className="field-label">
-                Type
+                Loại
               </label>
               <select
                 id="notification-type"
@@ -172,9 +187,9 @@ export function AdminNotificationsPage() {
                 }
                 className="shell-select"
               >
-                {["SYSTEM", "REWARD", "TASK", "REPORT", "ANNOUNCEMENT"].map((type) => (
+                {["General", "Maintenance", "Update", "Promotion", "Alert"].map((type) => (
                   <option key={type} value={type}>
-                    {type}
+                    {formatNotificationTypeLabel(type)}
                   </option>
                 ))}
               </select>
@@ -182,7 +197,7 @@ export function AdminNotificationsPage() {
 
             <div>
               <label htmlFor="notification-audience" className="field-label">
-                Audience
+                Đối tượng
               </label>
               <select
                 id="notification-audience"
@@ -195,9 +210,9 @@ export function AdminNotificationsPage() {
                 }
                 className="shell-select"
               >
-                {["ALL", "CITIZEN", "COLLECTOR", "ENTERPRISE"].map((audience) => (
+                {["All", "Citizen", "Collector", "Enterprise"].map((audience) => (
                   <option key={audience} value={audience}>
-                    {audience}
+                    {formatNotificationAudienceLabel(audience)}
                   </option>
                 ))}
               </select>
@@ -205,7 +220,7 @@ export function AdminNotificationsPage() {
 
             <div>
               <label htmlFor="notification-priority" className="field-label">
-                Priority
+                Mức ưu tiên
               </label>
               <select
                 id="notification-priority"
@@ -218,9 +233,9 @@ export function AdminNotificationsPage() {
                 }
                 className="shell-select"
               >
-                {["HIGH", "NORMAL", "LOW"].map((priority) => (
+                {["Urgent", "High", "Normal", "Low"].map((priority) => (
                   <option key={priority} value={priority}>
-                    {priority}
+                    {formatPriorityLabel(priority.toUpperCase())}
                   </option>
                 ))}
               </select>
@@ -228,7 +243,7 @@ export function AdminNotificationsPage() {
 
             <div>
               <label htmlFor="notification-start" className="field-label">
-                Start date
+                Ngày bắt đầu
               </label>
               <Input
                 id="notification-start"
@@ -245,7 +260,7 @@ export function AdminNotificationsPage() {
 
             <div className="sm:col-span-2">
               <label htmlFor="notification-end" className="field-label">
-                End date
+                Ngày kết thúc
               </label>
               <Input
                 id="notification-end"
@@ -262,21 +277,21 @@ export function AdminNotificationsPage() {
 
       {deactivateTarget ? (
         <ModalShell
-          title="Deactivate notification"
-          description="Users will no longer see this message once it is deactivated."
+          title="Ngừng kích hoạt thông báo"
+          description="Người dùng sẽ không còn nhìn thấy thông báo này sau khi bạn ngừng kích hoạt."
           icon={ShieldAlert}
           onClose={() => setDeactivateTarget(null)}
           footer={
             <>
               <Button variant="outline" onClick={() => setDeactivateTarget(null)}>
-                Cancel
+                Hủy
               </Button>
               <Button
                 variant="destructive"
                 onClick={() => deactivateNotification.mutate(deactivateTarget.id)}
                 disabled={deactivateNotification.isPending}
               >
-                {deactivateNotification.isPending ? "Deactivating..." : "Deactivate"}
+                {deactivateNotification.isPending ? "Đang ngừng kích hoạt..." : "Ngừng kích hoạt"}
               </Button>
             </>
           }
@@ -288,13 +303,13 @@ export function AdminNotificationsPage() {
       ) : null}
 
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Admin workspace</span>}
-        title="Notification center"
-        description="Create platform-wide messages, review active announcements and manage delivery windows in one consistent admin surface."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian quản trị</span>}
+        title="Trung tâm thông báo"
+        description="Tạo thông báo toàn nền tảng, xem các bản tin đang hoạt động và quản lý khoảng thời gian hiển thị trong một giao diện thống nhất."
         actions={
           <Button onClick={() => setShowCreate(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            New notification
+            Thông báo mới
           </Button>
         }
       />
@@ -326,32 +341,32 @@ export function AdminNotificationsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           icon={Bell}
-          label="Total notifications"
+          label="Tổng thông báo"
           value={notifications.length}
-          description="All notification records in the current list."
+          description="Toàn bộ bản ghi thông báo trong danh sách hiện tại."
           tone="sand"
           featured
         />
         <StatCard
           icon={ShieldAlert}
-          label="Active"
+          label="Đang hoạt động"
           value={activeCount}
-          description="Messages currently visible to users."
+          description="Những thông báo hiện đang hiển thị với người dùng."
           tone="mint"
         />
         <StatCard
           icon={Plus}
-          label="Scheduled windows"
+          label="Khoảng thời gian đặt lịch"
           value={scheduledCount}
-          description="Notifications with a start or end date configured."
+          description="Những thông báo có cấu hình ngày bắt đầu hoặc kết thúc."
           tone="sky"
         />
       </div>
 
       <SectionCard className="overflow-hidden">
         <SectionHeader
-          title="Broadcast list"
-          description="Search by title or message content, then deactivate live broadcasts as needed."
+          title="Danh sách phát thông báo"
+          description="Tìm theo tiêu đề hoặc nội dung, sau đó ngừng kích hoạt các thông báo đang phát khi cần."
         />
 
         <div className="space-y-5 p-5 sm:p-6">
@@ -361,7 +376,7 @@ export function AdminNotificationsPage() {
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search notifications by title or content"
+                placeholder="Tìm thông báo theo tiêu đề hoặc nội dung"
                 className="pl-11"
               />
             </div>
@@ -376,8 +391,8 @@ export function AdminNotificationsPage() {
           ) : filteredNotifications.length === 0 ? (
             <EmptyState
               icon={Bell}
-              title="No notifications found"
-              description="Create a new message or adjust the search term to review existing broadcasts."
+              title="Không tìm thấy thông báo"
+              description="Tạo thông báo mới hoặc đổi từ khóa tìm kiếm để xem các bản tin hiện có."
               tone="slate"
             />
           ) : (
@@ -394,14 +409,14 @@ export function AdminNotificationsPage() {
                           {notification.title}
                         </p>
                         <Badge variant={getPriorityVariant(notification.priority)}>
-                          {notification.priority}
+                          {formatPriorityLabel(notification.priority)}
                         </Badge>
-                        <Badge variant="assigned">{notification.type}</Badge>
-                        <Badge variant="accepted">{notification.targetAudience}</Badge>
+                        <Badge variant="assigned">{formatNotificationTypeLabel(notification.type)}</Badge>
+                        <Badge variant="accepted">{formatNotificationAudienceLabel(notification.targetAudience)}</Badge>
                         <Badge
                           variant={notification.isActive ? "collected" : "secondary"}
                         >
-                          {notification.isActive ? "ACTIVE" : "INACTIVE"}
+                          {notification.isActive ? "Đang hoạt động" : "Ngừng hoạt động"}
                         </Badge>
                       </div>
 
@@ -410,12 +425,12 @@ export function AdminNotificationsPage() {
                       </p>
 
                       <p className="text-sm text-[var(--text-secondary)]">
-                        Created {new Date(notification.createdAt).toLocaleDateString()}
+                        Tạo ngày {new Date(notification.createdAt).toLocaleDateString()}
                         {notification.startDate
-                          ? ` | Starts ${new Date(notification.startDate).toLocaleDateString()}`
+                          ? ` | Bắt đầu ${new Date(notification.startDate).toLocaleDateString()}`
                           : ""}
                         {notification.endDate
-                          ? ` | Ends ${new Date(notification.endDate).toLocaleDateString()}`
+                          ? ` | Kết thúc ${new Date(notification.endDate).toLocaleDateString()}`
                           : ""}
                       </p>
                     </div>
@@ -425,7 +440,7 @@ export function AdminNotificationsPage() {
                         variant="destructive"
                         onClick={() => setDeactivateTarget(notification)}
                       >
-                        Deactivate
+                        Ngừng kích hoạt
                       </Button>
                     ) : null}
                   </div>

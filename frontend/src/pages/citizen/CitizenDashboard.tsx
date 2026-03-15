@@ -37,13 +37,13 @@ export const CitizenDashboard: React.FC = () => {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Citizen workspace</span>}
-        title="Your impact dashboard"
-        description="Review your recent submissions, reward momentum and community impact without changing your existing reporting flow."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian công dân</span>}
+        title="Bảng theo dõi đóng góp của bạn"
+        description="Theo dõi báo cáo gần đây, tiến độ tích điểm và tác động cộng đồng của bạn mà không đổi luồng báo cáo hiện có."
         actions={
           <Button onClick={() => navigate("/citizen/report")}>
             <AlertTriangle className="mr-2 h-4 w-4" />
-            Report waste
+            Báo cáo rác
           </Button>
         }
       />
@@ -83,25 +83,25 @@ export const CitizenDashboard: React.FC = () => {
       <div className="grid gap-3 md:grid-cols-3">
         <StatCard
           icon={AlertTriangle}
-          label="Reports submitted"
+          label="Đã gửi"
           value={totalReports}
-          description="All your reports across the platform."
+          description="Tất cả báo cáo của bạn trên nền tảng."
           tone="mint"
           compact
         />
         <StatCard
           icon={Award}
-          label="Reward points"
+          label="Điểm thưởng"
           value="0 pts"
-          description="Earn more by keeping reports consistent."
+          description="Tích lũy thêm điểm bằng cách báo cáo đều đặn."
           tone="sky"
           compact
         />
         <StatCard
           icon={TreePine}
-          label="Waste prevented"
+          label="Rác đã ngăn chặn"
           value="0 kg"
-          description="Your current environmental impact estimate."
+          description="Ước tính tác động môi trường hiện tại của bạn."
           tone="sand"
           featured
           compact
@@ -111,11 +111,11 @@ export const CitizenDashboard: React.FC = () => {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)]">
         <SectionCard className="overflow-hidden">
           <SectionHeader
-            title="Recent reports"
-            description="Your latest submissions are listed here for quick follow-up."
+            title="Báo cáo gần đây"
+            description="Những báo cáo mới nhất của bạn được hiển thị tại đây để theo dõi nhanh."
             action={
               <Button variant="ghost" onClick={() => navigate("/citizen/reports")}>
-                View all
+                Xem tất cả
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             }
@@ -132,11 +132,11 @@ export const CitizenDashboard: React.FC = () => {
               <div className="p-5 sm:p-6">
                 <EmptyState
                   icon={AlertTriangle}
-                  title="No reports yet"
-                  description="Start by reporting a nearby waste issue. Your next submission will appear here instantly."
+                  title="Chưa có báo cáo nào"
+                  description="Hãy bắt đầu bằng việc báo cáo một điểm rác gần bạn. Lần gửi tiếp theo sẽ xuất hiện ngay tại đây."
                   action={
                     <Button onClick={() => navigate("/citizen/report")}>
-                      Create first report
+                      Tạo báo cáo đầu tiên
                     </Button>
                   }
                 />
@@ -154,10 +154,10 @@ export const CitizenDashboard: React.FC = () => {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
-                      {report.wasteTypeName || "Unknown type"}
+                      {report.wasteTypeName || "Không rõ loại rác"}
                     </p>
                     <p className="text-sm text-[var(--text-secondary)]">
-                      Submitted {new Date(report.createdAt).toLocaleDateString()}
+                      Gửi ngày {new Date(report.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                   <StatusBadge status={report.status} />
@@ -169,15 +169,15 @@ export const CitizenDashboard: React.FC = () => {
 
         <SectionCard className="overflow-hidden">
           <SectionHeader
-            title="District leaders"
-            description="See how your participation compares this month."
+            title="Bảng xếp hạng khu vực"
+            description="Xem mức độ đóng góp của bạn trong tháng này."
           />
 
           <div className="space-y-4 p-5 sm:p-6">
             {[
               { name: "Sarah Jenkins", points: 3200, icon: Trophy },
               { name: "Michael Chen", points: 2850, icon: Trophy },
-              { name: "You", points: 0, icon: Leaf },
+              { name: "Bạn", points: 0, icon: Leaf },
             ].map((user, index) => (
               <div key={user.name} className="rounded-[20px] border border-[var(--stroke-soft)] bg-white/84 p-4">
                 <div className="flex items-center gap-3">
@@ -189,7 +189,7 @@ export const CitizenDashboard: React.FC = () => {
                       {user.name}
                     </p>
                     <p className="text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                      Rank #{index + 1}
+                      Hạng #{index + 1}
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-[var(--text-primary)]">
@@ -214,10 +214,10 @@ export const CitizenDashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-amber-800">
-                    Start a new streak today
+                    Bắt đầu chuỗi mới hôm nay
                   </p>
                   <p className="text-sm text-amber-700">
-                    Submit another report to build momentum.
+                    Gửi thêm một báo cáo để duy trì đà đóng góp.
                   </p>
                 </div>
               </div>

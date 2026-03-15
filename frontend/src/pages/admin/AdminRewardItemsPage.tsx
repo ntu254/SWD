@@ -71,32 +71,32 @@ export function AdminRewardItemsPage() {
   const createItem = useMutation({
     mutationFn: (body: object) => adminApi.createRewardItem(body),
     onSuccess: () => {
-      toast.success("Reward item created.");
+      toast.success("Đã tạo vật phẩm thưởng.");
       queryClient.invalidateQueries({ queryKey: ["admin-reward-items"] });
       setModal(null);
     },
-    onError: () => toast.error("Failed to create reward item."),
+    onError: () => toast.error("Tạo vật phẩm thưởng thất bại."),
   });
 
   const updateItem = useMutation({
     mutationFn: ({ id, body }: { id: string; body: object }) =>
       adminApi.updateRewardItem(id, body),
     onSuccess: () => {
-      toast.success("Reward item updated.");
+      toast.success("Đã cập nhật vật phẩm thưởng.");
       queryClient.invalidateQueries({ queryKey: ["admin-reward-items"] });
       setModal(null);
     },
-    onError: () => toast.error("Failed to update reward item."),
+    onError: () => toast.error("Cập nhật vật phẩm thưởng thất bại."),
   });
 
   const deactivateItem = useMutation({
     mutationFn: (id: string) => adminApi.deactivateRewardItem(id),
     onSuccess: () => {
-      toast.success("Reward item deactivated.");
+      toast.success("Đã ngừng kích hoạt vật phẩm thưởng.");
       queryClient.invalidateQueries({ queryKey: ["admin-reward-items"] });
       setDeactivateTarget(null);
     },
-    onError: () => toast.error("Failed to deactivate reward item."),
+    onError: () => toast.error("Ngừng kích hoạt vật phẩm thưởng thất bại."),
   });
 
   const items: RewardItem[] = data?.data?.content ?? [];
@@ -149,25 +149,25 @@ export function AdminRewardItemsPage() {
     <div className="space-y-4 lg:space-y-5">
       {modal ? (
         <ModalShell
-          title={modal.mode === "create" ? "Create reward item" : "Edit reward item"}
-          description="Configure catalog metadata, stock and points cost for redemption."
+          title={modal.mode === "create" ? "Tạo vật phẩm thưởng" : "Sửa vật phẩm thưởng"}
+          description="Cấu hình thông tin danh mục, tồn kho và số điểm cần đổi."
           icon={modal.mode === "create" ? Plus : Pencil}
           onClose={() => setModal(null)}
           widthClassName="max-w-xl"
           footer={
             <>
               <Button variant="outline" onClick={() => setModal(null)}>
-                Cancel
+                Hủy
               </Button>
               <Button
                 onClick={submitForm}
                 disabled={isSaving || !form.name || !form.pointsCost || !form.stock}
               >
                 {isSaving
-                  ? "Saving..."
+                  ? "Đang lưu..."
                   : modal.mode === "create"
-                    ? "Create item"
-                    : "Save changes"}
+                    ? "Tạo vật phẩm"
+                    : "Lưu thay đổi"}
               </Button>
             </>
           }
@@ -175,7 +175,7 @@ export function AdminRewardItemsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label htmlFor="reward-name" className="field-label">
-                Item name
+                Tên vật phẩm
               </label>
               <Input
                 id="reward-name"
@@ -188,7 +188,7 @@ export function AdminRewardItemsPage() {
 
             <div className="sm:col-span-2">
               <label htmlFor="reward-description" className="field-label">
-                Description
+                Mô tả
               </label>
               <textarea
                 id="reward-description"
@@ -206,7 +206,7 @@ export function AdminRewardItemsPage() {
 
             <div className="sm:col-span-2">
               <label htmlFor="reward-image" className="field-label">
-                Image URL
+                URL ảnh
               </label>
               <Input
                 id="reward-image"
@@ -222,7 +222,7 @@ export function AdminRewardItemsPage() {
 
             <div>
               <label htmlFor="reward-points" className="field-label">
-                Points cost
+                Điểm đổi
               </label>
               <Input
                 id="reward-points"
@@ -240,7 +240,7 @@ export function AdminRewardItemsPage() {
 
             <div>
               <label htmlFor="reward-stock" className="field-label">
-                Stock
+                Tồn kho
               </label>
               <Input
                 id="reward-stock"
@@ -257,7 +257,7 @@ export function AdminRewardItemsPage() {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="field-label">Availability</label>
+              <label className="field-label">Trạng thái khả dụng</label>
               <button
                 type="button"
                 onClick={() =>
@@ -272,8 +272,8 @@ export function AdminRewardItemsPage() {
                     : "border-[var(--stroke-soft)] bg-white/84 text-[var(--text-secondary)]"
                 }`}
               >
-                <span>{form.isActive ? "Active and redeemable" : "Inactive"}</span>
-                <span>{form.isActive ? "On" : "Off"}</span>
+                <span>{form.isActive ? "Đang hoạt động và có thể đổi" : "Ngừng hoạt động"}</span>
+                <span>{form.isActive ? "Bật" : "Tắt"}</span>
               </button>
             </div>
           </div>
@@ -282,21 +282,21 @@ export function AdminRewardItemsPage() {
 
       {deactivateTarget ? (
         <ModalShell
-          title="Deactivate reward item"
-          description="The item will no longer be available for redemption."
+          title="Ngừng kích hoạt vật phẩm thưởng"
+          description="Vật phẩm này sẽ không còn khả dụng để đổi."
           icon={ShieldAlert}
           onClose={() => setDeactivateTarget(null)}
           footer={
             <>
               <Button variant="outline" onClick={() => setDeactivateTarget(null)}>
-                Cancel
+                Hủy
               </Button>
               <Button
                 variant="destructive"
                 onClick={() => deactivateItem.mutate(deactivateTarget.itemId)}
                 disabled={deactivateItem.isPending}
               >
-                {deactivateItem.isPending ? "Deactivating..." : "Deactivate"}
+                {deactivateItem.isPending ? "Đang ngừng kích hoạt..." : "Ngừng kích hoạt"}
               </Button>
             </>
           }
@@ -308,13 +308,13 @@ export function AdminRewardItemsPage() {
       ) : null}
 
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Admin workspace</span>}
-        title="Reward catalog"
-        description="Maintain the reward inventory, pricing and availability that powers citizen redemption."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian quản trị</span>}
+        title="Danh mục phần thưởng"
+        description="Quản lý tồn kho, mức điểm và khả năng đổi quà trong chương trình dành cho công dân."
         actions={
           <Button onClick={openCreate}>
             <Plus className="mr-2 h-4 w-4" />
-            New item
+            Vật phẩm mới
           </Button>
         }
       />
@@ -346,32 +346,32 @@ export function AdminRewardItemsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           icon={Gift}
-          label="Catalog items"
+          label="Vật phẩm trong danh mục"
           value={items.length}
-          description="Total reward items configured."
+          description="Tổng số vật phẩm thưởng đã cấu hình."
           tone="mint"
           featured
         />
         <StatCard
           icon={Plus}
-          label="Active"
+          label="Đang hoạt động"
           value={activeCount}
-          description="Items currently visible for redemption."
+          description="Những vật phẩm hiện đang hiển thị để đổi."
           tone="sky"
         />
         <StatCard
           icon={ShieldAlert}
-          label="Total stock"
+          label="Tổng tồn kho"
           value={totalStock}
-          description="Combined stock across all items."
+          description="Tổng số lượng còn lại của mọi vật phẩm."
           tone="sand"
         />
       </div>
 
       <SectionCard className="overflow-hidden">
         <SectionHeader
-          title="Catalog table"
-          description="Search by item name or description, then edit details or deactivate inventory."
+          title="Bảng danh mục"
+          description="Tìm theo tên hoặc mô tả vật phẩm, sau đó sửa chi tiết hoặc ngừng kích hoạt."
         />
 
         <div className="space-y-5 p-5 sm:p-6">
@@ -381,7 +381,7 @@ export function AdminRewardItemsPage() {
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search reward items"
+                placeholder="Tìm vật phẩm thưởng"
                 className="pl-11"
               />
             </div>
@@ -396,19 +396,19 @@ export function AdminRewardItemsPage() {
           ) : filteredItems.length === 0 ? (
             <EmptyState
               icon={Gift}
-              title="No reward items found"
-              description="Create a catalog item or adjust the search term to review the current inventory."
+              title="Không tìm thấy vật phẩm thưởng"
+              description="Tạo vật phẩm mới hoặc đổi từ khóa tìm kiếm để xem tồn kho hiện tại."
               tone="slate"
             />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Points</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Vật phẩm</TableHead>
+                  <TableHead>Điểm</TableHead>
+                  <TableHead>Tồn kho</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead className="text-right">Hành động</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -420,7 +420,7 @@ export function AdminRewardItemsPage() {
                           {item.name}
                         </p>
                         <p className="text-sm text-[var(--text-secondary)]">
-                          {item.description || "No description provided."}
+                          {item.description || "Không có mô tả."}
                         </p>
                       </div>
                     </TableCell>
@@ -428,7 +428,7 @@ export function AdminRewardItemsPage() {
                     <TableCell>{item.stock}</TableCell>
                     <TableCell>
                       <Badge variant={item.isActive ? "collected" : "secondary"}>
-                        {item.isActive ? "ACTIVE" : "INACTIVE"}
+                        {item.isActive ? "Đang hoạt động" : "Ngừng hoạt động"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -439,7 +439,7 @@ export function AdminRewardItemsPage() {
                           onClick={() => openEdit(item)}
                         >
                           <Pencil className="mr-2 h-3.5 w-3.5" />
-                          Edit
+                          Sửa
                         </Button>
                         {item.isActive ? (
                           <Button
@@ -447,7 +447,7 @@ export function AdminRewardItemsPage() {
                             variant="destructive"
                             onClick={() => setDeactivateTarget(item)}
                           >
-                            Deactivate
+                            Ngừng kích hoạt
                           </Button>
                         ) : null}
                       </div>

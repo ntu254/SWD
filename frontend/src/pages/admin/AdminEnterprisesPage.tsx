@@ -7,6 +7,7 @@ import { adminApi } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
+import { formatStatusLabel } from "../../lib/labels";
 import {
   EmptyState,
   ModalShell,
@@ -59,20 +60,20 @@ export function AdminEnterprisesPage() {
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       adminApi.updateUserStatus(id, status),
     onSuccess: () => {
-      toast.success("Enterprise status updated.");
+      toast.success("Đã cập nhật trạng thái doanh nghiệp.");
       queryClient.invalidateQueries({ queryKey: ["admin-enterprises"] });
     },
-    onError: () => toast.error("Failed to update enterprise status."),
+    onError: () => toast.error("Cập nhật trạng thái doanh nghiệp thất bại."),
   });
 
   const deleteEnterprise = useMutation({
     mutationFn: (id: string) => adminApi.deleteUser(id),
     onSuccess: () => {
-      toast.success("Enterprise removed.");
+      toast.success("Đã xóa doanh nghiệp.");
       queryClient.invalidateQueries({ queryKey: ["admin-enterprises"] });
       setDeleteConfirm(null);
     },
-    onError: () => toast.error("Failed to delete enterprise."),
+    onError: () => toast.error("Xóa doanh nghiệp thất bại."),
   });
 
   const enterprises: Enterprise[] = data?.data?.content ?? [];
@@ -90,21 +91,21 @@ export function AdminEnterprisesPage() {
     <div className="space-y-4 lg:space-y-5">
       {deleteConfirm ? (
         <ModalShell
-          title="Remove enterprise"
-          description="This permanently removes the enterprise account."
+          title="Xóa doanh nghiệp"
+          description="Thao tác này sẽ xóa vĩnh viễn tài khoản doanh nghiệp."
           icon={ShieldAlert}
           onClose={() => setDeleteConfirm(null)}
           footer={
             <>
               <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-                Cancel
+                Hủy
               </Button>
               <Button
                 variant="destructive"
                 onClick={() => deleteEnterprise.mutate(deleteConfirm.userId)}
                 disabled={deleteEnterprise.isPending}
               >
-                {deleteEnterprise.isPending ? "Removing..." : "Remove enterprise"}
+                {deleteEnterprise.isPending ? "Đang xóa..." : "Xóa doanh nghiệp"}
               </Button>
             </>
           }
@@ -116,9 +117,9 @@ export function AdminEnterprisesPage() {
       ) : null}
 
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Admin workspace</span>}
-        title="Enterprise accounts"
-        description="Review organization access, toggle account state and manage enterprise presence across the platform."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian quản trị</span>}
+        title="Tài khoản doanh nghiệp"
+        description="Theo dõi quyền truy cập của tổ chức, bật tắt trạng thái tài khoản và quản lý doanh nghiệp trên toàn nền tảng."
       />
 
       {/* <PageHero
@@ -148,32 +149,32 @@ export function AdminEnterprisesPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           icon={Building2}
-          label="Total enterprises"
+          label="Tổng doanh nghiệp"
           value={enterprises.length}
-          description="All enterprise accounts currently stored."
+          description="Toàn bộ tài khoản doanh nghiệp hiện có."
           tone="violet"
           featured
         />
         <StatCard
           icon={ShieldAlert}
-          label="Active"
+          label="Đang hoạt động"
           value={activeCount}
-          description="Accounts currently able to operate."
+          description="Những tài khoản hiện có thể vận hành."
           tone="mint"
         />
         <StatCard
           icon={Trash2}
-          label="Restricted"
+          label="Bị hạn chế"
           value={enterprises.length - activeCount}
-          description="Disabled or otherwise unavailable accounts."
+          description="Những tài khoản đã bị vô hiệu hóa hoặc tạm không khả dụng."
           tone="peach"
         />
       </div>
 
       <SectionCard className="overflow-hidden">
         <SectionHeader
-          title="Enterprise directory"
-          description="Search by company name or email, then toggle status or remove the account."
+          title="Danh sách doanh nghiệp"
+          description="Tìm theo tên công ty hoặc email, sau đó đổi trạng thái hoặc xóa tài khoản."
         />
 
         <div className="space-y-5 p-5 sm:p-6">
@@ -183,7 +184,7 @@ export function AdminEnterprisesPage() {
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search enterprises by name or email"
+                placeholder="Tìm doanh nghiệp theo tên hoặc email"
                 className="pl-11"
               />
             </div>
@@ -198,18 +199,18 @@ export function AdminEnterprisesPage() {
           ) : filteredEnterprises.length === 0 ? (
             <EmptyState
               icon={Building2}
-              title="No enterprises found"
-              description="Try another search term or check again after new organizations are onboarded."
+              title="Không tìm thấy doanh nghiệp"
+              description="Hãy thử từ khóa khác hoặc kiểm tra lại sau khi có tổ chức mới tham gia."
               tone="slate"
             />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
+                  <TableHead>Tên</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead className="text-right">Hành động</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -221,14 +222,14 @@ export function AdminEnterprisesPage() {
                           {enterprise.displayName}
                         </p>
                         <p className="text-sm text-[var(--text-secondary)]">
-                          ID {enterprise.userId}
+                          Mã {enterprise.userId}
                         </p>
                       </div>
                     </TableCell>
                     <TableCell>{enterprise.email}</TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(enterprise.accountStatus)}>
-                        {enterprise.accountStatus}
+                        {formatStatusLabel(enterprise.accountStatus)}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -246,7 +247,7 @@ export function AdminEnterprisesPage() {
                             })
                           }
                         >
-                          {enterprise.accountStatus === "ACTIVE" ? "Disable" : "Enable"}
+                          {enterprise.accountStatus === "ACTIVE" ? "Vô hiệu hóa" : "Kích hoạt"}
                         </Button>
                         <Button
                           size="icon"

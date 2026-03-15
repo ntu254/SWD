@@ -1,6 +1,7 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 
+import { formatStatusLabel } from "../../lib/labels";
 import { cn } from "../../lib/utils";
 
 const badgeVariants = cva(
@@ -50,7 +51,9 @@ const STATUS_VARIANTS = {
   pending: "pending",
   accepted: "accepted",
   assigned: "assigned",
+  inprogress: "ontheway",
   ontheway: "ontheway",
+  completed: "collected",
   collected: "collected",
   rejected: "rejected",
 } as const;
@@ -73,11 +76,7 @@ export function StatusBadge({
     ? STATUS_VARIANTS[normalizedStatus]
     : "outline";
 
-  const label = status
-    .toLowerCase()
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+  const label = formatStatusLabel(status);
 
   return (
     <Badge variant={variant} className={className}>

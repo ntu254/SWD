@@ -12,6 +12,7 @@ import { tasksApi } from "../../api";
 import type { Task } from "../../types";
 import { StatusBadge } from "../../components/ui/badge";
 import { Card, CardContent } from "../../components/ui/card";
+import { formatPriorityLabel } from "../../lib/labels";
 import { EmptyState, PageHeader, SectionHeader } from "../../components/ui/page";
 import {
   Table,
@@ -21,6 +22,12 @@ import {
   TableHeader,
   TableRow,
 } from "../../components/ui/table";
+
+function normalizeCollectorTaskStatus(status: string) {
+  if (status === "IN_PROGRESS") return "ON_THE_WAY";
+  if (status === "COLLECTED") return "COMPLETED";
+  return status;
+}
 
 export const CollectorTasksList: React.FC = () => {
   const navigate = useNavigate();
@@ -35,15 +42,15 @@ export const CollectorTasksList: React.FC = () => {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Collector workspace</span>}
-        title="My tasks"
-        description="Keep track of assigned stops, scheduled dates and live route progress from one cleaner task list."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian thu gom</span>}
+        title="Nhiệm vụ của tôi"
+        description="Theo dõi các điểm đã phân công, ngày hẹn và tiến độ lộ trình trực tiếp trong một danh sách gọn gàng hơn."
       />
 
       <Card className="overflow-hidden">
         <SectionHeader
-          title="Assigned tasks"
-          description="Select any row to open task details and update the existing status flow."
+          title="Nhiệm vụ được giao"
+          description="Chọn một dòng để mở chi tiết nhiệm vụ và cập nhật trạng thái theo đúng luồng hiện tại."
         />
 
         <CardContent className="pt-5 sm:pt-6">
@@ -54,18 +61,18 @@ export const CollectorTasksList: React.FC = () => {
           ) : tasks.length === 0 ? (
             <EmptyState
               icon={PackageCheck}
-              title="No tasks assigned"
-              description="Assigned tasks will appear here as soon as enterprise dispatches them."
+              title="Chưa có nhiệm vụ nào"
+              description="Nhiệm vụ sẽ xuất hiện ở đây ngay khi doanh nghiệp phân công cho bạn."
             />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Location area</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Scheduled date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>Khu vực</TableHead>
+                  <TableHead>Ưu tiên</TableHead>
+                  <TableHead>Ngày hẹn</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead className="text-right">Hành động</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -74,43 +81,51 @@ export const CollectorTasksList: React.FC = () => {
                     key={task.taskId}
                     onClick={() => navigate(`/collector/tasks/${task.taskId}`)}
                   >
-                    <TableCell>
+                    {(() => {
+                      const normalizedStatus = normalizeCollectorTaskStatus(task.status);
+
+                      return (
+                        <>
+                          <TableCell>
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-[var(--text-muted)]" />
                         <span className="font-semibold text-[var(--text-primary)]">
-                          {task.areaName || "Unknown"}
+                          {task.areaName || "Không rõ"}
                         </span>
                       </div>
-                    </TableCell>
-                    <TableCell>
+                          </TableCell>
+                          <TableCell>
                       <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
-                        {task.priority || "Normal"}
+                        {formatPriorityLabel(task.priority)}
                       </span>
-                    </TableCell>
-                    <TableCell className="text-[var(--text-secondary)]">
-                      {task.scheduledDate ?? "Unscheduled"}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={task.status} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {task.status === "ASSIGNED" ? (
+                          </TableCell>
+                          <TableCell className="text-[var(--text-secondary)]">
+                      {task.scheduledDate ?? "Chưa lên lịch"}
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge status={normalizedStatus} />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {normalizedStatus === "ASSIGNED" ? (
                         <span className="inline-flex items-center justify-end gap-1 text-sm font-semibold text-blue-700">
                           <Navigation className="h-4 w-4" />
-                          Start
+                          Bắt đầu
                         </span>
-                      ) : task.status === "ON_THE_WAY" ? (
+                            ) : normalizedStatus === "ON_THE_WAY" ? (
                         <span className="inline-flex items-center justify-end gap-1 text-sm font-semibold text-cyan-700">
                           <MapPin className="h-4 w-4" />
-                          Transit
+                          Đang đi
                         </span>
-                      ) : (
+                            ) : (
                         <span className="inline-flex items-center justify-end gap-1 text-sm font-semibold text-emerald-700">
                           <PackageCheck className="h-4 w-4" />
-                          Done
+                          Xong
                         </span>
-                      )}
-                    </TableCell>
+                            )}
+                          </TableCell>
+                        </>
+                      );
+                    })()}
                   </TableRow>
                 ))}
               </TableBody>

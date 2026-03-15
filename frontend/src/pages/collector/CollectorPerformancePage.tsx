@@ -39,32 +39,32 @@ export function CollectorPerformancePage() {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Collector workspace</span>}
-        title="Performance"
-        description="A chart-based view of your weekly output, route time and collection mix."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian thu gom</span>}
+        title="Hiệu suất"
+        description="Biểu đồ theo dõi sản lượng tuần, thời gian di chuyển và cơ cấu thu gom của bạn."
       />
 
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           icon={TrendingUp}
-          label="Tasks completed"
+          label="Nhiệm vụ hoàn thành"
           value={41}
-          description="This week across all assigned routes."
+          description="Trong tuần này trên toàn bộ tuyến được giao."
           tone="mint"
           featured
         />
         <StatCard
           icon={Clock}
-          label="Average route time"
+          label="Thời gian tuyến trung bình"
           value="5.6 h"
-          description="Measured from start to final pickup."
+          description="Tính từ lúc bắt đầu đến điểm thu gom cuối cùng."
           tone="sky"
         />
         <StatCard
           icon={Award}
-          label="Completion rate"
+          label="Tỷ lệ hoàn thành"
           value="92%"
-          description="Based on assigned versus completed tasks."
+          description="Dựa trên số nhiệm vụ được giao và đã hoàn tất."
           tone="violet"
         />
       </div>
@@ -72,8 +72,8 @@ export function CollectorPerformancePage() {
       <div className="grid gap-6 xl:grid-cols-2">
         <SectionCard className="overflow-hidden">
           <SectionHeader
-            title="Weekly completion trend"
-            description="Daily completions visualised with a proper area chart."
+            title="Xu hướng hoàn thành theo tuần"
+            description="Số nhiệm vụ hoàn thành mỗi ngày được hiển thị bằng biểu đồ vùng."
           />
           <div className="h-[320px] px-3 pb-3 sm:px-6 sm:pb-6">
             <ResponsiveContainer width="100%" height="100%">
@@ -94,7 +94,7 @@ export function CollectorPerformancePage() {
                   stroke="#6aa08c"
                   fill="#c9e2d7"
                   strokeWidth={3}
-                  name="Completed tasks"
+                  name="Nhiệm vụ hoàn thành"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -103,8 +103,8 @@ export function CollectorPerformancePage() {
 
         <SectionCard className="overflow-hidden">
           <SectionHeader
-            title="Collections by category"
-            description="Where this week&apos;s workload has been concentrated."
+            title="Thu gom theo nhóm"
+            description="Khối lượng công việc trong tuần tập trung nhiều ở nhóm nào."
           />
           <div className="h-[320px] px-3 pb-3 sm:px-6 sm:pb-6">
             <ResponsiveContainer width="100%" height="100%">

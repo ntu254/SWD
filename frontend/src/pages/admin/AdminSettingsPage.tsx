@@ -38,34 +38,34 @@ export function AdminSettingsPage() {
     mutationFn: ({ key, value }: { key: string; value: string }) =>
       adminApi.updateSetting(key, value),
     onSuccess: () => {
-      toast.success("Setting saved");
+      toast.success("Đã lưu cài đặt");
       queryClient.invalidateQueries({ queryKey: ["admin-settings"] });
       setEditKey(null);
     },
-    onError: () => toast.error("Failed to save setting"),
+    onError: () => toast.error("Lưu cài đặt thất bại"),
   });
 
   const createSetting = useMutation({
     mutationFn: (body: object) => adminApi.createSetting(body),
     onSuccess: () => {
-      toast.success("Setting created");
+      toast.success("Đã tạo cài đặt");
       queryClient.invalidateQueries({ queryKey: ["admin-settings"] });
       setCreateModal(false);
       setNewKey("");
       setNewValue("");
       setNewDesc("");
     },
-    onError: () => toast.error("Failed to create setting"),
+    onError: () => toast.error("Tạo cài đặt thất bại"),
   });
 
   const deleteSetting = useMutation({
     mutationFn: (key: string) => adminApi.deleteSetting(key),
     onSuccess: () => {
-      toast.success("Setting deleted");
+      toast.success("Đã xóa cài đặt");
       queryClient.invalidateQueries({ queryKey: ["admin-settings"] });
       setDeleteKey(null);
     },
-    onError: () => toast.error("Failed to delete setting"),
+    onError: () => toast.error("Xóa cài đặt thất bại"),
   });
 
   const settings: Setting[] = data?.data ?? [];
@@ -78,13 +78,13 @@ export function AdminSettingsPage() {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Admin workspace</span>}
-        title="System settings"
-        description={`${settings.length} configuration keys currently drive the application. Edit values, add new entries or remove deprecated keys from one clean screen.`}
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian quản trị</span>}
+        title="Cài đặt hệ thống"
+        description={`Hiện có ${settings.length} khóa cấu hình đang điều khiển ứng dụng. Bạn có thể sửa giá trị, thêm khóa mới hoặc xóa khóa đã cũ trong một màn hình duy nhất.`}
         actions={
           <Button onClick={() => setCreateModal(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            New setting
+            Cài đặt mới
           </Button>
         }
       />
@@ -100,8 +100,8 @@ export function AdminSettingsPage() {
           <div className="p-5 sm:p-6">
             <EmptyState
               icon={Settings}
-              title="No settings configured"
-              description="Create your first key-value pair to start managing runtime configuration from the admin area."
+              title="Chưa có cài đặt nào"
+              description="Hãy tạo cặp khóa - giá trị đầu tiên để bắt đầu quản lý cấu hình từ khu vực quản trị."
             />
           </div>
         ) : (
@@ -141,14 +141,14 @@ export function AdminSettingsPage() {
                         }
                         disabled={updateSetting.isPending}
                       >
-                        {updateSetting.isPending ? "Saving..." : "Save"}
+                        {updateSetting.isPending ? "Đang lưu..." : "Lưu"}
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => setEditKey(null)}
                       >
-                        Cancel
+                        Hủy
                       </Button>
                     </>
                   ) : (
@@ -162,7 +162,7 @@ export function AdminSettingsPage() {
                         onClick={() => startEdit(setting)}
                       >
                         <Pencil className="mr-1.5 h-3.5 w-3.5" />
-                        Edit
+                        Sửa
                       </Button>
                       <Button
                         size="icon"
@@ -182,14 +182,14 @@ export function AdminSettingsPage() {
 
       {createModal ? (
         <ModalShell
-          title="Create setting"
-          description="Add a new configuration key without changing the rest of the admin workflow."
+          title="Tạo cài đặt"
+          description="Thêm khóa cấu hình mới mà không làm thay đổi phần còn lại của luồng quản trị."
           icon={Plus}
           onClose={() => setCreateModal(false)}
           footer={
             <>
               <Button variant="outline" onClick={() => setCreateModal(false)}>
-                Cancel
+                Hủy
               </Button>
               <Button
                 onClick={() =>
@@ -201,7 +201,7 @@ export function AdminSettingsPage() {
                 }
                 disabled={createSetting.isPending || !newKey || !newValue}
               >
-                {createSetting.isPending ? "Creating..." : "Create setting"}
+                {createSetting.isPending ? "Đang tạo..." : "Tạo cài đặt"}
               </Button>
             </>
           }
@@ -209,7 +209,7 @@ export function AdminSettingsPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-[var(--text-primary)]">
-                Key
+                Khóa
               </label>
               <Input
                 value={newKey}
@@ -220,7 +220,7 @@ export function AdminSettingsPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold text-[var(--text-primary)]">
-                Value
+                Giá trị
               </label>
               <Input
                 value={newValue}
@@ -231,12 +231,12 @@ export function AdminSettingsPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold text-[var(--text-primary)]">
-                Description
+                Mô tả
               </label>
               <input
                 value={newDesc}
                 onChange={(event) => setNewDesc(event.target.value)}
-                placeholder="What this setting controls"
+                placeholder="Cài đặt này dùng để làm gì"
                 className="shell-input"
               />
             </div>
@@ -246,21 +246,21 @@ export function AdminSettingsPage() {
 
       {deleteKey ? (
         <ModalShell
-          title="Delete setting"
-          description="This action removes the key permanently."
+          title="Xóa cài đặt"
+          description="Thao tác này sẽ xóa vĩnh viễn khóa cấu hình."
           icon={Trash2}
           onClose={() => setDeleteKey(null)}
           footer={
             <>
               <Button variant="outline" onClick={() => setDeleteKey(null)}>
-                Cancel
+                Hủy
               </Button>
               <Button
                 variant="destructive"
                 onClick={() => deleteSetting.mutate(deleteKey)}
                 disabled={deleteSetting.isPending}
               >
-                {deleteSetting.isPending ? "Deleting..." : "Delete setting"}
+                {deleteSetting.isPending ? "Đang xóa..." : "Xóa cài đặt"}
               </Button>
             </>
           }

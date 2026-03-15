@@ -79,27 +79,27 @@ export function AdminDashboard() {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Admin workspace</span>}
-        title="System overview"
-        description="Review platform health, user distribution and live workload in a cleaner control room."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian quản trị</span>}
+        title="Tổng quan hệ thống"
+        description="Theo dõi sức khỏe nền tảng, phân bố người dùng và tải công việc trực tiếp trong một trung tâm điều hành rõ ràng hơn."
         actions={
           <Button variant="outline" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
+            Làm mới
           </Button>
         }
       />
 
       <PageHero
-        eyebrow={<span className="shell-chip shell-chip-accent">Live platform pulse</span>}
-        title="One view across users, tasks and operations."
-        description="The admin dashboard now surfaces the same metrics with a calmer hierarchy so you can spot issues faster and move into the right management screen."
+        eyebrow={<span className="shell-chip shell-chip-accent">Nhịp vận hành trực tiếp</span>}
+        title="Một góc nhìn cho người dùng, nhiệm vụ và vận hành."
+        description="Bảng điều khiển quản trị vẫn hiển thị cùng các chỉ số nhưng với phân cấp rõ hơn để bạn nhận ra vấn đề nhanh và đi tới đúng màn quản lý."
         tone="sky"
         aside={
           <div className="space-y-4">
             <div>
               <p className="text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                Reward points issued
+                Điểm thưởng đã phát
               </p>
               <p className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
                 {isLoading
@@ -109,8 +109,8 @@ export function AdminDashboard() {
             </div>
             <p className="text-sm leading-6 text-[var(--text-secondary)]">
               {isLoading
-                ? "Loading system metrics..."
-                : `${metrics.pendingReports ?? 0} pending reports, ${metrics.activeTasks ?? 0} active tasks and ${metrics.openComplaints ?? 0} open complaints.`}
+                ? "Đang tải số liệu hệ thống..."
+                : `${metrics.pendingReports ?? 0} báo cáo chờ duyệt, ${metrics.activeTasks ?? 0} nhiệm vụ đang hoạt động và ${metrics.openComplaints ?? 0} khiếu nại đang mở.`}
             </p>
           </div>
         }
@@ -119,19 +119,19 @@ export function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={Users}
-          label="User base"
+          label="Người dùng"
           value={isLoading ? "..." : metrics.totalUsers ?? 0}
-          description="Combined platform users across citizen, collector, enterprise and admin roles."
+          description="Tổng người dùng trên nền tảng ở các vai trò công dân, thu gom, doanh nghiệp và quản trị."
           footer={
             <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-muted)]">
               <span className="rounded-full bg-white/70 px-2 py-1">
-                Citizens {metrics.totalCitizens ?? 0}
+                Công dân {metrics.totalCitizens ?? 0}
               </span>
               <span className="rounded-full bg-white/70 px-2 py-1">
-                Collectors {metrics.totalCollectors ?? 0}
+                Thu gom {metrics.totalCollectors ?? 0}
               </span>
               <span className="rounded-full bg-white/70 px-2 py-1">
-                Enterprises {metrics.totalEnterprises ?? 0}
+                Doanh nghiệp {metrics.totalEnterprises ?? 0}
               </span>
             </div>
           }
@@ -140,22 +140,22 @@ export function AdminDashboard() {
         />
         <StatCard
           icon={FileText}
-          label="Reports queue"
+          label="Hàng chờ báo cáo"
           value={isLoading ? "..." : metrics.totalReports ?? 0}
-          meta={`Pending ${metrics.pendingReports ?? 0}`}
-          description="All incoming and historical reports with current queue pressure."
+          meta={`Chờ duyệt ${metrics.pendingReports ?? 0}`}
+          description="Toàn bộ báo cáo đến và lịch sử, kèm áp lực hàng chờ hiện tại."
           tone="sand"
           featured
           compact
         />
         <StatCard
           icon={Truck}
-          label="Task flow"
+          label="Luồng nhiệm vụ"
           value={isLoading ? "..." : metrics.activeTasks ?? 0}
-          description="Tasks currently in progress across active collection operations."
+          description="Những nhiệm vụ đang diễn ra trong các hoạt động thu gom hiện hành."
           footer={
             <p className="text-xs text-[var(--text-secondary)]">
-              Completed today:{" "}
+              Hoàn thành hôm nay:{" "}
               <span className="font-semibold text-[var(--text-primary)]">
                 {isLoading ? "..." : metrics.completedTasksToday ?? 0}
               </span>
@@ -166,9 +166,9 @@ export function AdminDashboard() {
         />
         <StatCard
           icon={MessageSquare}
-          label="Open complaints"
+          label="Khiếu nại đang mở"
           value={isLoading ? "..." : metrics.openComplaints ?? 0}
-          description="Issues waiting for review or closure."
+          description="Các vấn đề đang chờ xem xét hoặc đóng lại."
           tone="peach"
           compact
         />
@@ -179,10 +179,10 @@ export function AdminDashboard() {
           <div className="space-y-4 px-5 py-5 sm:px-6">
             <div>
               <p className="text-sm font-semibold text-[var(--text-primary)]">
-                User distribution
+                Phân bố người dùng
               </p>
               <p className="text-sm leading-6 text-[var(--text-secondary)]">
-                Live role composition across the current platform user base.
+                Cơ cấu vai trò trực tiếp trong tập người dùng hiện tại.
               </p>
             </div>
           </div>
@@ -218,10 +218,10 @@ export function AdminDashboard() {
           <div className="space-y-4 px-5 py-5 sm:px-6">
             <div>
               <p className="text-sm font-semibold text-[var(--text-primary)]">
-                Operational snapshot
+                Tóm tắt vận hành
               </p>
               <p className="text-sm leading-6 text-[var(--text-secondary)]">
-                Core queue health pulled from the current dashboard aggregates.
+                Sức khỏe hàng chờ cốt lõi được tổng hợp từ dữ liệu dashboard hiện tại.
               </p>
             </div>
           </div>
@@ -253,10 +253,10 @@ export function AdminDashboard() {
         <SectionCard className="p-5 sm:p-6">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
-              { label: "Citizens", value: metrics.totalCitizens ?? 0 },
-              { label: "Collectors", value: metrics.totalCollectors ?? 0 },
-              { label: "Enterprises", value: metrics.totalEnterprises ?? 0 },
-              { label: "Admins", value: adminCount },
+              { label: "Công dân", value: metrics.totalCitizens ?? 0 },
+              { label: "Thu gom", value: metrics.totalCollectors ?? 0 },
+              { label: "Doanh nghiệp", value: metrics.totalEnterprises ?? 0 },
+              { label: "Quản trị", value: adminCount },
             ].map((item) => (
               <div
                 key={item.label}
@@ -277,21 +277,21 @@ export function AdminDashboard() {
           <div className="space-y-4">
             <div>
               <p className="text-sm font-semibold text-[var(--text-primary)]">
-                Quick actions
+                Thao tác nhanh
               </p>
               <p className="text-sm leading-6 text-[var(--text-secondary)]">
-                Jump straight into the areas that need attention.
+                Đi thẳng tới những khu vực đang cần chú ý.
               </p>
             </div>
 
             <div className="space-y-3">
               {[
-                { to: "/admin/users", icon: Users, label: "User management", sub: "Roles, status and account controls" },
-                { to: "/admin/enterprises", icon: Building2, label: "Enterprises", sub: "Review organisation onboarding and activity" },
-                { to: "/admin/complaints", icon: MessageSquare, label: "Complaints", sub: `${metrics.openComplaints ?? 0} currently open` },
-                { to: "/admin/notifications", icon: Award, label: "Notifications", sub: "Broadcast updates to all users" },
-                { to: "/admin/reward-items", icon: Award, label: "Reward items", sub: "Manage redeemable catalogue items" },
-                { to: "/admin/settings", icon: Settings, label: "System settings", sub: "Maintain operational defaults and secrets" },
+                { to: "/admin/users", icon: Users, label: "Quản lý người dùng", sub: "Vai trò, trạng thái và kiểm soát tài khoản" },
+                { to: "/admin/enterprises", icon: Building2, label: "Doanh nghiệp", sub: "Theo dõi hoạt động và quá trình tham gia" },
+                { to: "/admin/complaints", icon: MessageSquare, label: "Khiếu nại", sub: `${metrics.openComplaints ?? 0} mục đang mở` },
+                { to: "/admin/notifications", icon: Award, label: "Thông báo", sub: "Phát thông tin tới toàn bộ người dùng" },
+                { to: "/admin/reward-items", icon: Award, label: "Vật phẩm thưởng", sub: "Quản lý danh mục vật phẩm có thể đổi" },
+                { to: "/admin/settings", icon: Settings, label: "Cài đặt hệ thống", sub: "Duy trì giá trị mặc định và bí mật vận hành" },
               ].map((item) => (
                 <Link
                   key={item.to}

@@ -19,8 +19,11 @@ import {
   Users,
 } from "lucide-react";
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { NavLink, useNavigate } from "react-router-dom";
 
+import { notificationsApi } from "../../api";
+import { formatRoleLabel } from "../../lib/labels";
 import { cn } from "../../lib/utils";
 import { useAuthStore } from "../../store/authStore";
 import { BrandMark } from "../ui/brand-mark";
@@ -33,43 +36,40 @@ interface NavItem {
 
 const navByRole: Record<string, NavItem[]> = {
   CITIZEN: [
-    { to: "/citizen/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { to: "/citizen/report", icon: AlertTriangle, label: "Report waste" },
-    { to: "/citizen/reports", icon: FileText, label: "My reports" },
-    { to: "/citizen/rewards", icon: Award, label: "Rewards" },
+    { to: "/citizen/dashboard", icon: LayoutDashboard, label: "Tổng quan" },
+    { to: "/citizen/report", icon: AlertTriangle, label: "Báo cáo rác" },
+    { to: "/citizen/reports", icon: FileText, label: "Báo cáo của tôi" },
+    { to: "/citizen/notifications", icon: Bell, label: "Thông báo" },
+    { to: "/citizen/rewards", icon: Award, label: "Phần thưởng" },
   ],
   COLLECTOR: [
-    { to: "/collector/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { to: "/collector/tasks", icon: ListTodo, label: "My tasks" },
-    { to: "/collector/map", icon: MapIcon, label: "Task map" },
-    { to: "/collector/performance", icon: TrendingUp, label: "Performance" },
-    { to: "/collector/profile", icon: UserIcon, label: "Profile" },
+    { to: "/collector/dashboard", icon: LayoutDashboard, label: "Tổng quan" },
+    { to: "/collector/tasks", icon: ListTodo, label: "Nhiệm vụ của tôi" },
+    { to: "/collector/notifications", icon: Bell, label: "Thông báo" },
+    { to: "/collector/map", icon: MapIcon, label: "Bản đồ nhiệm vụ" },
+    { to: "/collector/performance", icon: TrendingUp, label: "Hiệu suất" },
+    { to: "/collector/profile", icon: UserIcon, label: "Hồ sơ" },
   ],
   ENTERPRISE: [
-    { to: "/enterprise/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { to: "/enterprise/reports", icon: BarChart3, label: "Reports" },
-    { to: "/enterprise/tasks", icon: ListTodo, label: "Tasks" },
-    { to: "/enterprise/collectors", icon: UserCog, label: "Collectors" },
-    { to: "/enterprise/reward-rules", icon: Gift, label: "Reward rules" },
-    { to: "/enterprise/analytics", icon: TrendingUp, label: "Analytics" },
-    { to: "/enterprise/profile", icon: Building2, label: "Company profile" },
+    { to: "/enterprise/dashboard", icon: LayoutDashboard, label: "Tổng quan" },
+    { to: "/enterprise/reports", icon: BarChart3, label: "Báo cáo" },
+    { to: "/enterprise/tasks", icon: ListTodo, label: "Nhiệm vụ" },
+    { to: "/enterprise/capabilities", icon: MapIcon, label: "Phạm vi phục vụ" },
+    { to: "/enterprise/notifications", icon: Bell, label: "Thông báo" },
+    { to: "/enterprise/collectors", icon: UserCog, label: "Nhân viên thu gom" },
+    { to: "/enterprise/reward-rules", icon: Gift, label: "Quy tắc thưởng" },
+    { to: "/enterprise/analytics", icon: TrendingUp, label: "Phân tích" },
+    { to: "/enterprise/profile", icon: Building2, label: "Hồ sơ doanh nghiệp" },
   ],
   ADMIN: [
-    { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { to: "/admin/users", icon: Users, label: "Users" },
-    { to: "/admin/enterprises", icon: Building2, label: "Enterprises" },
-    { to: "/admin/complaints", icon: MessageSquare, label: "Complaints" },
-    { to: "/admin/notifications", icon: Bell, label: "Notifications" },
-    { to: "/admin/reward-items", icon: Gift, label: "Reward items" },
-    { to: "/admin/settings", icon: Settings, label: "Settings" },
+    { to: "/admin/dashboard", icon: LayoutDashboard, label: "Tổng quan" },
+    { to: "/admin/users", icon: Users, label: "Người dùng" },
+    { to: "/admin/enterprises", icon: Building2, label: "Doanh nghiệp" },
+    { to: "/admin/complaints", icon: MessageSquare, label: "Khiếu nại" },
+    { to: "/admin/notifications", icon: Bell, label: "Thông báo" },
+    { to: "/admin/reward-items", icon: Gift, label: "Vật phẩm thưởng" },
+    { to: "/admin/settings", icon: Settings, label: "Cài đặt" },
   ],
-};
-
-const roleLabel: Record<string, string> = {
-  CITIZEN: "Citizen",
-  COLLECTOR: "Collector",
-  ENTERPRISE: "Enterprise",
-  ADMIN: "Administrator",
 };
 
 type SidebarProps = {
@@ -80,10 +80,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   const navigate = useNavigate();
   const role = useAuthStore((state) => state.role) ?? "CITIZEN";
   const email = useAuthStore((state) => state.email) ?? "";
+  const accessToken = useAuthStore((state) => state.accessToken);
   const clearAuth = useAuthStore((state) => state.clearAuth);
 
-  const displayName = email.split("@")[0] || "User";
+  const displayName = email.split("@")[0] || "Người dùng";
   const links = navByRole[role] ?? navByRole.CITIZEN;
+  const { data: notificationsResponse } = useQuery({
+    queryKey: ["sidebar-notifications", role],
+    queryFn: () => notificationsApi.getForUser(0).then((response) => response.data),
+    enabled: Boolean(accessToken) && role !== "ADMIN",
+    refetchInterval: 60_000,
+  });
+  const notificationCount =
+    role === "ADMIN" ? 0 : (notificationsResponse?.data?.totalElements ?? 0);
 
   const handleLogout = () => {
     clearAuth();
@@ -101,7 +110,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
       />
 
       <div className="relative z-10 rounded-[22px] border border-white/14 bg-white/8 px-3 py-3">
-        <BrandMark compact caption={`${roleLabel[role] ?? role} workspace`} />
+        <BrandMark compact caption={`Không gian ${formatRoleLabel(role).toLowerCase()}`} />
       </div>
 
       <div className="relative z-10 mt-3 rounded-[22px] border border-white/12 bg-white/7 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
@@ -121,10 +130,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
 
         <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/10 bg-white/8 px-2.5 py-1.5">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-on-dark-muted)]">
-            Active role
+            Vai trò hiện tại
           </span>
           <span className="text-xs font-semibold text-[var(--primary-200)]">
-            {roleLabel[role] ?? role}
+            {formatRoleLabel(role)}
           </span>
         </div>
       </div>
@@ -132,7 +141,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
       <nav className="relative z-10 mt-3 min-h-0 flex-1 space-y-1.5 overflow-hidden">
         <div className="px-2 pb-1">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-on-dark-muted)]">
-            Navigation
+            Điều hướng
           </p>
         </div>
 
@@ -160,6 +169,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
                   )}
                 />
                 <span className="flex-1">{link.label}</span>
+                {link.to.endsWith("/notifications") && notificationCount > 0 ? (
+                  <span className="rounded-full bg-[var(--primary-200)] px-2 py-0.5 text-[10px] font-semibold text-[var(--forest-900)]">
+                    {notificationCount}
+                  </span>
+                ) : null}
                 {isActive ? (
                   <ChevronRight className="h-3 w-3 text-[var(--primary-200)]" />
                 ) : null}
@@ -175,7 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
           className="flex w-full items-center gap-2.5 rounded-2xl border border-transparent px-3 py-2.5 text-xs font-semibold text-[var(--text-on-dark-muted)] transition-all duration-200 hover:border-white/10 hover:bg-white/8 hover:text-[var(--text-on-dark)] sm:text-sm"
         >
           <LogOut className="h-3.5 w-3.5" />
-          Sign out
+          Đăng xuất
         </button>
       </div>
     </aside>

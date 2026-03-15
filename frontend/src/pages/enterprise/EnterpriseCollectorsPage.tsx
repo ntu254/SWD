@@ -30,6 +30,7 @@ import {
   SectionHeader,
   StatCard,
 } from "../../components/ui/page";
+import { formatStatusLabel } from "../../lib/labels";
 import { useAuthStore } from "../../store/authStore";
 import {
   Table,
@@ -51,16 +52,16 @@ interface Collector {
 }
 
 const createSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  firstName: z.string().min(1, "Tên là bắt buộc"),
+  lastName: z.string().min(1, "Họ là bắt buộc"),
+  email: z.string().email("Email không hợp lệ"),
+  password: z.string().min(8, "Mật khẩu phải có ít nhất 8 ký tự"),
   phone: z.string().optional(),
 });
 
 const editSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
+  firstName: z.string().min(1, "Tên là bắt buộc"),
+  lastName: z.string().min(1, "Họ là bắt buộc"),
   displayName: z.string().optional(),
   phone: z.string().optional(),
 });
@@ -115,31 +116,31 @@ function CreateModal({
         role: "COLLECTOR",
         enterpriseUserId,
       });
-      toast.success("Collector account created.");
+      toast.success("Tạo tài khoản nhân viên thu gom thành công.");
       onCreated();
       onClose();
     } catch (error: unknown) {
       const message =
         (error as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? "Failed to create collector.";
+          ?.message ?? "Tạo nhân viên thu gom thất bại.";
       toast.error(message);
     }
   };
 
   return (
     <ModalShell
-      title="Add collector"
-      description="Create a new collector account under the current enterprise."
+      title="Thêm nhân viên thu gom"
+      description="Tạo một tài khoản nhân viên thu gom mới thuộc doanh nghiệp hiện tại."
       icon={Users}
       onClose={onClose}
       widthClassName="max-w-xl"
       footer={
         <>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            Hủy
           </Button>
           <Button onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Create account"}
+            {isSubmitting ? "Đang tạo..." : "Tạo tài khoản"}
           </Button>
         </>
       }
@@ -147,7 +148,7 @@ function CreateModal({
       <form className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="create-first-name" className="field-label">
-            First name
+            Tên
           </label>
           <Input id="create-first-name" {...register("firstName")} />
           {errors.firstName ? (
@@ -159,7 +160,7 @@ function CreateModal({
 
         <div>
           <label htmlFor="create-last-name" className="field-label">
-            Last name
+            Họ
           </label>
           <Input id="create-last-name" {...register("lastName")} />
           {errors.lastName ? (
@@ -191,7 +192,7 @@ function CreateModal({
 
         <div>
           <label htmlFor="create-password" className="field-label">
-            Password
+            Mật khẩu
           </label>
           <Input
             id="create-password"
@@ -207,7 +208,7 @@ function CreateModal({
 
         <div>
           <label htmlFor="create-phone" className="field-label">
-            Phone
+            Số điện thoại
           </label>
           <div className="relative">
             <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
@@ -245,20 +246,20 @@ function EditModal({
   const onSubmit = async (data: EditForm) => {
     try {
       await enterpriseCollectorsApi.update(collector.userId, data);
-      toast.success("Collector updated.");
+      toast.success("Đã cập nhật nhân viên thu gom.");
       onSaved();
       onClose();
     } catch (error: unknown) {
       const message =
         (error as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? "Failed to update collector.";
+          ?.message ?? "Cập nhật nhân viên thu gom thất bại.";
       toast.error(message);
     }
   };
 
   return (
     <ModalShell
-      title="Edit collector"
+      title="Sửa nhân viên thu gom"
       description={collector.email}
       icon={Pencil}
       onClose={onClose}
@@ -266,10 +267,10 @@ function EditModal({
       footer={
         <>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            Hủy
           </Button>
           <Button onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save changes"}
+            {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
           </Button>
         </>
       }
@@ -277,7 +278,7 @@ function EditModal({
       <form className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="edit-first-name" className="field-label">
-            First name
+            Tên
           </label>
           <Input id="edit-first-name" {...register("firstName")} />
           {errors.firstName ? (
@@ -289,7 +290,7 @@ function EditModal({
 
         <div>
           <label htmlFor="edit-last-name" className="field-label">
-            Last name
+            Họ
           </label>
           <Input id="edit-last-name" {...register("lastName")} />
           {errors.lastName ? (
@@ -301,7 +302,7 @@ function EditModal({
 
         <div className="sm:col-span-2">
           <label htmlFor="edit-display-name" className="field-label">
-            Display name
+            Tên hiển thị
           </label>
           <div className="relative">
             <UserIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
@@ -315,7 +316,7 @@ function EditModal({
 
         <div className="sm:col-span-2">
           <label htmlFor="edit-phone" className="field-label">
-            Phone
+            Số điện thoại
           </label>
           <div className="relative">
             <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
@@ -346,14 +347,14 @@ export function EnterpriseCollectorsPage() {
     mutationFn: (collectorUserId: string) =>
       enterpriseCollectorsApi.deactivate(collectorUserId),
     onSuccess: () => {
-      toast.success("Collector deactivated.");
+      toast.success("Đã vô hiệu hóa nhân viên thu gom.");
       queryClient.invalidateQueries({ queryKey: ["enterprise-collectors"] });
       setDeactivating(null);
     },
     onError: (error: unknown) => {
       const message =
         (error as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? "Failed to deactivate collector.";
+          ?.message ?? "Vô hiệu hóa nhân viên thu gom thất bại.";
       toast.error(message);
     },
   });
@@ -395,21 +396,21 @@ export function EnterpriseCollectorsPage() {
 
       {deactivating ? (
         <ModalShell
-          title="Deactivate collector"
-          description="The collector will no longer be able to sign in until re-enabled."
+          title="Vô hiệu hóa nhân viên thu gom"
+          description="Nhân viên này sẽ không thể đăng nhập cho tới khi được bật lại."
           icon={ShieldAlert}
           onClose={() => setDeactivating(null)}
           footer={
             <>
               <Button variant="outline" onClick={() => setDeactivating(null)}>
-                Cancel
+                Hủy
               </Button>
               <Button
                 variant="destructive"
                 onClick={() => deactivateCollector.mutate(deactivating.userId)}
                 disabled={deactivateCollector.isPending}
               >
-                {deactivateCollector.isPending ? "Deactivating..." : "Deactivate"}
+                {deactivateCollector.isPending ? "Đang vô hiệu hóa..." : "Vô hiệu hóa"}
               </Button>
             </>
           }
@@ -421,21 +422,21 @@ export function EnterpriseCollectorsPage() {
       ) : null}
 
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Enterprise workspace</span>}
-        title="Collector management"
-        description="Manage the collector accounts assigned to your enterprise with a cleaner directory, search and edit flow."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian doanh nghiệp</span>}
+        title="Quản lý nhân viên thu gom"
+        description="Quản lý các tài khoản nhân viên thu gom của doanh nghiệp với danh sách, tìm kiếm và chỉnh sửa rõ ràng hơn."
         actions={
           <Button onClick={() => setShowCreate(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Add collector
+            Thêm nhân viên
           </Button>
         }
       />
 
       <PageHero
-        eyebrow={<span className="shell-chip shell-chip-accent">Team capacity</span>}
-        title="Keep the collection network coordinated."
-        description="Account creation, editing and deactivation continue to use the existing backend endpoints. This view simply standardizes search, table actions and dialog behavior."
+        eyebrow={<span className="shell-chip shell-chip-accent">Năng lực đội ngũ</span>}
+        title="Giữ mạng lưới thu gom luôn được phối hợp tốt."
+        description="Việc tạo, sửa và vô hiệu hóa tài khoản vẫn dùng cùng endpoint backend hiện có. Màn này chỉ chuẩn hóa tìm kiếm, thao tác bảng và hộp thoại."
         tone="mint"
         aside={
           <div className="space-y-4">
@@ -445,7 +446,7 @@ export function EnterpriseCollectorsPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-[var(--text-primary)]">
-                  Active collectors
+                  Nhân viên đang hoạt động
                 </p>
                 <p className="text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
                   {activeCollectors}
@@ -453,8 +454,7 @@ export function EnterpriseCollectorsPage() {
               </div>
             </div>
             <p className="text-sm leading-6 text-[var(--text-secondary)]">
-              {collectors.length - activeCollectors} accounts are currently paused or
-              restricted.
+              Có {collectors.length - activeCollectors} tài khoản hiện đang tạm dừng hoặc bị hạn chế.
             </p>
           </div>
         }
@@ -463,32 +463,32 @@ export function EnterpriseCollectorsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           icon={Users}
-          label="Total collectors"
+          label="Tổng nhân viên"
           value={collectors.length}
-          description="All collector accounts under this enterprise."
+          description="Toàn bộ tài khoản nhân viên thuộc doanh nghiệp này."
           tone="mint"
           featured
         />
         <StatCard
           icon={UserIcon}
-          label="Active"
+          label="Đang hoạt động"
           value={activeCollectors}
-          description="Accounts ready to receive assignments."
+          description="Tài khoản sẵn sàng nhận phân công."
           tone="sky"
         />
         <StatCard
           icon={UserX}
-          label="Inactive"
+          label="Không hoạt động"
           value={collectors.length - activeCollectors}
-          description="Disabled, banned or pending deletion."
+          description="Bao gồm tài khoản bị vô hiệu hóa, khóa hoặc chờ xóa."
           tone="peach"
         />
       </div>
 
       <SectionCard className="overflow-hidden">
         <SectionHeader
-          title="Collector directory"
-          description="Search by name or email, then edit details or deactivate access."
+          title="Danh sách nhân viên"
+          description="Tìm theo tên hoặc email, sau đó sửa thông tin hoặc vô hiệu hóa quyền truy cập."
         />
 
         <div className="space-y-5 p-5 sm:p-6">
@@ -498,7 +498,7 @@ export function EnterpriseCollectorsPage() {
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search collectors by name or email"
+                placeholder="Tìm nhân viên theo tên hoặc email"
                 className="pl-11"
               />
             </div>
@@ -513,17 +513,17 @@ export function EnterpriseCollectorsPage() {
           ) : filteredCollectors.length === 0 ? (
             <EmptyState
               icon={Users}
-              title="No collectors found"
+              title="Không tìm thấy nhân viên nào"
               description={
                 collectors.length === 0
-                  ? "Start by creating your first collector account."
-                  : "Try another search term to find the collector you need."
+                  ? "Hãy bắt đầu bằng việc tạo tài khoản nhân viên thu gom đầu tiên."
+                  : "Hãy thử từ khóa khác để tìm đúng nhân viên bạn cần."
               }
               action={
                 collectors.length === 0 ? (
                   <Button onClick={() => setShowCreate(true)}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Add first collector
+                    Thêm nhân viên đầu tiên
                   </Button>
                 ) : undefined
               }
@@ -532,11 +532,11 @@ export function EnterpriseCollectorsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Collector</TableHead>
+                  <TableHead>Nhân viên</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Số điện thoại</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead className="text-right">Hành động</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -554,14 +554,14 @@ export function EnterpriseCollectorsPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-[var(--primary-100)] text-xs font-bold text-[var(--primary-800)]">
-                            {initials || "CU"}
+                            {initials || "TG"}
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-[var(--text-primary)]">
                               {name}
                             </p>
                             <p className="text-sm text-[var(--text-secondary)]">
-                              ID {collector.userId}
+                              Mã {collector.userId}
                             </p>
                           </div>
                         </div>
@@ -570,7 +570,7 @@ export function EnterpriseCollectorsPage() {
                       <TableCell>{collector.phone || "-"}</TableCell>
                       <TableCell>
                         <Badge variant={getStatusVariant(collector.accountStatus)}>
-                          {collector.accountStatus}
+                          {formatStatusLabel(collector.accountStatus)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -581,7 +581,7 @@ export function EnterpriseCollectorsPage() {
                             onClick={() => setEditing(collector)}
                           >
                             <Pencil className="mr-2 h-3.5 w-3.5" />
-                            Edit
+                            Sửa
                           </Button>
                           {collector.accountStatus !== "DISABLED" ? (
                             <Button
@@ -590,7 +590,7 @@ export function EnterpriseCollectorsPage() {
                               onClick={() => setDeactivating(collector)}
                             >
                               <UserX className="mr-2 h-3.5 w-3.5" />
-                              Deactivate
+                              Vô hiệu hóa
                             </Button>
                           ) : null}
                         </div>

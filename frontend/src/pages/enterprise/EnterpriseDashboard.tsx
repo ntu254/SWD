@@ -6,10 +6,10 @@ import {
   Building2,
   Clock,
   ListTodo,
-  Recycle,
+  MapPin,
 } from "lucide-react";
 
-import { tasksApi } from "../../api";
+import { enterpriseCapabilitiesApi, tasksApi } from "../../api";
 import { Button } from "../../components/ui/button";
 import {
   PageHeader,
@@ -28,31 +28,36 @@ export function EnterpriseDashboard() {
     queryKey: ["enterprise-tasks"],
     queryFn: () => tasksApi.getEnterpriseTasks().then((response) => response.data),
   });
+  const { data: capabilitiesData, isLoading: capabilitiesLoading } = useQuery({
+    queryKey: ["enterprise-capabilities"],
+    queryFn: () => enterpriseCapabilitiesApi.getAll().then((response) => response.data),
+  });
 
   const pendingCount = pendingData?.data?.totalElements ?? 0;
   const tasksCount = tasksData?.data?.totalElements ?? 0;
-  const isLoading = pendingLoading || tasksLoading;
+  const capabilitiesCount = capabilitiesData?.data?.length ?? 0;
+  const isLoading = pendingLoading || tasksLoading || capabilitiesLoading;
 
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Enterprise workspace</span>}
-        title="Operations at a glance"
-        description="Coordinate pending reports, active tasks and pickup requests with a cleaner enterprise control surface."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian doanh nghiệp</span>}
+        title="Tổng quan vận hành"
+        description="Điều phối báo cáo chờ duyệt, nhiệm vụ đang chạy và phạm vi phục vụ trong cùng một khu vực điều hành."
         actions={
           <Button asChild>
-            <Link to="/enterprise/pickup">
-              <Recycle className="mr-2 h-4 w-4" />
-              Schedule pickup
+            <Link to="/enterprise/capabilities">
+              <MapPin className="mr-2 h-4 w-4" />
+              Đăng ký phạm vi phục vụ
             </Link>
           </Button>
         }
       />
 
       <PageHero
-        eyebrow={<span className="shell-chip shell-chip-accent">Coverage snapshot</span>}
-        title="Move from report intake to pickup scheduling faster."
-        description="This refreshed dashboard highlights your operational queue while leaving report acceptance, task creation and pickup logic untouched."
+        eyebrow={<span className="shell-chip shell-chip-accent">Tổng quan phạm vi phục vụ</span>}
+        title="Đi từ tiếp nhận báo cáo tới điều phối khu vực nhanh hơn."
+        description="Bảng điều khiển mới làm nổi bật hàng chờ vận hành và luồng đăng ký phạm vi phục vụ đang khớp với các API backend hiện có."
         tone="mint"
         aside={
           <div className="space-y-4">
@@ -62,10 +67,10 @@ export function EnterpriseDashboard() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-[var(--text-primary)]">
-                  Enterprise account active
+                  Tài khoản doanh nghiệp đang hoạt động
                 </p>
                 <p className="text-sm leading-6 text-[var(--text-secondary)]">
-                  {isLoading ? "Loading metrics..." : `${pendingCount} pending reports and ${tasksCount} tracked tasks.`}
+                  {isLoading ? "Đang tải số liệu..." : `${pendingCount} báo cáo chờ duyệt và ${tasksCount} nhiệm vụ đang theo dõi.`}
                 </p>
               </div>
             </div>
@@ -76,31 +81,31 @@ export function EnterpriseDashboard() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={Clock}
-          label="Pending reports"
+          label="Báo cáo chờ duyệt"
           value={isLoading ? "..." : pendingCount}
-          description="Awaiting decision in your service areas."
+          description="Đang chờ quyết định trong các khu vực bạn phụ trách."
           tone="sand"
         />
         <StatCard
           icon={ListTodo}
-          label="Tracked tasks"
+          label="Nhiệm vụ đang theo dõi"
           value={isLoading ? "..." : tasksCount}
-          description="All tasks already created inside the system."
+          description="Toàn bộ nhiệm vụ đã được tạo trong hệ thống."
           tone="sky"
         />
         <StatCard
-          icon={Recycle}
-          label="New pickup flow"
-          value="Ready"
-          description="Create a pickup request using the existing enterprise workflow."
+          icon={MapPin}
+          label="Đăng ký phạm vi"
+          value={isLoading ? "..." : capabilitiesCount}
+          description="Các đăng ký khu vực và loại rác đang hoạt động."
           tone="mint"
           featured
         />
         <StatCard
           icon={Building2}
-          label="Company profile"
-          value="1 profile"
-          description="Keep account and facility details current."
+          label="Hồ sơ doanh nghiệp"
+          value="1 hồ sơ"
+          description="Giữ thông tin tài khoản và cơ sở luôn cập nhật."
           tone="violet"
         />
       </div>
@@ -110,22 +115,22 @@ export function EnterpriseDashboard() {
           {
             to: "/enterprise/reports",
             icon: BarChart3,
-            label: "Analytics and reports",
-            description: "Review pending requests, history and trend snapshots.",
+            label: "Phân tích và báo cáo",
+            description: "Xem yêu cầu chờ duyệt, lịch sử và xu hướng vận hành.",
             tone: "sky" as const,
           },
           {
-            to: "/enterprise/pickup",
-            icon: Recycle,
-            label: "Schedule pickup",
-            description: "Submit a new collection request for your site.",
+            to: "/enterprise/capabilities",
+            icon: MapPin,
+            label: "Đăng ký phạm vi phục vụ",
+            description: "Khai báo khu vực, loại rác và công suất mỗi ngày.",
             tone: "mint" as const,
           },
           {
             to: "/enterprise/profile",
             icon: Building2,
-            label: "Company profile",
-            description: "Update contact details and operating information.",
+            label: "Hồ sơ doanh nghiệp",
+            description: "Cập nhật thông tin liên hệ và thông tin vận hành.",
             tone: "violet" as const,
           },
         ].map((item) => (

@@ -7,6 +7,7 @@ import { adminApi } from "../../api";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
+import { formatRoleLabel, formatStatusLabel } from "../../lib/labels";
 import {
   EmptyState,
   FilterTabs,
@@ -23,7 +24,13 @@ type User = {
   accountStatus?: string | null;
 };
 
-const ROLES = ["ALL", "CITIZEN", "COLLECTOR", "ENTERPRISE", "ADMIN"] as const;
+const ROLE_TABS = [
+  { label: "TẤT CẢ", value: "ALL" },
+  { label: "CÔNG DÂN", value: "CITIZEN" },
+  { label: "THU GOM", value: "COLLECTOR" },
+  { label: "DOANH NGHIỆP", value: "ENTERPRISE" },
+  { label: "QUẢN TRỊ", value: "ADMIN" },
+] as const;
 const ROLE_VARIANT: Record<string, "default" | "assigned" | "ontheway" | "accepted" | "destructive"> = {
   ADMIN: "destructive",
   ENTERPRISE: "assigned",
@@ -55,31 +62,31 @@ export function AdminUsersPage() {
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       adminApi.updateUserStatus(id, status),
     onSuccess: () => {
-      toast.success("Status updated");
+      toast.success("Đã cập nhật trạng thái.");
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
-    onError: () => toast.error("Failed to update status"),
+    onError: () => toast.error("Cập nhật trạng thái thất bại"),
   });
 
   const updateRole = useMutation({
     mutationFn: ({ id, role }: { id: string; role: string }) =>
       adminApi.updateUserRole(id, role),
     onSuccess: () => {
-      toast.success("Role updated");
+      toast.success("Đã cập nhật vai trò.");
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setRoleModal(null);
     },
-    onError: () => toast.error("Failed to update role"),
+    onError: () => toast.error("Cập nhật vai trò thất bại"),
   });
 
   const deleteUser = useMutation({
     mutationFn: (id: string) => adminApi.deleteUser(id),
     onSuccess: () => {
-      toast.success("User deleted");
+      toast.success("Đã xóa người dùng.");
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setDeleteConfirm(null);
     },
-    onError: () => toast.error("Failed to delete user"),
+    onError: () => toast.error("Xóa người dùng thất bại"),
   });
 
   const allUsers: User[] = data?.data?.content ?? [];
@@ -93,9 +100,9 @@ export function AdminUsersPage() {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Admin workspace</span>}
-        title="User management"
-        description={`${allUsers.length} users available across all current roles. Filter, change status or update permissions without changing the backend workflow.`}
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian quản trị</span>}
+        title="Quản lý người dùng"
+        description={`Hiện có ${allUsers.length} người dùng trên toàn bộ các vai trò. Bạn có thể lọc, đổi trạng thái hoặc cập nhật quyền mà không đổi luồng backend.`}
       />
 
       <div className="shell-toolbar">
@@ -104,14 +111,16 @@ export function AdminUsersPage() {
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by name or email"
+            placeholder="Tìm theo tên hoặc email"
             className="pl-11"
           />
         </div>
         <FilterTabs
-          value={roleFilter}
-          options={ROLES}
-          onChange={(value) => setRoleFilter(value)}
+          value={ROLE_TABS.find((item) => item.value === roleFilter)?.label ?? "TẤT CẢ"}
+          options={ROLE_TABS.map((item) => item.label)}
+          onChange={(value) =>
+            setRoleFilter(ROLE_TABS.find((item) => item.label === value)?.value ?? "ALL")
+          }
         />
       </div>
 
@@ -126,8 +135,8 @@ export function AdminUsersPage() {
           <div className="p-5 sm:p-6">
             <EmptyState
               icon={UserCog}
-              title="No users found"
-              description="Try a different role filter or search keyword to locate the account you need."
+              title="Không tìm thấy người dùng"
+              description="Hãy thử bộ lọc vai trò khác hoặc từ khóa khác để tìm đúng tài khoản."
             />
           </div>
         ) : (
@@ -135,11 +144,11 @@ export function AdminUsersPage() {
             <table className="shell-table w-full">
               <thead>
                 <tr>
-                  <th className="px-4 py-3 text-left">Name</th>
+                  <th className="px-4 py-3 text-left">Tên</th>
                   <th className="px-4 py-3 text-left">Email</th>
-                  <th className="px-4 py-3 text-left">Role</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3 text-left">Vai trò</th>
+                  <th className="px-4 py-3 text-left">Trạng thái</th>
+                  <th className="px-4 py-3 text-right">Hành động</th>
                 </tr>
               </thead>
               <tbody>
@@ -151,21 +160,21 @@ export function AdminUsersPage() {
                     <td className="px-4 py-4">
                       <div>
                         <p className="text-sm font-semibold text-[var(--text-primary)]">
-                          {user.displayName || "Unnamed user"}
+                          {user.displayName || "Người dùng chưa đặt tên"}
                         </p>
                         <p className="text-sm text-[var(--text-secondary)]">
-                          User ID: {user.userId}
+                          Mã người dùng: {user.userId}
                         </p>
                       </div>
                     </td>
                     <td className="px-4 py-4 text-sm text-[var(--text-secondary)]">
-                      {user.email || "No email"}
+                      {user.email || "Không có email"}
                     </td>
                     <td className="px-4 py-4">
                       <Badge
                         variant={ROLE_VARIANT[user.role ?? ""] ?? "secondary"}
                       >
-                        {user.role ?? "UNKNOWN"}
+                        {formatRoleLabel(user.role)}
                       </Badge>
                     </td>
                     <td className="px-4 py-4">
@@ -176,7 +185,7 @@ export function AdminUsersPage() {
                             : "rejected"
                         }
                       >
-                        {user.accountStatus ?? "UNKNOWN"}
+                        {formatStatusLabel(user.accountStatus)}
                       </Badge>
                     </td>
                     <td className="px-4 py-4">
@@ -193,7 +202,7 @@ export function AdminUsersPage() {
                           }}
                         >
                           <UserCog className="mr-1.5 h-3.5 w-3.5" />
-                          Role
+                          Vai trò
                         </Button>
                         <Button
                           size="sm"
@@ -208,7 +217,7 @@ export function AdminUsersPage() {
                             })
                           }
                         >
-                          {user.accountStatus === "ACTIVE" ? "Disable" : "Enable"}
+                          {user.accountStatus === "ACTIVE" ? "Vô hiệu hóa" : "Kích hoạt"}
                         </Button>
                         <Button
                           size="icon"
@@ -229,14 +238,14 @@ export function AdminUsersPage() {
 
       {roleModal ? (
         <ModalShell
-          title="Change role"
-          description="Assign a new role without changing the user record or login flow."
+          title="Đổi vai trò"
+          description="Gán vai trò mới mà không thay đổi hồ sơ người dùng hay luồng đăng nhập."
           icon={UserCog}
           onClose={() => setRoleModal(null)}
           footer={
             <>
               <Button variant="outline" onClick={() => setRoleModal(null)}>
-                Cancel
+                Hủy
               </Button>
               <Button
                 onClick={() =>
@@ -244,7 +253,7 @@ export function AdminUsersPage() {
                 }
                 disabled={updateRole.isPending}
               >
-                {updateRole.isPending ? "Saving..." : "Save role"}
+                {updateRole.isPending ? "Đang lưu..." : "Lưu vai trò"}
               </Button>
             </>
           }
@@ -256,7 +265,7 @@ export function AdminUsersPage() {
           >
             {["CITIZEN", "COLLECTOR", "ENTERPRISE", "ADMIN"].map((role) => (
               <option key={role} value={role}>
-                {role}
+                {formatRoleLabel(role)}
               </option>
             ))}
           </select>
@@ -265,21 +274,21 @@ export function AdminUsersPage() {
 
       {deleteConfirm ? (
         <ModalShell
-          title="Delete user"
-          description="This permanently removes the account and cannot be undone."
+          title="Xóa người dùng"
+          description="Thao tác này sẽ xóa vĩnh viễn tài khoản và không thể hoàn tác."
           icon={Trash2}
           onClose={() => setDeleteConfirm(null)}
           footer={
             <>
               <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-                Cancel
+                Hủy
               </Button>
               <Button
                 variant="destructive"
                 onClick={() => deleteUser.mutate(deleteConfirm)}
                 disabled={deleteUser.isPending}
               >
-                {deleteUser.isPending ? "Deleting..." : "Delete user"}
+                {deleteUser.isPending ? "Đang xóa..." : "Xóa người dùng"}
               </Button>
             </>
           }

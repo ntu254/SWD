@@ -1,4 +1,4 @@
-import { Building2, Clock, LayoutDashboard } from "lucide-react";
+import { Building2, Clock, LayoutDashboard, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "../../components/ui/button";
@@ -10,26 +10,30 @@ export function EnterpriseProfilePage() {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Enterprise workspace</span>}
-        title="Company profile"
-        description="The company profile view now matches the shared eco-premium shell while the editable profile workflow remains scheduled for a later release."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian doanh nghiệp</span>}
+        title="Hồ sơ doanh nghiệp"
+        description="Màn hồ sơ doanh nghiệp giờ đã đồng bộ với giao diện chung, còn luồng chỉnh sửa chi tiết sẽ được bổ sung ở bản phát hành sau."
       />
 
       <PagePlaceholder
         icon={Building2}
-        eyebrow={<span className="shell-chip shell-chip-accent">Planned surface</span>}
-        title="Enterprise profile tools are on the roadmap."
-        description="This area will host facility details, contact preferences and operating metadata without changing your existing enterprise account permissions."
+        eyebrow={<span className="shell-chip shell-chip-accent">Khu vực dự kiến</span>}
+        title="Công cụ hồ sơ doanh nghiệp đang nằm trong lộ trình."
+        description="Khu vực này sẽ chứa thông tin cơ sở, tùy chọn liên hệ và dữ liệu vận hành mà không làm thay đổi quyền tài khoản doanh nghiệp hiện tại."
         tone="sky"
         action={
           <div className="flex flex-wrap gap-3">
             <Button onClick={() => navigate("/enterprise/dashboard")}>
               <LayoutDashboard className="mr-2 h-4 w-4" />
-              Back to dashboard
+              Về tổng quan
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/enterprise/capabilities")}>
+              <MapPin className="mr-2 h-4 w-4" />
+              Đăng ký phạm vi phục vụ
             </Button>
             <Button variant="outline" onClick={() => navigate("/enterprise/analytics")}>
               <Clock className="mr-2 h-4 w-4" />
-              View analytics
+              Xem phân tích
             </Button>
           </div>
         }

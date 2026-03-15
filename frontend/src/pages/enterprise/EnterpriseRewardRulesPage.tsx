@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "../../components/ui/table";
+import { formatSortingLevelLabel } from "../../lib/labels";
 
 interface RewardRule {
   ruleId: string;
@@ -66,7 +67,7 @@ const EMPTY_FORM: RuleFormData = {
 const SORTING_LEVELS = ["GOOD", "ACCEPTABLE", "POOR"] as const;
 
 function getWasteTypeLabel(wasteType: WasteType) {
-  return wasteType.name ?? wasteType.typeName ?? "Unknown";
+  return wasteType.name ?? wasteType.typeName ?? "Không rõ";
 }
 
 function getSortingVariant(level: string) {
@@ -102,21 +103,21 @@ function RuleModal({
   return (
     <ModalShell
       title={title}
-      description="Define the waste type, sorting level and points logic for citizen rewards."
+      description="Thiết lập loại rác, mức độ phân loại và cách tính điểm cho chương trình thưởng công dân."
       icon={Gift}
       onClose={onClose}
       widthClassName="max-w-2xl"
       footer={
         <>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            Hủy
           </Button>
           <Button
             onClick={onSubmit}
             disabled={!form.wasteTypeId || !form.sortingLevel || isPending}
           >
             <CheckCircle className="mr-2 h-4 w-4" />
-            {isPending ? "Saving..." : "Save rule"}
+            {isPending ? "Đang lưu..." : "Lưu quy tắc"}
           </Button>
         </>
       }
@@ -124,7 +125,7 @@ function RuleModal({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label htmlFor="reward-rule-type" className="field-label">
-            Waste type
+            Loại rác
           </label>
           <select
             id="reward-rule-type"
@@ -132,7 +133,7 @@ function RuleModal({
             onChange={(event) => onChange({ wasteTypeId: event.target.value })}
             className="shell-select"
           >
-            <option value="">Select waste type</option>
+            <option value="">Chọn loại rác</option>
             {wasteTypes.map((wasteType) => (
               <option key={wasteType.wasteTypeId} value={wasteType.wasteTypeId}>
                 {getWasteTypeLabel(wasteType)}
@@ -142,7 +143,7 @@ function RuleModal({
         </div>
 
         <div className="sm:col-span-2">
-          <label className="field-label">Sorting level</label>
+          <label className="field-label">Mức độ phân loại</label>
           <div className="grid gap-3 sm:grid-cols-3">
             {SORTING_LEVELS.map((level) => (
               <button
@@ -155,7 +156,7 @@ function RuleModal({
                     : "border-[var(--stroke-soft)] bg-white/84 text-[var(--text-secondary)]"
                 }`}
               >
-                {level}
+                {formatSortingLevelLabel(level)}
               </button>
             ))}
           </div>
@@ -163,7 +164,7 @@ function RuleModal({
 
         <div>
           <label htmlFor="reward-fixed" className="field-label">
-            Fixed points
+            Điểm cố định
           </label>
           <Input
             id="reward-fixed"
@@ -171,13 +172,13 @@ function RuleModal({
             min="0"
             value={form.pointsFixed}
             onChange={(event) => onChange({ pointsFixed: event.target.value })}
-            placeholder="e.g. 50"
+            placeholder="ví dụ 50"
           />
         </div>
 
         <div>
           <label htmlFor="reward-per-kg" className="field-label">
-            Points per kg
+            Điểm mỗi kg
           </label>
           <Input
             id="reward-per-kg"
@@ -186,13 +187,13 @@ function RuleModal({
             step="0.1"
             value={form.pointsPerKg}
             onChange={(event) => onChange({ pointsPerKg: event.target.value })}
-            placeholder="e.g. 10"
+            placeholder="ví dụ 10"
           />
         </div>
 
         <div>
           <label htmlFor="reward-effective-from" className="field-label">
-            Effective from
+            Hiệu lực từ
           </label>
           <Input
             id="reward-effective-from"
@@ -204,7 +205,7 @@ function RuleModal({
 
         <div>
           <label htmlFor="reward-effective-to" className="field-label">
-            Effective to
+            Hiệu lực đến
           </label>
           <Input
             id="reward-effective-to"
@@ -215,7 +216,7 @@ function RuleModal({
         </div>
 
         <div className="sm:col-span-2">
-          <label className="field-label">Rule state</label>
+          <label className="field-label">Trạng thái quy tắc</label>
           <button
             type="button"
             onClick={() => onChange({ isActive: !form.isActive })}
@@ -225,8 +226,8 @@ function RuleModal({
                 : "border-[var(--stroke-soft)] bg-white/84 text-[var(--text-secondary)]"
             }`}
           >
-            <span>{form.isActive ? "Active reward rule" : "Inactive reward rule"}</span>
-            <span>{form.isActive ? "On" : "Off"}</span>
+            <span>{form.isActive ? "Quy tắc đang hoạt động" : "Quy tắc đang tắt"}</span>
+            <span>{form.isActive ? "Bật" : "Tắt"}</span>
           </button>
         </div>
       </div>
@@ -255,33 +256,33 @@ export function EnterpriseRewardRulesPage() {
   const createRule = useMutation({
     mutationFn: (data: unknown) => enterpriseRewardRulesApi.create(data),
     onSuccess: () => {
-      toast.success("Reward rule created.");
+      toast.success("Đã tạo quy tắc thưởng.");
       queryClient.invalidateQueries({ queryKey: ["enterprise-reward-rules"] });
       setCreateOpen(false);
       setForm(EMPTY_FORM);
     },
-    onError: () => toast.error("Failed to create reward rule."),
+    onError: () => toast.error("Tạo quy tắc thưởng thất bại."),
   });
 
   const updateRule = useMutation({
     mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       enterpriseRewardRulesApi.update(id, data),
     onSuccess: () => {
-      toast.success("Reward rule updated.");
+      toast.success("Đã cập nhật quy tắc thưởng.");
       queryClient.invalidateQueries({ queryKey: ["enterprise-reward-rules"] });
       setEditRule(null);
     },
-    onError: () => toast.error("Failed to update reward rule."),
+    onError: () => toast.error("Cập nhật quy tắc thưởng thất bại."),
   });
 
   const removeRule = useMutation({
     mutationFn: (id: string) => enterpriseRewardRulesApi.delete(id),
     onSuccess: () => {
-      toast.success("Reward rule removed.");
+      toast.success("Đã xóa quy tắc thưởng.");
       queryClient.invalidateQueries({ queryKey: ["enterprise-reward-rules"] });
       setDeleteRule(null);
     },
-    onError: () => toast.error("Failed to remove reward rule."),
+    onError: () => toast.error("Xóa quy tắc thưởng thất bại."),
   });
 
   const rules: RewardRule[] = rulesData?.data ?? [];
@@ -315,7 +316,7 @@ export function EnterpriseRewardRulesPage() {
     <div className="space-y-4 lg:space-y-5">
       {createOpen ? (
         <RuleModal
-          title="Create reward rule"
+          title="Tạo quy tắc thưởng"
           form={form}
           onChange={(patch) => setForm((current) => ({ ...current, ...patch }))}
           onClose={() => {
@@ -330,7 +331,7 @@ export function EnterpriseRewardRulesPage() {
 
       {editRule ? (
         <RuleModal
-          title="Edit reward rule"
+          title="Sửa quy tắc thưởng"
           form={editForm}
           onChange={(patch) => setEditForm((current) => ({ ...current, ...patch }))}
           onClose={() => setEditRule(null)}
@@ -344,14 +345,14 @@ export function EnterpriseRewardRulesPage() {
 
       {deleteRule ? (
         <ModalShell
-          title="Remove reward rule"
-          description="Citizens will no longer receive points under this rule after deletion."
+          title="Xóa quy tắc thưởng"
+          description="Sau khi xóa, công dân sẽ không còn nhận điểm theo quy tắc này."
           icon={ShieldAlert}
           onClose={() => setDeleteRule(null)}
           footer={
             <>
               <Button variant="outline" onClick={() => setDeleteRule(null)}>
-                Cancel
+                Hủy
               </Button>
               <Button
                 variant="destructive"
@@ -359,7 +360,7 @@ export function EnterpriseRewardRulesPage() {
                 disabled={removeRule.isPending}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                {removeRule.isPending ? "Removing..." : "Remove rule"}
+                {removeRule.isPending ? "Đang xóa..." : "Xóa quy tắc"}
               </Button>
             </>
           }
@@ -371,21 +372,21 @@ export function EnterpriseRewardRulesPage() {
       ) : null}
 
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Enterprise workspace</span>}
-        title="Reward rules"
-        description="Configure how citizens earn points based on waste type and sorting quality inside your enterprise program."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian doanh nghiệp</span>}
+        title="Quy tắc thưởng"
+        description="Cấu hình cách công dân nhận điểm dựa trên loại rác và chất lượng phân loại trong chương trình của doanh nghiệp."
         actions={
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            New rule
+            Quy tắc mới
           </Button>
         }
       />
 
       <PageHero
-        eyebrow={<span className="shell-chip shell-chip-accent">Reward policy</span>}
-        title="Align waste quality with a clear points model."
-        description="Rule creation, edits and removal continue to use the same enterprise reward endpoints. The interface is now standardized with the rest of the product shell."
+        eyebrow={<span className="shell-chip shell-chip-accent">Chính sách thưởng</span>}
+        title="Liên kết chất lượng rác với mô hình tính điểm rõ ràng."
+        description="Việc tạo, sửa và xóa quy tắc vẫn dùng cùng endpoint thưởng của doanh nghiệp. Giao diện hiện đã được chuẩn hóa cùng phần còn lại của hệ thống."
         tone="mint"
         aside={
           <div className="space-y-4">
@@ -395,7 +396,7 @@ export function EnterpriseRewardRulesPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-[var(--text-primary)]">
-                  Active rules
+                  Quy tắc đang hoạt động
                 </p>
                 <p className="text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
                   {activeCount}
@@ -409,32 +410,32 @@ export function EnterpriseRewardRulesPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           icon={Gift}
-          label="Total rules"
+          label="Tổng quy tắc"
           value={rules.length}
-          description="All reward rules configured for this enterprise."
+          description="Toàn bộ quy tắc thưởng đã cấu hình cho doanh nghiệp này."
           tone="mint"
           featured
         />
         <StatCard
           icon={CheckCircle}
-          label="Active"
+          label="Đang hoạt động"
           value={activeCount}
-          description="Rules currently used to calculate citizen points."
+          description="Các quy tắc hiện được dùng để tính điểm cho công dân."
           tone="sky"
         />
         <StatCard
           icon={Trash2}
-          label="Inactive"
+          label="Đang tắt"
           value={rules.length - activeCount}
-          description="Rules not currently applied."
+          description="Các quy tắc hiện chưa được áp dụng."
           tone="peach"
         />
       </div>
 
       <SectionCard className="overflow-hidden">
         <SectionHeader
-          title="Rule table"
-          description="Review rule thresholds, effective periods and activation state from one place."
+          title="Bảng quy tắc"
+          description="Xem ngưỡng điểm, thời gian hiệu lực và trạng thái kích hoạt trong cùng một nơi."
         />
 
         <div className="p-5 sm:p-6">
@@ -447,12 +448,12 @@ export function EnterpriseRewardRulesPage() {
           ) : rules.length === 0 ? (
             <EmptyState
               icon={Gift}
-              title="No reward rules yet"
-              description="Create your first rule to start awarding citizens for sorting quality and waste type."
+              title="Chưa có quy tắc thưởng"
+              description="Hãy tạo quy tắc đầu tiên để bắt đầu thưởng điểm cho công dân theo loại rác và chất lượng phân loại."
               action={
                 <Button onClick={() => setCreateOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Create first rule
+                  Tạo quy tắc đầu tiên
                 </Button>
               }
             />
@@ -460,13 +461,13 @@ export function EnterpriseRewardRulesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Waste type</TableHead>
-                  <TableHead>Sorting level</TableHead>
-                  <TableHead>Fixed points</TableHead>
-                  <TableHead>Points / kg</TableHead>
-                  <TableHead>Effective period</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Loại rác</TableHead>
+                  <TableHead>Mức phân loại</TableHead>
+                  <TableHead>Điểm cố định</TableHead>
+                  <TableHead>Điểm / kg</TableHead>
+                  <TableHead>Thời gian hiệu lực</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead className="text-right">Hành động</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -475,19 +476,19 @@ export function EnterpriseRewardRulesPage() {
                     <TableCell>{rule.wasteTypeName}</TableCell>
                     <TableCell>
                       <Badge variant={getSortingVariant(rule.sortingLevel)}>
-                        {rule.sortingLevel}
+                        {formatSortingLevelLabel(rule.sortingLevel)}
                       </Badge>
                     </TableCell>
                     <TableCell>{rule.pointsFixed ?? "-"}</TableCell>
                     <TableCell>{rule.pointsPerKg ?? "-"}</TableCell>
                     <TableCell>
                       {rule.effectiveFrom
-                        ? `${rule.effectiveFrom.split("T")[0]} -> ${rule.effectiveTo?.split("T")[0] ?? "Open"}`
-                        : "Always"}
+                        ? `${rule.effectiveFrom.split("T")[0]} -> ${rule.effectiveTo?.split("T")[0] ?? "Mở"}`
+                        : "Luôn áp dụng"}
                     </TableCell>
                     <TableCell>
                       <Badge variant={rule.isActive ? "collected" : "secondary"}>
-                        {rule.isActive ? "ACTIVE" : "INACTIVE"}
+                        {rule.isActive ? "Đang hoạt động" : "Ngừng hoạt động"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -498,7 +499,7 @@ export function EnterpriseRewardRulesPage() {
                           onClick={() => openEdit(rule)}
                         >
                           <Pencil className="mr-2 h-3.5 w-3.5" />
-                          Edit
+                          Sửa
                         </Button>
                         <Button
                           size="sm"
@@ -506,7 +507,7 @@ export function EnterpriseRewardRulesPage() {
                           onClick={() => setDeleteRule(rule)}
                         >
                           <Trash2 className="mr-2 h-3.5 w-3.5" />
-                          Remove
+                          Xóa
                         </Button>
                       </div>
                     </TableCell>

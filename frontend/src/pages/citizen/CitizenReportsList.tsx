@@ -34,15 +34,15 @@ export const CitizenReportsList: React.FC = () => {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Citizen workspace</span>}
-        title="My reports"
-        description="Review every report you have submitted, including current status, location and proof photo."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian công dân</span>}
+        title="Báo cáo của tôi"
+        description="Xem lại tất cả báo cáo bạn đã gửi, gồm trạng thái hiện tại, vị trí và ảnh minh chứng."
       />
 
       <Card className="overflow-hidden">
         <SectionHeader
-          title="Submission history"
-          description="Select any row to open the full report detail page."
+          title="Lịch sử gửi báo cáo"
+          description="Chọn một dòng bất kỳ để mở trang chi tiết báo cáo."
         />
 
         <CardContent className="pt-5 sm:pt-6">
@@ -53,18 +53,18 @@ export const CitizenReportsList: React.FC = () => {
           ) : reports.length === 0 ? (
             <EmptyState
               icon={ImageIcon}
-              title="No reports submitted"
-              description="Once you submit a waste report it will appear here with its live status and location."
+              title="Chưa gửi báo cáo nào"
+              description="Sau khi bạn gửi báo cáo rác, nó sẽ xuất hiện ở đây cùng trạng thái và vị trí hiện tại."
             />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[120px]">Image</TableHead>
-                  <TableHead>Waste type</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="w-[120px]">Ảnh</TableHead>
+                  <TableHead>Loại rác</TableHead>
+                  <TableHead>Vị trí</TableHead>
+                  <TableHead>Ngày</TableHead>
+                  <TableHead>Trạng thái</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -78,7 +78,7 @@ export const CitizenReportsList: React.FC = () => {
                         <div className="h-14 w-14 overflow-hidden rounded-[18px] border border-[var(--stroke-soft)] bg-white">
                           <img
                             src={report.reportPhotoUrl}
-                            alt="Waste"
+                            alt="Ảnh rác"
                             className="h-full w-full object-cover"
                           />
                         </div>
@@ -89,7 +89,7 @@ export const CitizenReportsList: React.FC = () => {
                       )}
                     </TableCell>
                     <TableCell className="font-semibold text-[var(--text-primary)]">
-                      {report.wasteTypeName || "Unknown"}
+                      {report.wasteTypeName || "Không rõ"}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2 text-[var(--text-secondary)]">

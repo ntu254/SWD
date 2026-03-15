@@ -10,26 +10,26 @@ export function CollectorProfilePage() {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Collector workspace</span>}
-        title="Collector profile"
-        description="This surface is now aligned with the shared product shell while the account management workflow stays reserved for a later release."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian thu gom</span>}
+        title="Hồ sơ nhân viên thu gom"
+        description="Giao diện này đã đồng bộ với hệ thống chung, còn luồng quản lý tài khoản sẽ được bổ sung ở bản phát hành sau."
       />
 
       <PagePlaceholder
         icon={User}
-        eyebrow={<span className="shell-chip shell-chip-accent">Planned surface</span>}
-        title="Profile management is coming next."
-        description="You will be able to update personal details, operating preferences and route availability from here once the collector account settings flow is released."
+        eyebrow={<span className="shell-chip shell-chip-accent">Khu vực dự kiến</span>}
+        title="Quản lý hồ sơ sẽ có trong bản tiếp theo."
+        description="Bạn sẽ có thể cập nhật thông tin cá nhân, tùy chọn làm việc và thời gian sẵn sàng nhận tuyến ngay tại đây khi luồng cài đặt tài khoản được phát hành."
         tone="violet"
         action={
           <div className="flex flex-wrap gap-3">
             <Button onClick={() => navigate("/collector/performance")}>
               <TrendingUp className="mr-2 h-4 w-4" />
-              View performance
+              Xem hiệu suất
             </Button>
             <Button variant="outline" onClick={() => navigate("/collector/dashboard")}>
               <Clock className="mr-2 h-4 w-4" />
-              Back to dashboard
+              Về tổng quan
             </Button>
           </div>
         }

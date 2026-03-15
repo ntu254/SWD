@@ -47,17 +47,17 @@ const STATUS_META: Record<
   string,
   { label: string; color: string }
 > = {
-  PENDING_ENTERPRISE_APPROVAL: { label: "Pending", color: "#c98f45" },
-  ASSIGNED: { label: "Assigned", color: "#7791d4" },
-  IN_PROGRESS: { label: "In Progress", color: "#8a7fcb" },
-  COMPLETED: { label: "Completed", color: "#6aa08c" },
-  CANCELLED: { label: "Cancelled", color: "#c96f6a" },
+  PENDING_ENTERPRISE_APPROVAL: { label: "Chờ duyệt", color: "#c98f45" },
+  ASSIGNED: { label: "Đã phân công", color: "#7791d4" },
+  IN_PROGRESS: { label: "Đang thực hiện", color: "#8a7fcb" },
+  COMPLETED: { label: "Hoàn thành", color: "#6aa08c" },
+  CANCELLED: { label: "Đã hủy", color: "#c96f6a" },
 };
 
 function formatShortDate(value?: string) {
-  if (!value) return "Unknown";
+  if (!value) return "Không rõ";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown";
+  if (Number.isNaN(date.getTime())) return "Không rõ";
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
@@ -148,13 +148,13 @@ export function EnterpriseAnalyticsPage() {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Enterprise workspace</span>}
-        title="Analytics"
-        description="Track workload, completion patterns and collector throughput with real charts from the task dataset."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian doanh nghiệp</span>}
+        title="Phân tích"
+        description="Theo dõi khối lượng công việc, xu hướng hoàn thành và năng suất của nhân viên thu gom bằng biểu đồ từ dữ liệu nhiệm vụ thực tế."
         actions={
           <Button variant="outline" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
+            Làm mới
           </Button>
         }
       />
@@ -169,8 +169,8 @@ export function EnterpriseAnalyticsPage() {
         <SectionCard className="p-6">
           <EmptyState
             icon={BarChart3}
-            title="No analytics data yet"
-            description="Charts will appear once enterprise tasks start flowing through the platform."
+            title="Chưa có dữ liệu phân tích"
+            description="Biểu đồ sẽ xuất hiện khi nhiệm vụ của doanh nghiệp bắt đầu được tạo và xử lý trên nền tảng."
           />
         </SectionCard>
       ) : (
@@ -178,30 +178,30 @@ export function EnterpriseAnalyticsPage() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatCard
               icon={ListTodo}
-              label="Total tasks"
+              label="Tổng nhiệm vụ"
               value={total}
-              description="All enterprise tasks currently tracked."
+              description="Toàn bộ nhiệm vụ của doanh nghiệp đang được theo dõi."
               tone="slate"
             />
             <StatCard
               icon={CheckCircle}
-              label="Completed"
+              label="Hoàn thành"
               value={completed}
-              description="Tasks closed successfully."
+              description="Nhiệm vụ đã được đóng thành công."
               tone="mint"
             />
             <StatCard
               icon={TrendingUp}
-              label="In progress"
+              label="Đang xử lý"
               value={inProgress}
-              description="Tasks actively being worked."
+              description="Nhiệm vụ đang được thực hiện."
               tone="violet"
             />
             <StatCard
               icon={Clock}
-              label="Pending review"
+              label="Chờ xem xét"
               value={pending}
-              description="Pending approval and assigned tasks."
+              description="Bao gồm nhiệm vụ chờ duyệt và đã phân công."
               tone="sand"
               featured
             />
@@ -210,8 +210,8 @@ export function EnterpriseAnalyticsPage() {
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
             <SectionCard className="overflow-hidden">
               <SectionHeader
-                title="Task trend"
-                description="Created versus completed tasks across the latest visible dates."
+                title="Xu hướng nhiệm vụ"
+                description="So sánh số nhiệm vụ được tạo và hoàn thành trong các ngày gần nhất."
               />
               <div className="h-[340px] px-3 pb-3 sm:px-6 sm:pb-6">
                 <ResponsiveContainer width="100%" height="100%">
@@ -233,7 +233,7 @@ export function EnterpriseAnalyticsPage() {
                       stroke="#7791d4"
                       strokeWidth={3}
                       dot={{ r: 4 }}
-                      name="Created"
+                      name="Đã tạo"
                     />
                     <Line
                       type="monotone"
@@ -241,7 +241,7 @@ export function EnterpriseAnalyticsPage() {
                       stroke="#6aa08c"
                       strokeWidth={3}
                       dot={{ r: 4 }}
-                      name="Completed"
+                      name="Hoàn thành"
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -250,8 +250,8 @@ export function EnterpriseAnalyticsPage() {
 
             <SectionCard className="overflow-hidden">
               <SectionHeader
-                title="Status distribution"
-                description="Live composition of task states across the enterprise queue."
+                title="Phân bố trạng thái"
+                description="Cơ cấu trạng thái nhiệm vụ hiện tại trong hàng chờ của doanh nghiệp."
               />
               <div className="h-[340px] px-3 pb-3 sm:px-6 sm:pb-6">
                 <ResponsiveContainer width="100%" height="100%">
@@ -285,8 +285,8 @@ export function EnterpriseAnalyticsPage() {
           <div className="grid gap-6 xl:grid-cols-2">
             <SectionCard className="overflow-hidden">
               <SectionHeader
-                title="Collector performance"
-                description="Top collectors by assigned workload and completion count."
+                title="Hiệu suất nhân viên thu gom"
+                description="Những nhân viên có khối lượng được giao và số nhiệm vụ hoàn thành cao nhất."
               />
               <div className="h-[340px] px-3 pb-3 sm:px-6 sm:pb-6">
                 <ResponsiveContainer width="100%" height="100%">
@@ -308,8 +308,8 @@ export function EnterpriseAnalyticsPage() {
                       }}
                     />
                     <Legend />
-                    <Bar dataKey="total" fill="#7791d4" radius={[8, 8, 8, 8]} name="Total tasks" />
-                    <Bar dataKey="completed" fill="#6aa08c" radius={[8, 8, 8, 8]} name="Completed" />
+                    <Bar dataKey="total" fill="#7791d4" radius={[8, 8, 8, 8]} name="Tổng nhiệm vụ" />
+                    <Bar dataKey="completed" fill="#6aa08c" radius={[8, 8, 8, 8]} name="Hoàn thành" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -317,8 +317,8 @@ export function EnterpriseAnalyticsPage() {
 
             <SectionCard className="overflow-hidden">
               <SectionHeader
-                title="Tasks by area"
-                description="The busiest service areas based on current task volume."
+                title="Nhiệm vụ theo khu vực"
+                description="Những khu vực phục vụ có khối lượng nhiệm vụ cao nhất hiện tại."
               />
               <div className="h-[340px] px-3 pb-3 sm:px-6 sm:pb-6">
                 <ResponsiveContainer width="100%" height="100%">
@@ -333,7 +333,7 @@ export function EnterpriseAnalyticsPage() {
                         background: "rgba(255,255,255,0.96)",
                       }}
                     />
-                    <Bar dataKey="value" fill="#8a7fcb" radius={[10, 10, 0, 0]} name="Tasks" />
+                    <Bar dataKey="value" fill="#8a7fcb" radius={[10, 10, 0, 0]} name="Nhiệm vụ" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

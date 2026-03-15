@@ -11,7 +11,7 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30000 } },
 });
 
-type LazyModule = Record<string, ComponentType<any>>;
+type LazyModule = Record<string, ComponentType<unknown>>;
 
 function lazyPage(importer: () => Promise<unknown>, exportName: string) {
   return lazy(async () => {
@@ -48,6 +48,10 @@ const CitizenRewardsPage = lazyPage(
   () => import("./pages/citizen/CitizenRewardsPage"),
   "CitizenRewardsPage",
 );
+const NotificationsInboxPage = lazyPage(
+  () => import("./pages/shared/NotificationsInboxPage"),
+  "NotificationsInboxPage",
+);
 const CollectorDashboard = lazyPage(
   () => import("./pages/collector/CollectorDashboard"),
   "CollectorDashboard",
@@ -83,6 +87,14 @@ const EnterpriseReportsPage = lazyPage(
 const EnterpriseTasksPage = lazyPage(
   () => import("./pages/enterprise/EnterpriseTasksPage"),
   "EnterpriseTasksPage",
+);
+const EnterpriseTaskDetail = lazyPage(
+  () => import("./pages/enterprise/EnterpriseTaskDetail"),
+  "EnterpriseTaskDetail",
+);
+const EnterpriseCapabilitiesPage = lazyPage(
+  () => import("./pages/enterprise/EnterpriseCapabilitiesPage"),
+  "EnterpriseCapabilitiesPage",
 );
 const EnterpriseCollectorsPage = lazyPage(
   () => import("./pages/enterprise/EnterpriseCollectorsPage"),
@@ -151,7 +163,7 @@ function RouteFallback() {
           <div className="shimmer h-full rounded-[14px]" />
         </div>
         <p className="mt-5 text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-          Loading workspace
+          Đang tải không gian làm việc
         </p>
         <h1 className="mt-2 text-display text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">
           GreenLoop
@@ -204,6 +216,10 @@ function App() {
                 element={withSuspense(<CitizenRewardsPage />)}
               />
               <Route
+                path="/citizen/notifications"
+                element={withSuspense(<NotificationsInboxPage />)}
+              />
+              <Route
                 path="/citizen"
                 element={<Navigate to="/citizen/dashboard" replace />}
               />
@@ -219,6 +235,10 @@ function App() {
               <Route
                 path="/collector/tasks"
                 element={withSuspense(<CollectorTasksList />)}
+              />
+              <Route
+                path="/collector/notifications"
+                element={withSuspense(<NotificationsInboxPage />)}
               />
               <Route
                 path="/collector/tasks/:taskId"
@@ -256,6 +276,18 @@ function App() {
               <Route
                 path="/enterprise/tasks"
                 element={withSuspense(<EnterpriseTasksPage />)}
+              />
+              <Route
+                path="/enterprise/tasks/:taskId"
+                element={withSuspense(<EnterpriseTaskDetail />)}
+              />
+              <Route
+                path="/enterprise/capabilities"
+                element={withSuspense(<EnterpriseCapabilitiesPage />)}
+              />
+              <Route
+                path="/enterprise/notifications"
+                element={withSuspense(<NotificationsInboxPage />)}
               />
               <Route
                 path="/enterprise/collectors"

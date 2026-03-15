@@ -19,6 +19,7 @@ import {
   SectionHeader,
   StatCard,
 } from "../../components/ui/page";
+import { formatRewardReasonLabel } from "../../lib/labels";
 
 type RewardItem = {
   itemId: string;
@@ -59,12 +60,12 @@ export function CitizenRewardsPage() {
     mutationFn: (itemId: string) => rewardsApi.redeem(itemId),
     onMutate: (itemId) => setRedeemingId(itemId),
     onSuccess: () => {
-      toast.success("Reward redeemed successfully.");
+      toast.success("Đổi phần thưởng thành công.");
       queryClient.invalidateQueries({ queryKey: ["rewards-balance"] });
       queryClient.invalidateQueries({ queryKey: ["reward-items"] });
       queryClient.invalidateQueries({ queryKey: ["reward-transactions"] });
     },
-    onError: () => toast.error("Unable to redeem this reward right now."),
+    onError: () => toast.error("Hiện chưa thể đổi phần thưởng này."),
     onSettled: () => setRedeemingId(null),
   });
 
@@ -79,9 +80,9 @@ export function CitizenRewardsPage() {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Citizen workspace</span>}
-        title="Rewards and redemption"
-        description="Track your current balance, see what is in stock and review the points flow from your recent activity."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian công dân</span>}
+        title="Phần thưởng và đổi quà"
+        description="Theo dõi số điểm hiện có, xem vật phẩm còn hàng và lịch sử biến động điểm từ các hoạt động gần đây."
       />
 
       {/* <PageHero
@@ -115,24 +116,24 @@ export function CitizenRewardsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           icon={Award}
-          label="Balance"
+          label="Số dư"
           value={balanceLoading ? "..." : `${pointsBalance} pts`}
-          description="Available points ready for redemption."
+          description="Số điểm hiện sẵn sàng để đổi quà."
           tone="sand"
           featured
         />
         <StatCard
           icon={Gift}
-          label="Redeemable now"
+          label="Đổi được ngay"
           value={itemsLoading ? "..." : redeemableCount}
-          description="Items you can claim with your current balance."
+          description="Những vật phẩm bạn có thể đổi với số điểm hiện tại."
           tone="mint"
         />
         <StatCard
           icon={Ticket}
-          label="Live inventory"
+          label="Tồn kho hiện có"
           value={itemsLoading ? "..." : liveInventory}
-          description="Total stock remaining across active rewards."
+          description="Tổng số lượng còn lại trong danh mục phần thưởng."
           tone="sky"
         />
       </div>
@@ -140,8 +141,8 @@ export function CitizenRewardsPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <SectionCard className="overflow-hidden">
           <SectionHeader
-            title="Available rewards"
-            description="Redeem items without leaving your current workspace."
+            title="Phần thưởng hiện có"
+            description="Đổi vật phẩm ngay trong không gian làm việc hiện tại."
           />
 
           {itemsLoading ? (
@@ -154,8 +155,8 @@ export function CitizenRewardsPage() {
             <div className="p-5 sm:p-6">
               <EmptyState
                 icon={Gift}
-                title="No rewards in stock"
-                description="New reward items will appear here as soon as the catalog is replenished."
+                title="Chưa có phần thưởng khả dụng"
+                description="Vật phẩm mới sẽ xuất hiện tại đây khi danh mục được bổ sung."
                 tone="sand"
               />
             </div>
@@ -193,7 +194,7 @@ export function CitizenRewardsPage() {
                             <Badge
                               variant={item.stock > 0 ? "accepted" : "outline"}
                             >
-                              Stock {item.stock}
+                              Còn {item.stock}
                             </Badge>
                           </div>
                         </div>
@@ -203,14 +204,14 @@ export function CitizenRewardsPage() {
                     <div className="mt-5 flex items-center justify-between gap-3 rounded-[20px] border border-[var(--stroke-soft)] bg-[var(--bg-surface-muted)] px-4 py-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                          Eligibility
+                          Điều kiện đổi
                         </p>
                         <p className="text-sm font-medium text-[var(--text-secondary)]">
                           {canRedeem
-                            ? "Ready to redeem now."
+                            ? "Đã đủ điều kiện để đổi ngay."
                             : item.stock === 0
-                              ? "Currently out of stock."
-                              : "Earn more points to unlock."}
+                              ? "Tạm thời đã hết hàng."
+                              : "Hãy tích thêm điểm để mở khóa."}
                         </p>
                       </div>
                       <Button
@@ -220,7 +221,7 @@ export function CitizenRewardsPage() {
                         disabled={!canRedeem || isRedeeming}
                         onClick={() => redeemItem.mutate(item.itemId)}
                       >
-                        {isRedeeming ? "Redeeming..." : "Redeem"}
+                        {isRedeeming ? "Đang đổi..." : "Đổi quà"}
                       </Button>
                     </div>
                   </div>
@@ -232,8 +233,8 @@ export function CitizenRewardsPage() {
 
         <SectionCard className="overflow-hidden">
           <SectionHeader
-            title="Transaction history"
-            description="A running ledger of points earned and spent."
+            title="Lịch sử giao dịch"
+            description="Nhật ký các lần cộng và trừ điểm."
           />
 
           {transactionsLoading ? (
@@ -246,8 +247,8 @@ export function CitizenRewardsPage() {
             <div className="p-5 sm:p-6">
               <EmptyState
                 icon={History}
-                title="No transactions yet"
-                description="Once points are earned or redeemed, every change will be listed here."
+                title="Chưa có giao dịch nào"
+                description="Mọi thay đổi về điểm sẽ xuất hiện tại đây khi bạn bắt đầu tích hoặc đổi điểm."
                 tone="slate"
               />
             </div>
@@ -277,13 +278,7 @@ export function CitizenRewardsPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
-                          {transaction.reasonCode
-                            .toLowerCase()
-                            .split("_")
-                            .map(
-                              (part) => part.charAt(0).toUpperCase() + part.slice(1),
-                            )
-                            .join(" ")}
+                          {formatRewardReasonLabel(transaction.reasonCode)}
                         </p>
                         <p className="text-sm text-[var(--text-secondary)]">
                           {new Date(transaction.createdAt).toLocaleString()}

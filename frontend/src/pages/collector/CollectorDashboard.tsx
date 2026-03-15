@@ -59,27 +59,27 @@ export const CollectorDashboard: React.FC = () => {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Collector workspace</span>}
-        title="Field operations overview"
-        description="See what is assigned today, jump into your route and follow live task progress in the same workflow you already use."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian thu gom</span>}
+        title="Tổng quan hiện trường"
+        description="Xem các nhiệm vụ hôm nay, mở ngay lộ trình và theo dõi tiến độ xử lý theo đúng luồng công việc bạn đang dùng."
         actions={
           <>
             <Button variant="outline" onClick={() => navigate("/collector/map")}>
               <Navigation className="mr-2 h-4 w-4" />
-              Route map
+              Bản đồ lộ trình
             </Button>
             <Button onClick={() => navigate("/collector/tasks")}>
               <ListTodo className="mr-2 h-4 w-4" />
-              All tasks
+              Tất cả nhiệm vụ
             </Button>
           </>
         }
       />
 
       <PageHero
-        eyebrow={<span className="shell-chip shell-chip-accent">Today&apos;s route</span>}
-        title="Stay focused on the next pickup."
-        description="The collector dashboard now prioritises route clarity, active tasks and response momentum without changing status transitions or task details."
+        eyebrow={<span className="shell-chip shell-chip-accent">Lộ trình hôm nay</span>}
+        title="Tập trung vào điểm thu gom tiếp theo."
+        description="Trang tổng quan của nhân viên thu gom giờ ưu tiên sự rõ ràng của lộ trình, nhiệm vụ đang làm và nhịp phản hồi mà không đổi luồng trạng thái hay chi tiết nhiệm vụ."
         tone="sky"
         aside={
           <div className="space-y-4">
@@ -89,7 +89,7 @@ export const CollectorDashboard: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-[18px] bg-white/78 p-4">
                 <p className="text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                  Assigned
+                  Đã phân công
                 </p>
                 <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
                   5
@@ -97,7 +97,7 @@ export const CollectorDashboard: React.FC = () => {
               </div>
               <div className="rounded-[18px] bg-white/78 p-4">
                 <p className="text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                  ETA left
+                  Thời gian còn lại
                 </p>
                 <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
                   1h 45m
@@ -111,31 +111,31 @@ export const CollectorDashboard: React.FC = () => {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={ListTodo}
-          label="Tasks today"
+          label="Nhiệm vụ hôm nay"
           value={5}
-          description="Two items are marked as high priority."
+          description="Có hai nhiệm vụ được đánh dấu ưu tiên cao."
           tone="mint"
           featured
         />
         <StatCard
           icon={CheckCircle2}
-          label="Completed this week"
+          label="Hoàn thành tuần này"
           value={42}
-          description="You are ahead of last week&apos;s pace."
+          description="Bạn đang nhanh hơn tiến độ của tuần trước."
           tone="sky"
         />
         <StatCard
           icon={Navigation}
-          label="Currently in transit"
+          label="Đang di chuyển"
           value={3}
-          description="Live route status is updated from the same task flow."
+          description="Trạng thái lộ trình được cập nhật trực tiếp từ luồng nhiệm vụ."
           tone="violet"
         />
         <StatCard
           icon={Truck}
-          label="Total collected"
+          label="Tổng đã thu gom"
           value="1.2 t"
-          description="Best weekly performance this month."
+          description="Hiệu suất tốt nhất trong tháng này."
           tone="sand"
         />
       </div>
@@ -143,11 +143,11 @@ export const CollectorDashboard: React.FC = () => {
       <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
         <SectionCard className="overflow-hidden">
           <SectionHeader
-            title="Priority tasks"
-            description="The most urgent jobs are pinned here for faster action."
+            title="Nhiệm vụ ưu tiên"
+            description="Các việc gấp nhất được ghim ở đây để xử lý nhanh hơn."
             action={
               <Button variant="ghost" onClick={() => navigate("/collector/tasks")}>
-                View tasks
+                Xem nhiệm vụ
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             }
@@ -172,12 +172,12 @@ export const CollectorDashboard: React.FC = () => {
                     <StatusBadge status={task.status} />
                   </div>
                   <p className="text-sm text-[var(--text-secondary)]">
-                    Scheduled {task.scheduledDate}
+                    Lên lịch {task.scheduledDate}
                   </p>
                   {task.priority === "HIGH" ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-red-100/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-red-700">
                       <Zap className="h-3.5 w-3.5" />
-                      Urgent
+                      Khẩn cấp
                     </span>
                   ) : null}
                 </div>
@@ -188,8 +188,8 @@ export const CollectorDashboard: React.FC = () => {
 
         <SectionCard className="overflow-hidden">
           <SectionHeader
-            title="Live route map"
-            description="Locations remain connected to the same task detail pages and route actions."
+            title="Bản đồ lộ trình trực tiếp"
+            description="Các vị trí vẫn liên kết tới cùng trang chi tiết nhiệm vụ và hành động tuyến đường."
           />
           <div className="h-[420px]">
             <MapComponent

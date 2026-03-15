@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 import { enterpriseKpiApi, tasksApi } from "../../api";
 import { Badge } from "../../components/ui/badge";
@@ -24,13 +25,14 @@ import {
   SectionHeader,
   StatCard,
 } from "../../components/ui/page";
+import { formatPriorityLabel, formatStatusLabel } from "../../lib/labels";
 
 const STATUS_TABS = [
-  { label: "ALL", value: "ALL" },
-  { label: "PENDING", value: "PENDING_ENTERPRISE_APPROVAL" },
-  { label: "ASSIGNED", value: "ASSIGNED" },
-  { label: "ON THE WAY", value: "ON_THE_WAY" },
-  { label: "COMPLETED", value: "COMPLETED" },
+  { label: "TẤT CẢ", value: "ALL" },
+  { label: "CHỜ DUYỆT", value: "PENDING_ENTERPRISE_APPROVAL" },
+  { label: "ĐÃ PHÂN CÔNG", value: "ASSIGNED" },
+  { label: "ĐANG DI CHUYỂN", value: "ON_THE_WAY" },
+  { label: "HOÀN THÀNH", value: "COMPLETED" },
 ] as const;
 
 interface Task {
@@ -110,21 +112,21 @@ function AssignModal({
 
   return (
     <ModalShell
-      title="Assign task to collector"
-      description="Choose one of your current collectors. Assignment logic and backend workflow stay unchanged."
+      title="Phân công nhiệm vụ cho nhân viên thu gom"
+      description="Chọn một trong các nhân viên thu gom hiện có. Logic phân công và luồng backend vẫn giữ nguyên."
       icon={UserRoundPlus}
       onClose={onClose}
       widthClassName="max-w-lg"
       footer={
         <>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            Hủy
           </Button>
           <Button
             onClick={() => onAssign(selected)}
             disabled={!selected || isPending || collectors.length === 0}
           >
-            {isPending ? "Assigning..." : "Assign task"}
+            {isPending ? "Đang phân công..." : "Phân công nhiệm vụ"}
           </Button>
         </>
       }
@@ -132,7 +134,7 @@ function AssignModal({
       <div className="space-y-4">
         <div className="rounded-[20px] border border-[var(--stroke-soft)] bg-[var(--bg-surface-muted)] px-4 py-3">
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-            Task ID
+            Mã nhiệm vụ
           </p>
           <p className="mt-2 text-sm font-semibold text-[var(--text-primary)]">
             {task.taskId}
@@ -141,11 +143,11 @@ function AssignModal({
 
         <div>
           <label htmlFor="collector-select" className="field-label">
-            Select collector
+            Chọn nhân viên thu gom
           </label>
           {collectors.length === 0 ? (
             <div className="rounded-[20px] border border-[var(--stroke-soft)] bg-[var(--bg-surface-muted)] px-4 py-3 text-sm text-[var(--text-secondary)]">
-              No collectors are registered under this enterprise yet.
+              Chưa có nhân viên thu gom nào được đăng ký cho doanh nghiệp này.
             </div>
           ) : (
             <select
@@ -154,7 +156,7 @@ function AssignModal({
               onChange={(event) => setSelected(event.target.value)}
               className="shell-select"
             >
-              <option value="">Choose a collector</option>
+              <option value="">Chọn nhân viên thu gom</option>
               {collectors.map((collector) => (
                 <option key={collector.userId} value={collector.userId}>
                   {getCollectorName(collector)} ({collector.email})
@@ -169,6 +171,7 @@ function AssignModal({
 }
 
 export function EnterpriseTasksPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>("ALL");
   const [assigningTask, setAssigningTask] = useState<Task | null>(null);
@@ -199,14 +202,14 @@ export function EnterpriseTasksPage() {
       collectorUserId: string;
     }) => tasksApi.assignTask(taskId, collectorUserId),
     onSuccess: () => {
-      toast.success("Task assigned to collector.");
+      toast.success("Đã phân công nhiệm vụ cho nhân viên thu gom.");
       queryClient.invalidateQueries({ queryKey: ["enterprise-tasks-list"] });
       setAssigningTask(null);
     },
     onError: (error: unknown) => {
       const message =
         (error as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || "Failed to assign task.";
+          ?.message || "Phân công nhiệm vụ thất bại.";
       toast.error(message);
     },
   });
@@ -241,21 +244,21 @@ export function EnterpriseTasksPage() {
       ) : null}
 
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Enterprise workspace</span>}
-        title="Task operations"
-        description="Review the live task queue, assign collectors and monitor handoff status through a single enterprise task board."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian doanh nghiệp</span>}
+        title="Điều hành nhiệm vụ"
+        description="Theo dõi hàng chờ nhiệm vụ trực tiếp, phân công nhân viên thu gom và giám sát trạng thái bàn giao trong cùng một bảng điều phối."
         actions={
           <Button variant="outline" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
+            Làm mới
           </Button>
         }
       />
 
       <PageHero
-        eyebrow={<span className="shell-chip shell-chip-accent">Dispatch board</span>}
-        title="From pending approval to route completion."
-        description="Task creation, reassignment and collector mapping use the same backend actions as before. This layout simply clarifies queue health and assignment readiness."
+        eyebrow={<span className="shell-chip shell-chip-accent">Bảng điều phối</span>}
+        title="Từ chờ duyệt tới hoàn tất tuyến thu gom."
+        description="Việc tạo nhiệm vụ, phân công lại và gán nhân viên thu gom vẫn dùng cùng hành động backend như trước. Giao diện này chỉ làm rõ sức khỏe hàng chờ và mức sẵn sàng phân công."
         tone="sky"
         aside={
           <div className="space-y-4">
@@ -265,10 +268,10 @@ export function EnterpriseTasksPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-[var(--text-primary)]">
-                  Collector capacity
+                  Năng lực nhân sự
                 </p>
                 <p className="text-sm leading-6 text-[var(--text-secondary)]">
-                  {collectors.length} collectors currently available for assignment.
+                  Hiện có {collectors.length} nhân viên sẵn sàng để phân công.
                 </p>
               </div>
             </div>
@@ -279,45 +282,45 @@ export function EnterpriseTasksPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={Clock}
-          label="Pending approval"
+          label="Chờ duyệt"
           value={pendingCount}
-          description="Tasks awaiting enterprise action."
+          description="Nhiệm vụ đang chờ doanh nghiệp xử lý."
           tone="sand"
         />
         <StatCard
           icon={ListTodo}
-          label="Active tasks"
+          label="Nhiệm vụ đang hoạt động"
           value={activeCount}
-          description="Currently assigned or already in progress."
+          description="Những nhiệm vụ đã phân công hoặc đang thực hiện."
           tone="sky"
           featured
         />
         <StatCard
           icon={CheckCircle}
-          label="Completed"
+          label="Hoàn thành"
           value={completedCount}
-          description="Tasks marked complete in the current view."
+          description="Nhiệm vụ đã được đánh dấu hoàn thành trong chế độ xem hiện tại."
           tone="mint"
         />
         <StatCard
           icon={Users}
-          label="Collectors"
+          label="Nhân viên"
           value={collectors.length}
-          description="Available assignment capacity."
+          description="Năng lực phân công hiện có."
           tone="violet"
         />
       </div>
 
       <SectionCard className="overflow-hidden">
         <SectionHeader
-          title="Current queue"
-          description="Filter by task stage and assign collectors without leaving the board."
+          title="Hàng chờ hiện tại"
+          description="Lọc theo giai đoạn nhiệm vụ và phân công nhân viên ngay trên bảng điều phối."
         />
 
         <div className="space-y-5 p-5 sm:p-6">
           <div className="shell-toolbar justify-between">
             <FilterTabs
-              value={activeTab}
+              value={STATUS_TABS.find((item) => item.value === activeTab)?.label ?? "TẤT CẢ"}
               options={STATUS_TABS.map((item) => item.label)}
               onChange={(value) => {
                 const next = STATUS_TABS.find((item) => item.label === value);
@@ -326,7 +329,7 @@ export function EnterpriseTasksPage() {
             />
             <Button variant="outline" onClick={() => refetch()}>
               <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh queue
+              Làm mới hàng chờ
             </Button>
           </div>
 
@@ -339,8 +342,8 @@ export function EnterpriseTasksPage() {
           ) : tasks.length === 0 ? (
             <EmptyState
               icon={ListTodo}
-              title="No tasks in this view"
-              description="Try another status filter or refresh again after new reports are accepted."
+              title="Không có nhiệm vụ trong chế độ xem này"
+              description="Hãy thử bộ lọc trạng thái khác hoặc làm mới lại sau khi có báo cáo mới được chấp nhận."
               tone="slate"
             />
           ) : (
@@ -358,14 +361,14 @@ export function EnterpriseTasksPage() {
                       <div className="min-w-0 space-y-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-base font-semibold text-[var(--text-primary)]">
-                            {task.areaName || "Unassigned area"}
+                            {task.areaName || "Khu vực chưa xác định"}
                           </p>
                           <Badge variant={getTaskVariant(task.status)}>
-                            {task.status.replace(/_/g, " ")}
+                            {formatStatusLabel(task.status)}
                           </Badge>
                           {task.priority ? (
                             <Badge variant={getPriorityVariant(task.priority)}>
-                              {task.priority}
+                              {formatPriorityLabel(task.priority)}
                             </Badge>
                           ) : null}
                         </div>
@@ -373,7 +376,7 @@ export function EnterpriseTasksPage() {
                         <div className="flex flex-wrap gap-4 text-sm text-[var(--text-secondary)]">
                           <span className="inline-flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
-                            {task.areaName || "Area pending"}
+                            {task.areaName || "Khu vực đang chờ"}
                           </span>
                           <span className="inline-flex items-center gap-2">
                             <Clock className="h-4 w-4" />
@@ -381,20 +384,27 @@ export function EnterpriseTasksPage() {
                               ? new Date(
                                   task.scheduledDate ?? task.scheduledAt!,
                                 ).toLocaleDateString()
-                              : "Unscheduled"}
+                              : "Chưa lên lịch"}
                           </span>
                           <span>
-                            Collector: {task.collectorName || "Not assigned yet"}
+                            Nhân viên: {task.collectorName || "Chưa phân công"}
                           </span>
                         </div>
 
                         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                          Task ID {task.taskId}
+                          Mã nhiệm vụ {task.taskId}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/enterprise/tasks/${task.taskId}`)}
+                      >
+                        Xem chi tiáº¿t
+                      </Button>
                       {(task.status === "PENDING_ENTERPRISE_APPROVAL" ||
                         task.status === "ASSIGNED") ? (
                         <Button
@@ -402,7 +412,7 @@ export function EnterpriseTasksPage() {
                           onClick={() => setAssigningTask(task)}
                         >
                           <UserRoundPlus className="mr-2 h-4 w-4" />
-                          {task.status === "ASSIGNED" ? "Reassign" : "Assign"}
+                          {task.status === "ASSIGNED" ? "Phân công lại" : "Phân công"}
                         </Button>
                       ) : null}
                     </div>

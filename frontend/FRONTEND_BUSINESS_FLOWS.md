@@ -30,10 +30,12 @@
 - `/citizen/report`
 - `/citizen/reports`
 - `/citizen/reports/:id`
+- `/citizen/notifications`
 - `/citizen/rewards`
 
 ### Collector
 - `/collector/dashboard`
+- `/collector/notifications`
 - `/collector/tasks`
 - `/collector/tasks/:taskId`
 - `/collector/map`
@@ -44,6 +46,8 @@
 - `/enterprise/dashboard`
 - `/enterprise/reports`
 - `/enterprise/tasks`
+- `/enterprise/capabilities`
+- `/enterprise/notifications`
 - `/enterprise/collectors`
 - `/enterprise/reward-rules`
 - `/enterprise/analytics`
@@ -149,7 +153,7 @@
    - `PUT /api/collector/tasks/{taskId}/status?status=ON_THE_WAY`
 4. Dien form hoan tat:
    - anh chung minh (bat buoc)
-   - estimated weight > 0 (bat buoc)
+   - measured weight > 0 (bat buoc, sau khi can rac)
    - sorting level
    - collector note
 5. Upload chung cu:
@@ -220,7 +224,17 @@
   - top collector
   - khu vuc co nhieu task.
 
-### 7.7 Pickup/Profile
+### 7.7 Dang ky coverage/khu vuc enterprise
+- Route: `/enterprise/capabilities`.
+- API:
+  - `GET /api/enterprise/capabilities`
+  - `POST /api/enterprise/capabilities`
+  - `DELETE /api/enterprise/capabilities/{capabilityId}`
+  - `GET /api/service-areas`
+  - `GET /api/waste-types`
+- Muc tieu: dang ky khu vuc phuc vu + loai rac + cong suat/ngay de enterprise co the nhan report dung pham vi van hanh.
+
+### 7.8 Pickup/Profile
 - `/enterprise/pickup`: placeholder (chua co luong tao pickup thuc te).
 - `/enterprise/profile`: placeholder (chua co luong sua profile enterprise).
 
@@ -255,7 +269,13 @@
    - `PUT /api/complaints/{complaintId}/resolve`
    - payload gom decision/note/isAccepted/adminResponse.
 
-### 8.5 Notification center
+### 8.5 Nhan notification theo role
+1. Citizen/Collector/Enterprise vao route notification rieng trong workspace.
+2. Frontend goi `GET /api/notifications`.
+3. Hien danh sach thong bao active theo dung target audience tu backend.
+4. Co search + refresh de xem nhanh thong bao hien hanh.
+
+### 8.6 Notification center
 1. Tai danh sach:
    - `GET /api/admin/notifications`.
 2. Tao moi thong bao:
@@ -263,7 +283,7 @@
 3. Vo hieu hoa:
    - `PUT /api/admin/notifications/{notificationId}/deactivate`.
 
-### 8.6 Reward catalog (CRUD)
+### 8.7 Reward catalog (CRUD)
 1. Tai item:
    - `GET /api/admin/reward-items`.
 2. Tao item:
@@ -273,7 +293,7 @@
 4. Deactivate item:
    - `DELETE /api/admin/reward-items/{itemId}`.
 
-### 8.7 System settings (CRUD)
+### 8.8 System settings (CRUD)
 1. Tai settings:
    - `GET /api/admin/settings`.
 2. Tao setting:
@@ -304,7 +324,7 @@ Ghi chu mapping tren UI collector:
 - `complaintsApi.create/getMine/getById` co wrapper, nhung web citizen/collector/enterprise chua co man tao/xem complaint cua toi.
 - `userApi.getProfile/updateProfile/uploadAvatar` co wrapper, nhung cac man profile web hien tai chua implement chinh thuc.
 - `serviceAreasApi` va `wasteTypesApi` admin CRUD co wrapper, nhung web admin chua co page quan tri rieng cho 2 danh muc nay.
-- `enterpriseCapabilitiesApi` va `enterpriseKpiApi.calculateKpi/getCollectorKpi` co wrapper, nhung UI web chua co full flow thao tac.
+- `enterpriseKpiApi.calculateKpi/getCollectorKpi` co wrapper, nhung UI web chua co full flow thao tac.
 
 ## 11. Ghi chu ve du lieu mock/placeholder
 - Collector: `dashboard`, `map`, `performance` dang co phan du lieu mock.
