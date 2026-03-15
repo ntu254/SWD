@@ -1,14 +1,14 @@
 # Mobile README
 
-## Tổng quan
+## Tong quan
 
-`mobile/` là ứng dụng Expo React Native dùng cho các flow mobile của hệ thống:
+`mobile/` la ung dung Expo React Native dung cho cac flow mobile cua he thong:
 
-- `Citizen`: tạo report, xem lịch sử, xem chi tiết báo cáo, nhận gợi ý AI bubble
-- `Collector`: xem task, vào màn chi tiết, chụp minh chứng, nhập cân nặng, hoàn tất nhiệm vụ
-- `Enterprise` và `Admin`: các flow mobile đang có sẵn theo router hiện tại
+- `Citizen`: tao report, xem lich su, xem chi tiet bao cao, nhan goi y AI bubble
+- `Collector`: xem task, vao man chi tiet, chup minh chung, nhap can nang, hoan tat nhiem vu
+- `Enterprise` va `Admin`: cac flow mobile dang co san theo router hien tai
 
-Ứng dụng dùng `Expo Router` với cấu trúc route theo nhóm vai trò.
+Ung dung dung `Expo Router` voi cau truc route theo nhom vai tro.
 
 ## Stack
 
@@ -22,7 +22,7 @@
 - `expo-location`
 - `expo-image-picker`
 
-## Cấu trúc thư mục chính
+## Cau truc thu muc chinh
 
 ```text
 mobile/
@@ -45,14 +45,14 @@ mobile/
 `-- package.json
 ```
 
-## Yêu cầu chạy
+## Yeu cau chay
 
 - `Node.js 18+`
 - `npm`
-- `Expo Go` nếu chạy trên điện thoại thật
-- backend đang chạy và reachable từ thiết bị
+- `Expo Go` neu chay tren dien thoai that
+- backend dang chay va reachable tu thiet bi
 
-## Cấu hình môi trường
+## Cau hinh moi truong
 
 File `mobile/.env`:
 
@@ -61,12 +61,12 @@ EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key
 EXPO_PUBLIC_API_BASE_URL=http://localhost:8080/api
 ```
 
-Lưu ý quan trọng:
+Luu y quan trong:
 
-- mobile cần `EXPO_PUBLIC_API_BASE_URL` có `/api`
-- web frontend thì ngược lại, không có `/api`
+- mobile can `EXPO_PUBLIC_API_BASE_URL` co `/api`
+- web frontend thi nguoc lai, khong co `/api`
 
-Các biến khác app cũng hỗ trợ:
+Các bien khac app cung ho tro:
 
 - `EXPO_PUBLIC_MAP_PROVIDER`
 - `EXPO_PUBLIC_API_TIMEOUT_MS`
@@ -74,7 +74,7 @@ Các biến khác app cũng hỗ trợ:
 - `EXPO_PUBLIC_ADMIN_SETUP_SECRET`
 - `EXPO_PUBLIC_DEMO_ACCOUNT_PREFIX`
 
-## Chạy dự án
+## Chay du an
 
 ```powershell
 cd mobile
@@ -94,83 +94,80 @@ npm run web
 npm run lint
 ```
 
-## Chạy theo môi trường
+## Chay theo moi truong
 
 ### Android emulator
 
-Fallback API mặc định là `http://10.0.2.2:8080/api` nếu bạn chưa set `EXPO_PUBLIC_API_BASE_URL`.
+Fallback API mac dinh la `http://10.0.2.2:8080/api` neu ban chua set `EXPO_PUBLIC_API_BASE_URL`.
 
 ### iOS simulator / local web
 
-Fallback mặc định là `http://localhost:8080/api`.
+Fallback mac dinh la `http://localhost:8080/api`.
 
-### Điện thoại thật
+### Dien thoai that
 
-Bạn nên:
+Ban nen:
 
-1. public backend local bằng Slim
-2. sửa `mobile/.env`:
+1. public backend local bang ngrok:
 
-```env
-EXPO_PUBLIC_API_BASE_URL=https://your-backend.slim.show/api
+```powershell
+ngrok http 8080
 ```
 
-3. chạy Expo:
+2. sua `mobile/.env`:
+
+```env
+EXPO_PUBLIC_API_BASE_URL=https://abc123.ngrok-free.app/api
+```
+
+3. chay Expo:
 
 ```powershell
 npm run start:tunnel
 ```
 
-## Slim + Expo tunnel
+## Ngrok + Expo tunnel
 
-Đây là cách ổn định nhất khi muốn quét app trên điện thoại thật:
+Day la cach on dinh nhat khi muon quet app tren dien thoai that:
 
-1. backend chạy local port `8080`
-2. tạo public URL cho backend bằng Slim
-3. set `EXPO_PUBLIC_API_BASE_URL` sang URL public có `/api`
-4. chạy Expo bằng `start:tunnel`
+1. backend chay local port `8080`
+2. tao public URL cho backend bang ngrok
+3. set `EXPO_PUBLIC_API_BASE_URL` sang URL public co `/api`
+4. chay Expo bang `start:tunnel`
 
-Ví dụ:
+Vi du:
 
 ```env
-EXPO_PUBLIC_API_BASE_URL=https://your-backend.slim.show/api
+EXPO_PUBLIC_API_BASE_URL=https://abc123.ngrok-free.app/api
 ```
 
-### Lệnh mẫu đúng
+### Lenh mau dung
 
 ```powershell
-slim login
-slim share --port 8080 --subdomain swd392-api
+ngrok http 8080
 ```
 
-Sau đó cập nhật:
-
-```env
-EXPO_PUBLIC_API_BASE_URL=https://swd392-api.slim.show/api
-```
-
-Rồi restart Expo:
+Sau do cap nhat `mobile/.env`, roi restart Expo:
 
 ```powershell
 npm run start:tunnel
 ```
 
-### Các lỗi sai thường gặp với mobile + Slim
+### Cac loi sai thuong gap voi mobile + ngrok
 
-- dùng `http://localhost:8080/api` trên điện thoại thật
-- thiếu `/api` ở cuối `EXPO_PUBLIC_API_BASE_URL`
-- sửa `.env` nhưng không restart Expo
-- bật `--password` khi app cần fetch API trực tiếp
-- tưởng chỉ cần Expo tunnel là đủ
-- dùng `slim start` thay vì `slim share` khi mục tiêu là public backend cho điện thoại thật
+- dung `http://localhost:8080/api` tren dien thoai that
+- thieu `/api` o cuoi `EXPO_PUBLIC_API_BASE_URL`
+- sua `.env` nhung khong restart Expo
+- tuong chi can Expo tunnel la du
+- restart ngrok nhung app van dung URL cu
 
-## Bản đồ và vị trí
+## Ban do va vi tri
 
-- app có tích hợp Google Maps key qua `app.config.js`
-- nếu không có key hoặc đổi provider, kiểm tra `EXPO_PUBLIC_MAP_PROVIDER`
-- các flow report/task detail phụ thuộc lat/lng từ backend
+- app co tich hop Google Maps key qua `app.config.js`
+- neu khong co key hoac doi provider, kiem tra `EXPO_PUBLIC_MAP_PROVIDER`
+- cac flow report/task detail phu thuoc lat/lng tu backend
 
-## Kiểm tra chất lượng
+## Kiem tra chat luong
 
 ### Lint
 
@@ -186,24 +183,24 @@ npx tsc --noEmit
 
 ## Troubleshooting
 
-### Mobile không fetch được API
+### Mobile khong fetch duoc API
 
-- kiểm tra `EXPO_PUBLIC_API_BASE_URL`
-- nếu chạy trên điện thoại thật, không dùng `localhost`
-- thử Slim hoặc một public tunnel khác
+- kiem tra `EXPO_PUBLIC_API_BASE_URL`
+- neu chay tren dien thoai that, khong dung `localhost`
+- thu ngrok hoac mot public tunnel khac
 
-### Quét QR được nhưng app không load data
+### Quet QR duoc nhung app khong load data
 
-- Expo dev server và backend là hai vấn đề khác nhau
-- Expo nên chạy `start:tunnel`
-- backend nên có public URL riêng
+- Expo dev server va backend la hai van de khac nhau
+- Expo nen chay `start:tunnel`
+- backend nen co public URL rieng
 
-### Map không hiện
+### Map khong hien
 
-- kiểm tra `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`
-- restart Expo sau khi đổi `.env`
+- kiem tra `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`
+- restart Expo sau khi doi `.env`
 
-### Ảnh không upload được
+### Anh khong upload duoc
 
-- kiểm tra backend Cloudinary
-- kiểm tra quyền camera/photo library trên thiết bị
+- kiem tra backend Cloudinary
+- kiem tra quyen camera/photo library tren thiet bi

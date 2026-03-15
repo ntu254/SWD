@@ -1,13 +1,13 @@
 # Frontend README
 
-## Tổng quan
+## Tong quan
 
-`frontend/` là web app quản lý theo vai trò cho toàn bộ hệ thống. Ứng dụng phục vụ:
+`frontend/` la web app quan ly theo vai tro cho toan bo he thong. Ung dung phuc vu:
 
-- đăng nhập, đăng ký, phân quyền
+- dang nhap, dang ky, phan quyen
 - dashboard cho `Citizen`, `Collector`, `Enterprise`, `Admin`
-- quản lý báo cáo, nhiệm vụ, collector, thông báo, phần thưởng
-- hiển thị bản đồ, biểu đồ, bảng dữ liệu và các flow quản trị
+- quan ly bao cao, nhiem vu, collector, thong bao, phan thuong
+- hien thi ban do, bieu do, bang du lieu va cac flow quan tri
 
 ## Stack
 
@@ -22,7 +22,7 @@
 - `Leaflet`
 - `Recharts`
 
-## Cấu trúc thư mục chính
+## Cau truc thu muc chinh
 
 ```text
 frontend/
@@ -44,12 +44,12 @@ frontend/
 `-- vite.config.ts
 ```
 
-## Yêu cầu chạy
+## Yeu cau chay
 
 - `Node.js 18+`
-- backend đang chạy tại `http://localhost:8080` hoặc một base URL khác bạn cấu hình
+- backend dang chay tai `http://localhost:8080` hoac mot base URL khac ban cau hinh
 
-## Cấu hình môi trường
+## Cau hinh moi truong
 
 File `frontend/.env`:
 
@@ -57,46 +57,54 @@ File `frontend/.env`:
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
-Lưu ý:
+Luu y:
 
-- không thêm `/api`
-- app sẽ tự append `/api` trong layer axios
+- khong them `/api`
+- app se tu append `/api` trong layer axios
 
-Ví dụ khi dùng Slim:
-
-```env
-VITE_API_BASE_URL=https://your-backend.slim.show
-```
-
-## Dùng `slim.sh` cho frontend web
-
-### Trường hợp 1: chỉ public backend
-
-Khi đó frontend vẫn chạy local và chỉ cần đổi:
+Vi du khi dung ngrok:
 
 ```env
-VITE_API_BASE_URL=https://your-backend.slim.show
+VITE_API_BASE_URL=https://your-backend.ngrok-free.app
 ```
 
-### Trường hợp 2: gom frontend và backend vào cùng local HTTPS domain
+## Dung `ngrok` cho frontend web
+
+Voi ngrok, frontend va backend thuong la hai URL rieng. Frontend chi can tro `VITE_API_BASE_URL` toi URL public cua backend.
+
+### Truong hop 1: chi public backend
+
+Frontend van chay local va chi can:
 
 ```powershell
-slim start swd --port 5173 --route /api=8080
+ngrok http 8080
 ```
 
-Khi đó:
+Sau do cap nhat:
 
-- `https://swd.test` -> frontend
-- `https://swd.test/api` -> backend
+```env
+VITE_API_BASE_URL=https://abc123.ngrok-free.app
+```
 
-### Các lỗi sai thường gặp
+### Truong hop 2: public chinh frontend web
 
-- ghi `VITE_API_BASE_URL=https://your-backend.slim.show/api`
-- quên restart Vite sau khi đổi `.env`
-- public frontend bằng domain mới nhưng backend chưa thêm domain đó vào `CORS_ALLOWED_ORIGINS`
-- nhầm `slim start` với `slim share`
+```powershell
+ngrok http 5173
+```
 
-## Chạy dự án
+Khi do:
+
+- ban co the chia se web app local qua URL public
+- neu backend van o origin khac, nho them URL frontend public vao `CORS_ALLOWED_ORIGINS`
+
+### Cac loi sai thuong gap voi `ngrok`
+
+- ghi `VITE_API_BASE_URL=https://your-backend.ngrok-free.app/api`
+- quen restart Vite sau khi doi `.env`
+- public frontend bang domain moi nhung backend chua them domain do vao `CORS_ALLOWED_ORIGINS`
+- nghi Expo tunnel se public luon backend cho web/mobile
+
+## Chay du an
 
 ```powershell
 cd frontend
@@ -104,7 +112,7 @@ npm install
 npm run dev
 ```
 
-App mặc định chạy tại `http://localhost:5173`.
+App mac dinh chay tai `http://localhost:5173`.
 
 ## Scripts
 
@@ -115,55 +123,55 @@ npm run preview
 npm run lint
 ```
 
-## Tích hợp API
+## Tich hop API
 
-- `axios` dùng `VITE_API_BASE_URL`
-- request auth tự gắn `Bearer token` từ `localStorage`
-- khi gặp `401`, app thử refresh token rồi retry request
+- `axios` dung `VITE_API_BASE_URL`
+- request auth tu gan `Bearer token` tu `localStorage`
+- khi gap `401`, app thu refresh token roi retry request
 
-File liên quan:
+File lien quan:
 
 - `src/api/axios.ts`
 - `vite.config.ts`
 
-## Các nhóm màn hình chính
+## Cac nhom man hinh chinh
 
 ### Auth
 
-- đăng nhập
-- đăng ký
+- dang nhap
+- dang ky
 - unauthorized page
 
 ### Citizen
 
 - dashboard
-- tạo báo cáo
-- chi tiết báo cáo
-- danh sách báo cáo
-- phần thưởng
-- thông báo
+- tao bao cao
+- chi tiet bao cao
+- danh sach bao cao
+- phan thuong
+- thong bao
 
 ### Collector
 
 - dashboard
-- danh sách task
-- chi tiết task
-- bản đồ
-- hiệu suất
-- hồ sơ
-- thông báo
+- danh sach task
+- chi tiet task
+- ban do
+- hieu suat
+- ho so
+- thong bao
 
 ### Enterprise
 
 - dashboard
-- báo cáo chờ duyệt
-- nhiệm vụ
-- chi tiết nhiệm vụ
+- bao cao cho duyet
+- nhiem vu
+- chi tiet nhiem vu
 - collector
 - analytics
 - reward rules
 - capabilities
-- thông báo
+- thong bao
 
 ### Admin
 
@@ -182,7 +190,7 @@ cd frontend
 npm run build
 ```
 
-Thư mục output: `frontend/dist`
+Thu muc output: `frontend/dist`
 
 ## Lint
 
@@ -192,18 +200,18 @@ npm run lint
 
 ## Troubleshooting
 
-### Web không gọi được API
+### Web khong goi duoc API
 
-- kiểm tra backend đang chạy
-- kiểm tra `VITE_API_BASE_URL`
-- nếu backend ở domain public khác, kiểm tra CORS bên backend
+- kiem tra backend dang chay
+- kiem tra `VITE_API_BASE_URL`
+- neu backend o domain public khac, kiem tra CORS ben backend
 
-### Login xong bị đá về `/login`
+### Login xong bi da ve `/login`
 
-- kiểm tra access token và refresh token trong `localStorage`
-- kiểm tra backend trả `401` hay lỗi role-based route
+- kiem tra access token va refresh token trong `localStorage`
+- kiem tra backend tra `401` hay loi role-based route
 
-### Map không hiển thị
+### Map khong hien thi
 
-- kiểm tra tile/map network
-- kiểm tra component map có nhận đúng lat/lng từ API
+- kiem tra tile/map network
+- kiem tra component map co nhan dung lat/lng tu API

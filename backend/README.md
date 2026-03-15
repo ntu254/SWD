@@ -1,15 +1,15 @@
 # Backend README
 
-## Tổng quan
+## Tong quan
 
-`backend/` là Spring Boot API cho toàn bộ nền tảng quản lý thu gom rác. Ứng dụng chịu trách nhiệm:
+`backend/` la Spring Boot API cho toan bo nen tang quan ly thu gom rac. Ung dung chiu trach nhiem:
 
-- xác thực và phân quyền bằng JWT
-- quản lý user theo vai trò
-- nhận và xử lý báo cáo rác
-- điều phối nhiệm vụ cho collector
-- quản lý thông báo, phần thưởng, khiếu nại, cấu hình hệ thống
-- upload ảnh qua Cloudinary
+- xac thuc va phan quyen bang JWT
+- quan ly user theo vai tro
+- nhan va xu ly bao cao rac
+- dieu phoi nhiem vu cho collector
+- quan ly thong bao, phan thuong, khieu nai, cau hinh he thong
+- upload anh qua Cloudinary
 
 ## Stack
 
@@ -22,7 +22,7 @@
 - `Springdoc OpenAPI`
 - `Cloudinary`
 
-## Cấu trúc thư mục chính
+## Cau truc thu muc chinh
 
 ```text
 backend/
@@ -41,7 +41,7 @@ backend/
 `-- pom.xml
 ```
 
-## Các controller chính
+## Cac controller chinh
 
 - `AuthController`
 - `UserController`
@@ -55,47 +55,47 @@ backend/
 - `ComplaintController`
 - `RewardController`
 
-## Yêu cầu chạy
+## Yeu cau chay
 
 - `Java 21`
-- `PostgreSQL` hoặc Supabase PostgreSQL
-- Maven wrapper có sẵn trong repo
+- `PostgreSQL` hoac Supabase PostgreSQL
+- Maven wrapper co san trong repo
 
-## Cấu hình môi trường
+## Cau hinh moi truong
 
-File local đang dùng là `backend/.env`. Các biến quan trọng:
+File local dang dung la `backend/.env`. Cac bien quan trong:
 
-| Biến | Ý nghĩa |
+| Bien | Y nghia |
 | --- | --- |
 | `DB_HOST` | Host PostgreSQL |
 | `DB_PORT` | Port PostgreSQL |
-| `DB_NAME` | Tên database |
+| `DB_NAME` | Ten database |
 | `DB_USERNAME` | User database |
 | `DB_PASSWORD` | Password database |
-| `SERVER_PORT` | Port chạy API |
-| `JWT_SECRET` | Secret ký access/refresh token |
+| `SERVER_PORT` | Port chay API |
+| `JWT_SECRET` | Secret ky access/refresh token |
 | `JWT_ACCESS_EXPIRY` | TTL access token |
 | `JWT_REFRESH_EXPIRY` | TTL refresh token |
-| `CORS_ALLOWED_ORIGINS` | Danh sách origin cho web frontend |
+| `CORS_ALLOWED_ORIGINS` | Danh sach origin cho web frontend |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Cloudinary key |
 | `CLOUDINARY_API_SECRET` | Cloudinary secret |
-| `ADMIN_SETUP_SECRET` | Secret cho luồng setup admin |
+| `ADMIN_SETUP_SECRET` | Secret cho luong setup admin |
 
-## Lưu ý cấu hình database
+## Luu y cau hinh database
 
-Ứng dụng hiện chạy với:
+Ung dung hien chay voi:
 
 - `spring.jpa.hibernate.ddl-auto=validate`
 - `spring.flyway.enabled=false`
 
-Điều này có nghĩa:
+Dieu nay co nghia:
 
-- backend không tự tạo schema
-- backend chỉ chạy nếu schema hiện tại khớp với entity
-- khi đổi entity, cần tự xử lý migration database
+- backend khong tu tao schema
+- backend chi chay neu schema hien tai khop voi entity
+- khi doi entity, can tu xu ly migration database
 
-## Chạy dự án
+## Chay du an
 
 ### Windows
 
@@ -111,9 +111,9 @@ cd backend
 ./mvnw spring-boot:run
 ```
 
-API mặc định: `http://localhost:8080`
+API mac dinh: `http://localhost:8080`
 
-## Các lệnh hữu ích
+## Cac lenh huu ich
 
 ### Compile
 
@@ -139,86 +139,85 @@ API mặc định: `http://localhost:8080`
 - OpenAPI JSON: `http://localhost:8080/api-docs`
 - Health endpoint: `http://localhost:8080/actuator/health`
 
-## Phân quyền
+## Phan quyen
 
-Các nhóm quyền chính:
+Các nhom quyen chinh:
 
 - `/api/auth/**`: public
 - `/api/admin/**`: `ADMIN`
 - `/api/enterprise/**`: `ENTERPRISE`, `ADMIN`
 - `/api/collector/**`: `COLLECTOR`, `ADMIN`
-- một số GET public như `waste-types`, `service-areas`
+- mot so GET public nhu `waste-types`, `service-areas`
 
-## Kết nối với frontend và mobile
+## Ket noi voi frontend va mobile
 
 ### Frontend web
 
-Frontend gọi backend root URL, ví dụ:
+Frontend goi backend root URL, vi du:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
-Nếu frontend chạy ở public domain, thêm domain đó vào:
+Neu frontend chay o public domain, them domain do vao:
 
 ```env
-CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:8081,https://your-frontend.slim.show
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:8081,https://your-frontend.ngrok-free.app
 ```
 
 ### Mobile Expo
 
-Mobile native không phụ thuộc CORS nhưng cần backend phải reachable từ thiết bị. Nếu dùng điện thoại thật, nên public backend bằng Slim và cấu hình:
+Mobile native khong phu thuoc CORS nhu browser nhung can backend phai reachable tu thiet bi. Neu dung dien thoai that, nen public backend bang ngrok va cau hinh:
 
 ```env
-EXPO_PUBLIC_API_BASE_URL=https://your-backend.slim.show/api
+EXPO_PUBLIC_API_BASE_URL=https://your-backend.ngrok-free.app/api
 ```
 
-## Dùng `slim.sh` với backend
+## Dung `ngrok` voi backend
 
 ### Public backend local
 
 ```powershell
-slim login
-slim share --port 8080 --subdomain swd392-api
+ngrok http 8080
 ```
 
-Ví dụ URL thu được:
+Vi du URL thu duoc:
 
 ```text
-https://swd392-api.slim.show
+https://abc123.ngrok-free.app
 ```
 
-Khi đó:
+Khi do:
 
-- mobile dùng `https://swd392-api.slim.show/api`
-- frontend dùng `https://swd392-api.slim.show`
+- mobile dung `https://abc123.ngrok-free.app/api`
+- frontend dung `https://abc123.ngrok-free.app`
 
-### Các lỗi sai thường gặp
+### Cac loi sai thuong gap
 
-- public backend xong nhưng mobile vẫn để `http://localhost:8080/api`
-- public frontend bằng domain public nhưng quên thêm origin vào `CORS_ALLOWED_ORIGINS`
-- bật `--password` khi mobile/web cần gọi API trực tiếp
-- sửa `.env` backend nhưng không restart Spring Boot
+- public backend xong nhung mobile van de `http://localhost:8080/api`
+- public frontend bang domain public nhung quen them origin vao `CORS_ALLOWED_ORIGINS`
+- sua `.env` backend nhung khong restart Spring Boot
+- restart ngrok nhung mobile/frontend van dung URL cu
 
 ## Troubleshooting
 
-### Lỗi database/schema
+### Loi database/schema
 
-- kiểm tra DB đang dùng đúng schema
-- kiểm tra schema đã được tạo đúng trước khi chạy app
-- vì `ddl-auto=validate`, chỉ cần lệch cột hoặc enum là app sẽ fail khi start
+- kiem tra DB dang dung dung schema
+- kiem tra schema da duoc tao dung truoc khi chay app
+- vi `ddl-auto=validate`, chi can lech cot hoac enum la app se fail khi start
 
-### Lỗi upload ảnh
+### Loi upload anh
 
-- kiểm tra 3 biến Cloudinary
-- kiểm tra network outbound từ backend
+- kiem tra 3 bien Cloudinary
+- kiem tra network outbound tu backend
 
-### Lỗi CORS ở frontend
+### Loi CORS o frontend
 
-- thêm origin web vào `CORS_ALLOWED_ORIGINS`
-- restart backend sau khi đổi `.env`
+- them origin web vao `CORS_ALLOWED_ORIGINS`
+- restart backend sau khi doi `.env`
 
-### Lỗi 401
+### Loi 401
 
-- kiểm tra `JWT_SECRET`
-- kiểm tra access token gửi đúng header `Authorization: Bearer ...`
+- kiem tra `JWT_SECRET`
+- kiem tra access token gui dung header `Authorization: Bearer ...`

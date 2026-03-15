@@ -1,19 +1,19 @@
 # SWD V2 - Waste Collection Platform
 
-Nền tảng quản lý báo cáo rác và điều phối thu gom gồm 3 ứng dụng:
+Nen tang quan ly bao cao rac va dieu phoi thu gom gom 3 ung dung:
 
 - `backend`: Spring Boot API
 - `frontend`: React + Vite web app
 - `mobile`: Expo React Native app
 
-Hệ thống phục vụ 4 vai trò chính:
+He thong phuc vu 4 vai tro chinh:
 
-- `Citizen`: tạo báo cáo rác, theo dõi trạng thái, tích điểm
-- `Collector`: nhận nhiệm vụ, di chuyển, cân rác, hoàn tất task
-- `Enterprise`: duyệt báo cáo, phân công collector, quản lý năng lực phục vụ
-- `Admin`: quản lý người dùng, doanh nghiệp, thông báo, phần thưởng, cấu hình
+- `Citizen`: tao bao cao rac, theo doi trang thai, tich diem
+- `Collector`: nhan nhiem vu, di chuyen, can rac, hoan tat task
+- `Enterprise`: duyet bao cao, phan cong collector, quan ly nang luc phuc vu
+- `Admin`: quan ly nguoi dung, doanh nghiep, thong bao, phan thuong, cau hinh
 
-## Kiến trúc tổng thể
+## Kien truc tong the
 
 ```text
 .
@@ -21,27 +21,28 @@ Hệ thống phục vụ 4 vai trò chính:
 |-- frontend/   React 19 + Vite + Tailwind CSS + React Query
 |-- mobile/     Expo Router + React Native + React Query
 |-- README.md
-|-- SWD392-API.postman_collection.json
+`-- SWD392-API.postman_collection.json
 ```
 
 ## Tech stack
 
-| Thành phần | Công nghệ chính |
+| Thanh phan | Cong nghe chinh |
 | --- | --- |
 | Backend | Java 21, Spring Boot 3.2, Spring Security, Spring Data JPA, PostgreSQL |
 | Frontend | React 19, TypeScript, Vite 7, Tailwind CSS 4, React Query, Zustand |
 | Mobile | Expo 54, React Native 0.81, Expo Router 6, React Query, Zustand |
-| Hạ tầng ngoài | PostgreSQL/Supabase, Cloudinary, Google Maps |
+| Ha tang ngoai | PostgreSQL/Supabase, Cloudinary, Google Maps |
 
-## Yêu cầu môi trường
+## Yeu cau moi truong
 
 - `Java 21`
 - `Node.js 18+`
 - `npm`
-- `PostgreSQL` hoặc Supabase PostgreSQL
-- `Expo Go` nếu chạy mobile trên điện thoại thật
+- `PostgreSQL` hoac Supabase PostgreSQL
+- `Expo Go` neu chay mobile tren dien thoai that
+- `ngrok` neu can public backend local cho mobile/web
 
-## Chạy nhanh toàn bộ dự án
+## Chay nhanh toan bo du an
 
 ### 1. Backend
 
@@ -50,7 +51,7 @@ cd backend
 .\mvnw.cmd spring-boot:run
 ```
 
-API mặc định chạy tại `http://localhost:8080`.
+API mac dinh chay tai `http://localhost:8080`.
 
 ### 2. Frontend
 
@@ -60,7 +61,7 @@ npm install
 npm run dev
 ```
 
-Web mặc định chạy tại `http://localhost:5173`.
+Web mac dinh chay tai `http://localhost:5173`.
 
 ### 3. Mobile
 
@@ -70,17 +71,17 @@ npm install
 npm run start
 ```
 
-Nếu chạy trên điện thoại thật, nên dùng:
+Neu chay tren dien thoai that, nen dung:
 
 ```powershell
 npm run start:tunnel
 ```
 
-## Cấu hình môi trường
+## Cau hinh moi truong
 
 ### Backend
 
-Các biến chính nằm trong `backend/.env`:
+Các biến chính nam trong `backend/.env`:
 
 - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`
 - `SERVER_PORT`
@@ -89,143 +90,129 @@ Các biến chính nằm trong `backend/.env`:
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
 - `ADMIN_SETUP_SECRET`
 
-Lưu ý:
+Luu y:
 
 - `spring.jpa.hibernate.ddl-auto=validate`
 - `spring.flyway.enabled=false`
 
-Nghĩa là schema database phải tồn tại sẵn và khớp entity hiện tại.
+Nghia la schema database phai ton tai san va khop voi entity hien tai.
 
 ### Frontend
 
-File `frontend/.env` dùng:
+File `frontend/.env` dung:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
-Giá trị này là base URL backend không có `/api`.
+Gia tri nay la base URL backend khong co `/api`.
 
 ### Mobile
 
-File `mobile/.env` có thể dùng:
+File `mobile/.env` co the dung:
 
 ```env
 EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key
 EXPO_PUBLIC_API_BASE_URL=http://localhost:8080/api
 ```
 
-Lưu ý:
+Luu y:
 
-- Mobile cần URL có `/api`
-- Khi chạy trên Android emulator, app có fallback `10.0.2.2`
-- Khi chạy trên điện thoại thật, nên dùng public URL như Slim hoặc tunnel khác
+- Mobile can URL co `/api`
+- Frontend web thi nguoc lai, khong co `/api`
+- Khi chay tren Android emulator, app co fallback `10.0.2.2`
+- Khi chay tren dien thoai that, nen dung public URL nhu ngrok
 
-## Slim + Expo cho điện thoại thật
+## Ngrok + Expo cho dien thoai that
 
-Nếu backend chạy local nhưng mobile quét QR trên điện thoại thật:
+Neu backend chay local nhung mobile quet QR tren dien thoai that:
 
-1. Public backend local bằng Slim, ví dụ `https://your-backend.slim.show`
-2. Set trong `mobile/.env`:
+1. Public backend local:
 
-```env
-EXPO_PUBLIC_API_BASE_URL=https://your-backend.slim.show/api
+```powershell
+ngrok http 8080
 ```
 
-3. Khởi động Expo bằng:
+2. Lay HTTPS forwarding URL, vi du `https://abc123.ngrok-free.app`
+3. Set trong `mobile/.env`:
+
+```env
+EXPO_PUBLIC_API_BASE_URL=https://abc123.ngrok-free.app/api
+```
+
+4. Khoi dong Expo bang:
 
 ```powershell
 cd mobile
 npm run start:tunnel
 ```
 
-Nếu frontend web cũng cần gọi backend qua Slim:
+Neu frontend web cung can goi backend qua ngrok:
 
 ```env
-VITE_API_BASE_URL=https://your-backend.slim.show
+VITE_API_BASE_URL=https://abc123.ngrok-free.app
 ```
 
-## Hướng dẫn dùng `slim.sh`
+## Huong dan dung `ngrok`
 
-`slim.sh` có hai kiểu dùng rất dễ nhầm:
+`Expo tunnel` va `ngrok` la hai viec khac nhau:
 
-- `slim start`: tạo local HTTPS domain kiểu `https://myapp.test`
-- `slim share`: tạo public URL kiểu `https://demo.slim.show`
+- `npm run start:tunnel`: public Expo dev server de dien thoai mo app qua QR
+- `ngrok http 8080`: public backend local de mobile/web goi duoc API
 
-### Dùng `slim start` khi nào
-
-Dùng khi bạn muốn có local domain đẹp và route nhiều service chung một domain.
-
-Ví dụ:
+### Public backend local
 
 ```powershell
-slim start swd --port 5173 --route /api=8080
+ngrok http 8080
 ```
 
-Khi đó:
-
-- `https://swd.test` -> frontend
-- `https://swd.test/api` -> backend
-
-### Dùng `slim share` khi nào
-
-Dùng khi bạn muốn điện thoại thật hoặc người khác truy cập backend local của bạn.
-
-Ví dụ:
-
-```powershell
-slim login
-slim share --port 8080 --subdomain swd392-api
-```
-
-Khi đó bạn sẽ có public URL như:
+Vi du URL nhan duoc:
 
 ```text
-https://swd392-api.slim.show
+https://abc123.ngrok-free.app
 ```
 
-### Các lỗi sai thường gặp với `slim.sh`
+Khi do:
 
-- dùng `localhost` trên điện thoại thật
-- mobile thiếu `/api` ở cuối `EXPO_PUBLIC_API_BASE_URL`
-- frontend lại thêm `/api` vào `VITE_API_BASE_URL`
-- quên `slim login` trước khi `slim share`
-- đổi `.env` xong nhưng không restart Expo hoặc Vite
-- nghĩ Expo tunnel sẽ tự public luôn backend API
-- public frontend bằng domain mới nhưng backend chưa thêm domain đó vào `CORS_ALLOWED_ORIGINS`
+- mobile dung `https://abc123.ngrok-free.app/api`
+- frontend dung `https://abc123.ngrok-free.app`
 
-### Mẫu `.slim.yaml`
+### Public frontend web khi can
 
-```yaml
-services:
-  - domain: swd
-    port: 5173
-    routes:
-      - path: /api
-        port: 8080
-log_mode: minimal
-```
-
-Chạy:
+Neu ban muon nguoi khac hoac thiet bi khac mo web app local cua ban:
 
 ```powershell
-slim up
-slim down
+ngrok http 5173
 ```
 
-## Tài liệu chi tiết từng app
+Luu y:
+
+- frontend va backend thuong la hai URL public rieng
+- neu frontend co URL public moi, them origin do vao `CORS_ALLOWED_ORIGINS`
+
+### Cac loi sai thuong gap voi `ngrok`
+
+- dung `localhost` tren dien thoai that
+- mobile thieu `/api` o cuoi `EXPO_PUBLIC_API_BASE_URL`
+- frontend lai them `/api` vao `VITE_API_BASE_URL`
+- doi `.env` xong nhung khong restart Expo hoac Vite
+- nghi Expo tunnel se tu public luon backend API
+- public frontend bang domain moi nhung backend chua them domain do vao `CORS_ALLOWED_ORIGINS`
+- restart ngrok nhung quen cap nhat URL moi trong `.env`
+
+## Tai lieu chi tiet tung app
 
 - [Backend README](./backend/README.md)
 - [Frontend README](./frontend/README.md)
 - [Mobile README](./mobile/README.md)
 
-## API và công cụ hỗ trợ
+## API va cong cu ho tro
 
 - Postman collection: [SWD392-API.postman_collection.json](./SWD392-API.postman_collection.json)
 - Script test nhanh: `test-api.ps1`, `test-full.ps1`
-- Swagger UI mặc định: `http://localhost:8080/swagger-ui.html`
+- Swagger UI mac dinh: `http://localhost:8080/swagger-ui.html`
 
-## Các lệnh hữu ích
+## Cac lenh huu ich
 
 ### Backend
 
@@ -251,15 +238,15 @@ npm run lint
 npx tsc --noEmit
 ```
 
-## Gợi ý onboarding nhanh
+## Goi y onboarding nhanh
 
-1. Chạy backend trước
-2. Kiểm tra Swagger hoạt động
-3. Chạy frontend để xác nhận login và dashboard
-4. Chạy mobile bằng Expo
-5. Nếu dùng điện thoại thật, cấu hình `EXPO_PUBLIC_API_BASE_URL` sang public URL
+1. Chay backend truoc
+2. Kiem tra Swagger hoat dong
+3. Chay frontend de xac nhan login va dashboard
+4. Chay mobile bang Expo
+5. Neu dung dien thoai that, cau hinh `EXPO_PUBLIC_API_BASE_URL` sang public URL cua ngrok
 
-## Lưu ý bảo mật
+## Luu y bao mat
 
-- Không nên commit secret thật vào repo dùng chung
-- Nên xoay vòng các khóa Cloudinary, JWT, database nếu repo đã lộ thông tin
+- Khong nen commit secret that vao repo dung chung
+- Nen xoay vong cac khoa Cloudinary, JWT, database neu repo da lo thong tin
