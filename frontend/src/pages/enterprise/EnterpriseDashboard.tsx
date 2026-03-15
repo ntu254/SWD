@@ -101,13 +101,13 @@ export function EnterpriseDashboard() {
           tone="mint"
           featured
         />
-        <StatCard
+        {/* <StatCard
           icon={Building2}
           label="Hồ sơ doanh nghiệp"
           value="1 hồ sơ"
           description="Giữ thông tin tài khoản và cơ sở luôn cập nhật."
           tone="violet"
-        />
+        /> */}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

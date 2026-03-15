@@ -13,6 +13,8 @@ import java.util.UUID;
 public interface RewardTransactionRepository extends JpaRepository<RewardTransaction, UUID> {
     Page<RewardTransaction> findByCitizen_UserIdOrderByCreatedAtDesc(UUID citizenId, Pageable pageable);
 
+    boolean existsByVisit_VisitIdAndReasonCode(UUID visitId, String reasonCode);
+
     @Query("SELECT COALESCE(SUM(rt.pointsDelta), 0) FROM RewardTransaction rt WHERE rt.citizen.userId = :citizenId")
     double sumPointsByCitizen(UUID citizenId);
 }

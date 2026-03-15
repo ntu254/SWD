@@ -423,15 +423,15 @@ export default function ReportWasteScreen() {
 
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionStep}>Gá»£i Ã½ thÃªm</Text>
-              <Text style={styles.sectionTitle}>Æ¯á»›c lÆ°á»£ng khá»‘i lÆ°á»£ng</Text>
+              <Text style={styles.sectionStep}>Gợi ý thêm</Text>
+              <Text style={styles.sectionTitle}>Ước lượng khối lượng</Text>
             </View>
 
             <View style={styles.weightSummaryCard}>
               <View>
-                <Text style={styles.weightSummaryLabel}>Sá»‘ kÃ½ Æ°á»›c tÃ­nh</Text>
+                <Text style={styles.weightSummaryLabel}>Số ký ước tính</Text>
                 <Text style={styles.weightSummaryHint}>
-                  Nháº­p gáº§n Ä‘Ãºng nháº¥t cÃ³ thá»ƒ Ä‘á»ƒ doanh nghiá»‡p Æ°á»›c lÆ°á»£ng náº¯ng lá»±c thu gom.
+                 Nhập khối lượng thu gom.
                 </Text>
               </View>
               <Text style={styles.weightSummaryValue}>
@@ -442,14 +442,14 @@ export default function ReportWasteScreen() {
             <TextInput
               style={styles.weightInput}
               keyboardType="decimal-pad"
-              placeholder="VÃ­ dá»¥: 12.5"
+              placeholder="ví dụ: 12.5"
               placeholderTextColor={Colors.neutral[400]}
               value={estimatedWeightKg}
               onChangeText={setEstimatedWeightKg}
             />
 
             <Text style={styles.weightHelperText}>
-              Má»¥c nÃ y khÃ´ng báº¯t buá»™c, nhÆ°ng giÃºp hÃ ng chá» Ä‘iá»u phá»‘i cÃ¢n Ä‘á»‘i hÆ¡n.
+              Mức này không bắt buộc, nhưng giúp hàng chờ điều phối cân đối hơn.
             </Text>
           </View>
         </ScrollView>

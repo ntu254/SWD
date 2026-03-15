@@ -59,7 +59,7 @@ const navByRole: Record<string, NavItem[]> = {
     { to: "/enterprise/collectors", icon: UserCog, label: "Nhân viên thu gom" },
     { to: "/enterprise/reward-rules", icon: Gift, label: "Quy tắc thưởng" },
     { to: "/enterprise/analytics", icon: TrendingUp, label: "Phân tích" },
-    { to: "/enterprise/profile", icon: Building2, label: "Hồ sơ doanh nghiệp" },
+    // { to: "/enterprise/profile", icon: Building2, label: "Hồ sơ doanh nghiệp" },
   ],
   ADMIN: [
     { to: "/admin/dashboard", icon: LayoutDashboard, label: "Tổng quan" },

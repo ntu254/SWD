@@ -13,7 +13,6 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,17 +21,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 @RequiredArgsConstructor
 public class RewardService {
+    private static final String COLLECTION_REWARD_REASON = "COLLECTION_REWARD";
+    private static final String REDEMPTION_REASON_PREFIX = "REDEMPTION:";
 
     private final RewardTransactionRepository transactionRepository;
     private final RewardItemRepository itemRepository;
     private final CitizenRepository citizenRepository;
     private final CitizenRewardRuleRepository rewardRuleRepository;
-    private final CollectionVisitRepository visitRepository;
 
     @Transactional
     public void calculateAndAwardPoints(UUID citizenId,
                                         CollectionVisit visit,
                                         List<CompleteVisitRequest.WasteItemInput> items) {
+        if (visit.getVisitId() != null
+                && transactionRepository.existsByVisit_VisitIdAndReasonCode(visit.getVisitId(), COLLECTION_REWARD_REASON)) {
+            log.warn("Skipping duplicate collection reward for visit {}", visit.getVisitId());
+            return;
+        }
+
         double totalPoints = 0;
 
         for (CompleteVisitRequest.WasteItemInput item : items) {
@@ -52,19 +58,20 @@ public class RewardService {
             }
         }
 
-        if (totalPoints > 0) {
-            Citizen citizen = citizenRepository.findByUser_UserId(citizenId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Citizen", "id", citizenId));
+        int awardedPoints = (int) Math.round(totalPoints);
+        if (awardedPoints > 0) {
+            Citizen citizen = loadCitizenForUpdate(citizenId);
+            warnIfBalanceOutOfSync(citizen);
 
             RewardTransaction tx = RewardTransaction.builder()
                     .citizen(citizen.getUser())
                     .visit(visit)
-                    .pointsDelta(totalPoints)
-                    .reasonCode("COLLECTION_REWARD")
+                    .pointsDelta((double) awardedPoints)
+                    .reasonCode(COLLECTION_REWARD_REASON)
                     .build();
             transactionRepository.save(tx);
 
-            citizen.setPoints(citizen.getPoints() + (int) totalPoints);
+            citizen.setPoints(getSafeCitizenPoints(citizen) + awardedPoints);
             citizenRepository.save(citizen);
         }
     }
@@ -89,7 +96,7 @@ public class RewardService {
 
     @Transactional(readOnly = true)
     public List<RewardItemDto> getAvailableItems() {
-        return itemRepository.findByIsActiveTrueOrderByPointsCostAsc()
+        return itemRepository.findByIsActiveTrueAndPointsCostGreaterThanAndStockGreaterThanOrderByPointsCostAsc(0, 0)
                 .stream().map(this::mapItemToDto).toList();
     }
 
@@ -103,27 +110,33 @@ public class RewardService {
 
     @Transactional
     public RewardItemDto createItem(RewardItemDto req) {
+        validateRewardItemRequest(req);
+
         RewardItem item = RewardItem.builder()
-                .name(req.getName())
+                .name(req.getName().trim())
                 .description(req.getDescription())
                 .imageUrl(req.getImageUrl())
                 .pointsCost(req.getPointsCost())
-                .stock(req.getStock() != null ? req.getStock() : 0)
-                .isActive(req.getIsActive() != null ? req.getIsActive() : true)
+                .stock(req.getStock())
+                .isActive(req.getIsActive())
                 .build();
+        normalizeRewardItemState(item);
         return mapItemToDto(itemRepository.save(item));
     }
 
     @Transactional
     public RewardItemDto updateItem(UUID itemId, RewardItemDto req) {
+        validateRewardItemRequest(req);
+
         RewardItem item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("RewardItem", "id", itemId));
-        item.setName(req.getName());
+        item.setName(req.getName().trim());
         item.setDescription(req.getDescription());
         item.setImageUrl(req.getImageUrl());
         item.setPointsCost(req.getPointsCost());
-        if (req.getStock() != null) item.setStock(req.getStock());
-        if (req.getIsActive() != null) item.setIsActive(req.getIsActive());
+        item.setStock(req.getStock());
+        item.setIsActive(req.getIsActive());
+        normalizeRewardItemState(item);
         return mapItemToDto(itemRepository.save(item));
     }
 
@@ -138,31 +151,30 @@ public class RewardService {
     @Transactional
     public RewardTransactionDto redeemItem(UUID citizenId, RedeemItemRequest request) {
         UUID itemId = request.getItemId();
-        RewardItem item = itemRepository.findById(itemId)
+        RewardItem item = itemRepository.findByIdForUpdate(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("RewardItem", "id", itemId));
 
-        if (!item.getIsActive()) throw new BadRequestException("This reward item is not available");
-        if (item.getStock() <= 0) throw new BadRequestException("This reward item is out of stock");
+        validateRewardItemForRedemption(item);
 
-        Citizen citizen = citizenRepository.findByUser_UserId(citizenId)
-                .orElseThrow(() -> new ResourceNotFoundException("Citizen", "id", citizenId));
+        Citizen citizen = loadCitizenForUpdate(citizenId);
+        warnIfBalanceOutOfSync(citizen);
 
-        if (citizen.getPoints() < item.getPointsCost()) {
+        if (getSafeCitizenPoints(citizen) < item.getPointsCost()) {
             throw new BadRequestException("Insufficient points. Required: " + item.getPointsCost()
-                    + ", Available: " + citizen.getPoints());
+                    + ", Available: " + getSafeCitizenPoints(citizen));
         }
 
         item.setStock(item.getStock() - 1);
-        if (item.getStock() == 0) item.setIsActive(false);
+        normalizeRewardItemState(item);
         itemRepository.save(item);
 
-        citizen.setPoints(citizen.getPoints() - item.getPointsCost());
+        citizen.setPoints(getSafeCitizenPoints(citizen) - item.getPointsCost());
         citizenRepository.save(citizen);
 
         RewardTransaction tx = RewardTransaction.builder()
                 .citizen(citizen.getUser())
                 .pointsDelta((double) -item.getPointsCost())
-                .reasonCode("REDEMPTION:" + itemId)
+                .reasonCode(REDEMPTION_REASON_PREFIX + itemId)
                 .build();
         return mapTxToDto(transactionRepository.save(tx));
     }
@@ -202,5 +214,63 @@ public class RewardService {
                 .stock(i.getStock())
                 .isActive(i.getIsActive())
                 .build();
+    }
+
+    private Citizen loadCitizenForUpdate(UUID citizenId) {
+        return citizenRepository.findByUserIdForUpdate(citizenId)
+                .orElseThrow(() -> new ResourceNotFoundException("Citizen", "id", citizenId));
+    }
+
+    private int getSafeCitizenPoints(Citizen citizen) {
+        return citizen.getPoints() != null ? citizen.getPoints() : 0;
+    }
+
+    private void validateRewardItemRequest(RewardItemDto req) {
+        if (req.getName() == null || req.getName().isBlank()) {
+            throw new BadRequestException("Reward item name is required");
+        }
+        if (req.getPointsCost() == null || req.getPointsCost() <= 0) {
+            throw new BadRequestException("Reward item points cost must be greater than 0");
+        }
+        if (req.getStock() == null || req.getStock() < 0) {
+            throw new BadRequestException("Reward item stock must be 0 or greater");
+        }
+        if (req.getIsActive() == null) {
+            throw new BadRequestException("Reward item active state is required");
+        }
+    }
+
+    private void validateRewardItemForRedemption(RewardItem item) {
+        if (!Boolean.TRUE.equals(item.getIsActive())) {
+            throw new BadRequestException("This reward item is not available");
+        }
+        if (item.getPointsCost() == null || item.getPointsCost() <= 0) {
+            throw new BadRequestException("This reward item has invalid points cost");
+        }
+        if (item.getStock() == null || item.getStock() <= 0) {
+            throw new BadRequestException("This reward item is out of stock");
+        }
+    }
+
+    private void normalizeRewardItemState(RewardItem item) {
+        if (item.getStock() == null || item.getStock() <= 0) {
+            item.setStock(item.getStock() == null ? 0 : item.getStock());
+            item.setIsActive(false);
+        } else if (item.getIsActive() == null) {
+            item.setIsActive(true);
+        }
+    }
+
+    private void warnIfBalanceOutOfSync(Citizen citizen) {
+        double transactionBalance = transactionRepository.sumPointsByCitizen(citizen.getUserId());
+        int storedPoints = getSafeCitizenPoints(citizen);
+        if (Math.round(transactionBalance) != storedPoints) {
+            log.warn(
+                    "Citizen reward balance mismatch detected. citizenId={}, storedPoints={}, transactionBalance={}",
+                    citizen.getUserId(),
+                    storedPoints,
+                    transactionBalance
+            );
+        }
     }
 }

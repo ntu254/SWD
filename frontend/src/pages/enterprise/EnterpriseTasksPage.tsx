@@ -403,7 +403,7 @@ export function EnterpriseTasksPage() {
                         variant="outline"
                         onClick={() => navigate(`/enterprise/tasks/${task.taskId}`)}
                       >
-                        Xem chi tiáº¿t
+                        Xem chi tiết
                       </Button>
                       {(task.status === "PENDING_ENTERPRISE_APPROVAL" ||
                         task.status === "ASSIGNED") ? (
