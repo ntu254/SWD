@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Loader2, MapPin, UploadCloud } from "lucide-react";
 import React, { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { z } from "zod";
@@ -46,6 +46,7 @@ export const CitizenReportPage: React.FC = () => {
 
   const {
     control,
+    clearErrors,
     register,
     handleSubmit,
     setValue,
@@ -54,6 +55,8 @@ export const CitizenReportPage: React.FC = () => {
     resolver: zodResolver(reportSchema),
     defaultValues: {
       description: "",
+      wasteTypeId: "",
+      areaId: "",
       estimatedWeightKg: undefined,
     },
   });
@@ -271,18 +274,30 @@ export const CitizenReportPage: React.FC = () => {
                   <label htmlFor="waste-type" className="field-label">
                     Loại rác
                   </label>
-                  <select
-                    id="waste-type"
-                    {...register("wasteTypeId")}
-                    className="shell-select"
-                  >
+                  <Controller
+                    control={control}
+                    name="wasteTypeId"
+                    render={({ field }) => (
+                      <select
+                        id="waste-type"
+                        value={field.value ?? ""}
+                        onChange={(event) => {
+                          field.onChange(event.target.value);
+                          clearErrors("wasteTypeId");
+                        }}
+                        onBlur={field.onBlur}
+                        ref={field.ref}
+                        className="shell-select"
+                      >
                     <option value="">Chọn loại rác</option>
                     {wasteTypeOptions.map((option) => (
                       <option key={option.wasteTypeId} value={option.wasteTypeId}>
                         {option.name}
                       </option>
                     ))}
-                  </select>
+                      </select>
+                    )}
+                  />
                   {errors.wasteTypeId ? (
                     <p role="alert" className="field-error">
                       {errors.wasteTypeId.message}
@@ -298,18 +313,30 @@ export const CitizenReportPage: React.FC = () => {
                   <label htmlFor="service-area" className="field-label">
                     Khu vực phục vụ
                   </label>
-                  <select
-                    id="service-area"
-                    {...register("areaId")}
-                    className="shell-select"
-                  >
+                  <Controller
+                    control={control}
+                    name="areaId"
+                    render={({ field }) => (
+                      <select
+                        id="service-area"
+                        value={field.value ?? ""}
+                        onChange={(event) => {
+                          field.onChange(event.target.value);
+                          clearErrors("areaId");
+                        }}
+                        onBlur={field.onBlur}
+                        ref={field.ref}
+                        className="shell-select"
+                      >
                     <option value="">Chọn khu vực</option>
                     {areaOptions.map((option) => (
                       <option key={option.areaId} value={option.areaId}>
                         {option.name}
                       </option>
                     ))}
-                  </select>
+                      </select>
+                    )}
+                  />
                   {errors.areaId ? (
                     <p role="alert" className="field-error">
                       {errors.areaId.message}

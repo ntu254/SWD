@@ -11,7 +11,7 @@ import {
   TreePine,
 } from "lucide-react";
 
-import { reportsApi } from "../../api";
+import { reportsApi, rewardsApi } from "../../api";
 import { Button } from "../../components/ui/button";
 import {
   EmptyState,
@@ -21,18 +21,70 @@ import {
   StatCard,
 } from "../../components/ui/page";
 import { StatusBadge } from "../../components/ui/badge";
+import { withReportMetadataList } from "../../lib/reportMetadata";
+import { useAuthStore } from "../../store/authStore";
 import type { WasteReport } from "../../types";
+
+type LeaderboardEntry = {
+  rank: number;
+  citizenUserId: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  points: number;
+};
 
 export const CitizenDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const currentUserId = useAuthStore((state) => state.userId);
 
   const { data: reportsData, isLoading } = useQuery({
     queryKey: ["citizen-reports"],
     queryFn: () => reportsApi.getMine().then((response) => response.data),
   });
 
-  const reports: WasteReport[] = reportsData?.data?.content || [];
+  const { data: balance, isLoading: isBalanceLoading } = useQuery({
+    queryKey: ["rewards-balance", "citizen-dashboard"],
+    queryFn: () => rewardsApi.getBalance().then((response) => response.data.data),
+  });
+
+  const { data: leaderboard, isLoading: isLeaderboardLoading } = useQuery({
+    queryKey: ["rewards-leaderboard", "citizen-dashboard"],
+    queryFn: () =>
+      rewardsApi.getLeaderboard(5).then((response) => response.data.data),
+  });
+
+  const reports: WasteReport[] = withReportMetadataList(
+    reportsData?.data?.content || [],
+  );
   const totalReports = reportsData?.data?.totalElements || 0;
+  const pointsBalance = balance ?? 0;
+  const estimatedWasteKg = reports.reduce(
+    (total, report) => total + (report.estimatedWeightKg ?? 0),
+    0,
+  );
+  const leaderboardEntries: LeaderboardEntry[] = leaderboard ?? [];
+  const currentUserEntry = leaderboardEntries.find(
+    (entry) => entry.citizenUserId === currentUserId,
+  );
+  const topLeaderboardPoints = Math.max(
+    ...leaderboardEntries.map((entry) => entry.points ?? 0),
+    1,
+  );
+  const contributionMessage =
+    totalReports === 0
+      ? {
+          title: "Tạo báo cáo đầu tiên",
+          body: "Gửi một báo cáo mới để bắt đầu ghi nhận đóng góp của bạn.",
+        }
+      : pointsBalance > 0
+        ? {
+            title: `Bạn đang có ${pointsBalance} điểm`,
+            body: "Điểm sẽ tiếp tục tăng khi các báo cáo được thu gom và xác nhận.",
+          }
+        : {
+            title: "Đang chờ cộng điểm",
+            body: "Điểm thưởng sẽ xuất hiện sau khi báo cáo của bạn được thu gom thành công.",
+          };
 
   return (
     <div className="space-y-4 lg:space-y-5">
@@ -92,16 +144,16 @@ export const CitizenDashboard: React.FC = () => {
         <StatCard
           icon={Award}
           label="Điểm thưởng"
-          value="0 pts"
+          value={isBalanceLoading ? "..." : `${pointsBalance} pts`}
           description="Tích lũy thêm điểm bằng cách báo cáo đều đặn."
           tone="sky"
           compact
         />
         <StatCard
           icon={TreePine}
-          label="Rác đã ngăn chặn"
-          value="0 kg"
-          description="Ước tính tác động môi trường hiện tại của bạn."
+          label="Khối lượng ước tính"
+          value={`${estimatedWasteKg.toFixed(1)} kg`}
+          description="Tổng khối lượng ước tính từ các báo cáo bạn đã gửi."
           tone="sand"
           featured
           compact
@@ -169,43 +221,64 @@ export const CitizenDashboard: React.FC = () => {
 
         <SectionCard className="overflow-hidden">
           <SectionHeader
-            title="Bảng xếp hạng khu vực"
-            description="Xem mức độ đóng góp của bạn trong tháng này."
+            title="Bảng xếp hạng cộng đồng"
+            description="Dữ liệu thật từ bảng điểm thưởng hiện tại trên toàn hệ thống."
           />
 
           <div className="space-y-4 p-5 sm:p-6">
-            {[
-              { name: "Sarah Jenkins", points: 3200, icon: Trophy },
-              { name: "Michael Chen", points: 2850, icon: Trophy },
-              { name: "Bạn", points: 0, icon: Leaf },
-            ].map((user, index) => (
-              <div key={user.name} className="rounded-[20px] border border-[var(--stroke-soft)] bg-white/84 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="shell-icon-chip h-11 w-11 shrink-0">
-                    <user.icon className="h-4.5 w-4.5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
-                      {user.name}
-                    </p>
-                    <p className="text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                      Hạng #{index + 1}
-                    </p>
-                  </div>
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">
-                    {user.points.toLocaleString()}
-                  </span>
-                </div>
-                <div className="mt-3 h-2 rounded-full bg-gray-100">
+            {isLeaderboardLoading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="shimmer h-36 rounded-[20px]" />
+              ))
+            ) : leaderboardEntries.length === 0 ? (
+              <EmptyState
+                icon={Trophy}
+                title="Chưa có bảng xếp hạng"
+                description="Bảng xếp hạng sẽ hiển thị khi hệ thống có dữ liệu điểm thưởng."
+                tone="slate"
+              />
+            ) : (
+              leaderboardEntries.map((entry) => {
+                const isCurrentUser = entry.citizenUserId === currentUserId;
+                const Icon = isCurrentUser ? Leaf : Trophy;
+                const progressWidth = Math.min(
+                  100,
+                  (entry.points / topLeaderboardPoints) * 100,
+                );
+
+                return (
                   <div
-                    className="h-2 rounded-full bg-[var(--primary-400)]"
-                    style={{
-                      width: `${Math.min(100, (user.points / 3200) * 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
+                    key={entry.citizenUserId}
+                    className="rounded-[20px] border border-[var(--stroke-soft)] bg-white/84 p-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="shell-icon-chip h-11 w-11 shrink-0">
+                        <Icon className="h-4.5 w-4.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
+                          {isCurrentUser
+                            ? "Bạn"
+                            : entry.displayName || "Người dùng"}
+                        </p>
+                        <p className="text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                          Hạng #{entry.rank}
+                        </p>
+                      </div>
+                      <span className="text-sm font-semibold text-[var(--text-primary)]">
+                        {entry.points.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="mt-3 h-2 rounded-full bg-gray-100">
+                      <div
+                        className="h-2 rounded-full bg-[var(--primary-400)]"
+                        style={{ width: `${progressWidth}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
 
             <div className="rounded-[20px] border border-amber-200 bg-amber-100/80 p-4">
               <div className="flex items-center gap-3">
@@ -214,10 +287,14 @@ export const CitizenDashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-amber-800">
-                    Bắt đầu chuỗi mới hôm nay
+                    {currentUserEntry
+                      ? `Bạn đang ở hạng #${currentUserEntry.rank}`
+                      : contributionMessage.title}
                   </p>
                   <p className="text-sm text-amber-700">
-                    Gửi thêm một báo cáo để duy trì đà đóng góp.
+                    {currentUserEntry
+                      ? "Tiếp tục gửi báo cáo để cải thiện vị trí của bạn trên bảng xếp hạng."
+                      : contributionMessage.body}
                   </p>
                 </div>
               </div>
