@@ -67,6 +67,7 @@ export const NOTIFICATION_AUDIENCE_LABELS: Record<string, string> = {
 export const REWARD_REASON_LABELS: Record<string, string> = {
   REPORT_COLLECTED: "Báo cáo đã được thu gom",
   REPORT_ACCEPTED: "Báo cáo đã được tiếp nhận",
+  COLLECTION_REWARD: "Thưởng sau thu gom",
   REWARD_REDEEMED: "Đổi phần thưởng",
   REWARD_REDEMPTION: "Đổi phần thưởng",
   REDEEM_REWARD: "Đổi phần thưởng",
@@ -107,5 +108,6 @@ export function formatNotificationAudienceLabel(audience?: string | null) {
 
 export function formatRewardReasonLabel(reasonCode?: string | null) {
   if (!reasonCode) return "Biến động điểm";
+  if (reasonCode.startsWith("REDEMPTION:")) return "Đổi phần thưởng";
   return REWARD_REASON_LABELS[reasonCode] ?? fallbackLabel(reasonCode);
 }

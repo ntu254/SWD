@@ -36,6 +36,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
 
 const statusColors: Record<ReportStatus, string> = {
   PENDING: Colors.status.pending,
@@ -346,6 +347,33 @@ export default function EnterpriseDashboardScreen() {
     await invalidateEnterpriseQueries();
     setRefreshing(false);
   }, [invalidateEnterpriseQueries]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!accessToken) {
+        return undefined;
+      }
+
+      void Promise.all([
+        pendingReportsQuery.refetch(),
+        acceptedReportsQuery.refetch(),
+        tasksQuery.refetch(),
+        collectorsQuery.refetch(),
+        capabilitiesQuery.refetch(),
+        complaintsQuery.refetch(),
+      ]);
+
+      return undefined;
+    }, [
+      accessToken,
+      acceptedReportsQuery,
+      capabilitiesQuery,
+      collectorsQuery,
+      complaintsQuery,
+      pendingReportsQuery,
+      tasksQuery,
+    ])
+  );
 
   const isLoadingInitial =
     pendingReportsQuery.isLoading ||

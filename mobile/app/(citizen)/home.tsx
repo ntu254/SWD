@@ -1,8 +1,10 @@
-﻿import React from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Bell } from 'lucide-react-native';
+import { useQuery } from '@tanstack/react-query';
+
 import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
 import { useAppStore } from '@/store/useAppStore';
@@ -11,8 +13,12 @@ import { QuickActions } from '@/components/Citizen/QuickActions';
 import { ReportCard } from '@/components/Citizen/ReportCard';
 import { NearbyReportsMap } from '@/components/Citizen/NearbyReportsMap';
 import type { WasteReport } from '@/types';
-import { useQuery } from '@tanstack/react-query';
-import { fetchLeaderboard, fetchMyReports, fetchRewardBalance } from '@/components/api/backend';
+import {
+  fetchLeaderboard,
+  fetchMyReports,
+  fetchRewardBalance,
+  fetchUserNotifications,
+} from '@/components/api/backend';
 
 export default function CitizenHomeScreen() {
   const router = useRouter();
@@ -37,8 +43,18 @@ export default function CitizenHomeScreen() {
     enabled: !!accessToken,
   });
 
+  const notificationsQuery = useQuery({
+    queryKey: ['notifications', 'citizen', user?.userId],
+    queryFn: () => fetchUserNotifications(accessToken ?? '', { size: 20 }),
+    enabled: !!accessToken,
+  });
+
   const myReports = reportsQuery.data ?? [];
   const recentReports = myReports.slice(0, 3);
+  const activeNotifications = React.useMemo(
+    () => (notificationsQuery.data ?? []).filter((item) => item.isActive),
+    [notificationsQuery.data]
+  );
 
   const myRank = React.useMemo(() => {
     if (!user || !leaderboardQuery.data) {
@@ -49,23 +65,39 @@ export default function CitizenHomeScreen() {
     return found >= 0 ? found + 1 : 0;
   }, [leaderboardQuery.data, user]);
 
+  const refetchAll = React.useCallback(async () => {
+    await Promise.all([
+      reportsQuery.refetch(),
+      balanceQuery.refetch(),
+      leaderboardQuery.refetch(),
+      notificationsQuery.refetch(),
+    ]);
+  }, [balanceQuery, leaderboardQuery, notificationsQuery, reportsQuery]);
+
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([
-        reportsQuery.refetch(),
-        balanceQuery.refetch(),
-        leaderboardQuery.refetch(),
-      ]);
+      await refetchAll();
     } finally {
       setRefreshing(false);
     }
-  }, [balanceQuery, leaderboardQuery, reportsQuery]);
+  }, [refetchAll]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!accessToken) {
+        return undefined;
+      }
+
+      void refetchAll();
+      return undefined;
+    }, [accessToken, refetchAll])
+  );
 
   const handleReportPress = React.useCallback(
     (report: WasteReport) => {
       router.push({
-        pathname: "/reports/[reportId]",
+        pathname: '/reports/[reportId]',
         params: { reportId: report.reportId },
       });
     },
@@ -79,10 +111,15 @@ export default function CitizenHomeScreen() {
           <Text style={styles.greeting}>Xin chào,</Text>
           <Text style={styles.userName}>{user?.firstName || 'Người dùng'}</Text>
         </View>
-        <View style={styles.notificationButton}>
+
+        <TouchableOpacity
+          style={styles.notificationButton}
+          activeOpacity={0.82}
+          onPress={() => router.push('/(citizen)/notifications')}
+        >
           <Bell size={24} color={Colors.neutral[700]} />
-          <View style={styles.notificationBadge} />
-        </View>
+          {activeNotifications.length > 0 ? <View style={styles.notificationBadge} /> : null}
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -119,12 +156,12 @@ export default function CitizenHomeScreen() {
             <ReportCard key={report.reportId} report={report} onPress={handleReportPress} />
           ))}
 
-          {recentReports.length === 0 && (
+          {recentReports.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>Chưa có báo cáo nào</Text>
               <Text style={styles.emptySubtext}>Bắt đầu báo cáo rác để tích điểm nhé!</Text>
             </View>
-          )}
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>

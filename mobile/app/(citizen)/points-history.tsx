@@ -8,8 +8,10 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
 import { Coins, History } from 'lucide-react-native';
 import { useQuery } from '@tanstack/react-query';
+
 import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
 import { useAppStore } from '@/store/useAppStore';
@@ -18,6 +20,7 @@ import type { RewardTransaction } from '@/types';
 
 const reasonLabels: Record<string, string> = {
   REPORT_APPROVED: 'Báo cáo hợp lệ',
+  COLLECTION_REWARD: 'Thưởng sau thu gom',
   REWARD_REDEEMED: 'Đổi quà',
   BONUS: 'Thưởng thêm',
   ADJUSTMENT: 'Điều chỉnh',
@@ -26,6 +29,10 @@ const reasonLabels: Record<string, string> = {
 function reasonLabel(reasonCode?: string) {
   if (!reasonCode) {
     return 'Giao dịch điểm';
+  }
+
+  if (reasonCode.startsWith('REDEMPTION:')) {
+    return 'Đổi quà';
   }
 
   return reasonLabels[reasonCode] ?? reasonCode;
@@ -60,10 +67,7 @@ export default function CitizenPointsHistoryScreen() {
     enabled: !!accessToken,
   });
 
-  const transactions = useMemo(
-    () => transactionsQuery.data ?? [],
-    [transactionsQuery.data]
-  );
+  const transactions = useMemo(() => transactionsQuery.data ?? [], [transactionsQuery.data]);
 
   const summary = useMemo(() => {
     let earned = 0;
@@ -80,9 +84,20 @@ export default function CitizenPointsHistoryScreen() {
     return { earned, redeemed };
   }, [transactions]);
 
-  const onRefresh = async () => {
+  const refetchAll = React.useCallback(async () => {
     await Promise.all([balanceQuery.refetch(), transactionsQuery.refetch()]);
-  };
+  }, [balanceQuery, transactionsQuery]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!accessToken) {
+        return undefined;
+      }
+
+      void refetchAll();
+      return undefined;
+    }, [accessToken, refetchAll])
+  );
 
   const renderItem = ({ item }: { item: RewardTransaction }) => {
     const positive = item.pointsDelta >= 0;
@@ -152,7 +167,9 @@ export default function CitizenPointsHistoryScreen() {
           refreshControl={
             <RefreshControl
               refreshing={transactionsQuery.isRefetching || balanceQuery.isRefetching}
-              onRefresh={() => void onRefresh()}
+              onRefresh={() => {
+                void refetchAll();
+              }}
             />
           }
           ListHeaderComponent={
@@ -164,7 +181,9 @@ export default function CitizenPointsHistoryScreen() {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>Chưa có giao dịch điểm</Text>
-              <Text style={styles.emptySub}>Điểm thưởng sẽ hiển thị sau khi báo cáo được duyệt.</Text>
+              <Text style={styles.emptySub}>
+                Điểm thưởng sẽ hiển thị sau khi báo cáo được duyệt hoặc nhiệm vụ thu gom hoàn tất.
+              </Text>
             </View>
           }
         />

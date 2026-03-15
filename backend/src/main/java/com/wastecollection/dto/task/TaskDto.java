@@ -1,5 +1,6 @@
 package com.wastecollection.dto.task;
 
+import com.wastecollection.dto.report.ReportDto;
 import lombok.Builder;
 import lombok.Data;
 
@@ -24,6 +25,7 @@ public class TaskDto {
     private String priority;
     private LocalDate scheduledDate;
     private String rejectionReason;
+    private ReportDto report;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

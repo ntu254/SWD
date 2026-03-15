@@ -4,35 +4,91 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Marker, Polyline } from 'react-native-maps';
 import { ArrowLeft, Navigation, Clock } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+
 import { Colors } from '@/constants/colors';
 import { AppMapView } from '@/components/maps/AppMapView';
-import { useQuery } from '@tanstack/react-query';
 import { fetchCollectorTasks } from '@/components/api/backend';
 import { useAppStore } from '@/store/useAppStore';
 
 const { width, height } = Dimensions.get('window');
+const defaultCoordinate = { latitude: 10.7758, longitude: 106.7 };
 
 export default function CollectorMapScreen() {
   const router = useRouter();
   const { accessToken } = useAppStore();
+
   const safeBack = () => {
     if (router.canGoBack()) {
       router.back();
       return;
     }
+
     router.replace('/(collector)/tasks');
   };
 
   const tasksQuery = useQuery({
-    queryKey: ['collector', 'tasks', 'map'],
+    queryKey: ['collector', 'tasks'],
     queryFn: () => fetchCollectorTasks(accessToken ?? ''),
     enabled: !!accessToken,
   });
 
   const myActiveTasks = useMemo(
-    () => (tasksQuery.data ?? []).filter((a) => ['ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'IN_PROGRESS'].includes(a.status)),
+    () =>
+      (tasksQuery.data ?? []).filter((assignment) =>
+        ['ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'IN_PROGRESS'].includes(assignment.status)
+      ),
     [tasksQuery.data]
   );
+
+  const taskStops = useMemo(
+    () =>
+      myActiveTasks
+        .map((task, index) => {
+          const latitude = task.task?.report?.latitude;
+          const longitude = task.task?.report?.longitude;
+
+          if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+            return null;
+          }
+
+          return {
+            id: task.assignmentId,
+            order: index + 1,
+            coordinate: { latitude, longitude },
+            title:
+              task.task?.report?.wasteTypeName ||
+              task.task?.report?.reporterName ||
+              `Nhiệm vụ ${index + 1}`,
+            description:
+              task.task?.report?.areaName ||
+              task.task?.areaName ||
+              'Khu vực thu gom',
+            subtitle: task.task?.report?.reporterName || task.status,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null),
+    [myActiveTasks]
+  );
+
+  const initialRegion = useMemo(() => {
+    const firstStop = taskStops[0]?.coordinate ?? defaultCoordinate;
+
+    return {
+      latitude: firstStop.latitude,
+      longitude: firstStop.longitude,
+      latitudeDelta: taskStops.length > 0 ? 0.04 : 0.1,
+      longitudeDelta: taskStops.length > 0 ? 0.04 : 0.1,
+    };
+  }, [taskStops]);
+
+  const routeCoordinates = useMemo(() => {
+    if (taskStops.length === 0) {
+      return [];
+    }
+
+    return [defaultCoordinate, ...taskStops.map((stop) => stop.coordinate)];
+  }, [taskStops]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -41,46 +97,33 @@ export default function CollectorMapScreen() {
           <ArrowLeft size={24} color={Colors.neutral[800]} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Tuyến đường thu gom</Text>
-        <View style={{ width: 40 }} />
+        <View style={styles.headerSpacer} />
       </View>
 
-      <AppMapView
-        style={styles.map}
-        initialRegion={{
-          latitude: 10.7758,
-          longitude: 106.7,
-          latitudeDelta: 0.1,
-          longitudeDelta: 0.1,
-        }}
-      >
+      <AppMapView style={styles.map} initialRegion={initialRegion}>
         <Marker
-          coordinate={{ latitude: 10.7758, longitude: 106.7 }}
+          coordinate={defaultCoordinate}
           pinColor={Colors.secondary[500]}
-          title='Vị trí của bạn'
+          title="Vị trí của bạn"
         />
 
-        {myActiveTasks.map((task, index) => (
+        {taskStops.map((stop) => (
           <Marker
-            key={task.assignmentId}
-            coordinate={{
-              latitude: 10.7758 + index * 0.01,
-              longitude: 106.7 + index * 0.01,
-            }}
+            key={stop.id}
+            coordinate={stop.coordinate}
             pinColor={Colors.accent[500]}
-            title={`Nhiệm vụ ${index + 1}`}
-            description={task.task?.areaName || 'Khu vực thu gom'}
+            title={stop.title}
+            description={stop.description}
           />
         ))}
 
-        <Polyline
-          coordinates={[
-            { latitude: 10.7758, longitude: 106.7 },
-            { latitude: 10.7858, longitude: 106.71 },
-            { latitude: 10.7958, longitude: 106.72 },
-          ]}
-          strokeColor={Colors.secondary[500]}
-          strokeWidth={4}
-        />
+        {routeCoordinates.length > 1 ? (
+          <Polyline
+            coordinates={routeCoordinates}
+            strokeColor={Colors.secondary[500]}
+            strokeWidth={4}
+          />
+        ) : null}
       </AppMapView>
 
       <View style={styles.bottomSheet}>
@@ -88,7 +131,7 @@ export default function CollectorMapScreen() {
           <View style={styles.routeStat}>
             <Navigation size={20} color={Colors.secondary[600]} />
             <View style={styles.routeStatText}>
-              <Text style={styles.routeStatValue}>{(myActiveTasks.length * 2.5).toFixed(1)} km</Text>
+              <Text style={styles.routeStatValue}>{(taskStops.length * 2.5).toFixed(1)} km</Text>
               <Text style={styles.routeStatLabel}>Tổng quãng đường</Text>
             </View>
           </View>
@@ -110,8 +153,14 @@ export default function CollectorMapScreen() {
                 <Text style={styles.taskNumberText}>{index + 1}</Text>
               </View>
               <View style={styles.taskInfo}>
-                <Text style={styles.taskName}>{task.task?.areaName || 'Khu vực'}</Text>
-                <Text style={styles.taskStatus}>{task.status}</Text>
+                <Text style={styles.taskName}>
+                  {task.task?.report?.wasteTypeName || task.task?.areaName || 'Khu vực'}
+                </Text>
+                <Text style={styles.taskStatus}>
+                  {task.task?.report?.reporterName ||
+                    task.task?.report?.areaName ||
+                    task.status}
+                </Text>
               </View>
             </View>
           ))}
@@ -146,6 +195,9 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: Colors.neutral[800],
+  },
+  headerSpacer: {
+    width: 40,
   },
   map: {
     width,

@@ -83,10 +83,10 @@ export default function CollectorTaskDetailScreen() {
   const reportQuery = useQuery({
     queryKey: ['collector', 'task-detail', 'report', assignment?.task?.reportId],
     queryFn: () => fetchReportById(accessToken ?? '', assignment!.task!.reportId!),
-    enabled: !!accessToken && !!assignment?.task?.reportId,
+    enabled: !!accessToken && !!assignment?.task?.reportId && !assignment?.task?.report,
   });
 
-  const report = reportQuery.data;
+  const report = reportQuery.data ?? assignment?.task?.report;
   const normalizedStatus = assignment?.status ?? 'ASSIGNED';
   const isAssigned = normalizedStatus === 'ASSIGNED';
   const isAccepted = normalizedStatus === 'ACCEPTED';

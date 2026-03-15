@@ -6,13 +6,14 @@ import {
   MapPin,
   Navigation,
   PackageCheck,
+  UserRound,
+  Clock3,
 } from "lucide-react";
 
 import { tasksApi } from "../../api";
 import type { Task } from "../../types";
 import { StatusBadge } from "../../components/ui/badge";
 import { Card, CardContent } from "../../components/ui/card";
-import { formatPriorityLabel } from "../../lib/labels";
 import { EmptyState, PageHeader, SectionHeader } from "../../components/ui/page";
 import {
   Table,
@@ -29,6 +30,25 @@ function normalizeCollectorTaskStatus(status: string) {
   return status;
 }
 
+function formatTaskDateTime(value?: string | null) {
+  if (!value) {
+    return "Chua co thoi diem";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Chua co thoi diem";
+  }
+
+  return date.toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export const CollectorTasksList: React.FC = () => {
   const navigate = useNavigate();
   const { data, isLoading } = useQuery({
@@ -42,15 +62,15 @@ export const CollectorTasksList: React.FC = () => {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Không gian thu gom</span>}
-        title="Nhiệm vụ của tôi"
-        description="Theo dõi các điểm đã phân công, ngày hẹn và tiến độ lộ trình trực tiếp trong một danh sách gọn gàng hơn."
+        eyebrow={<span className="shell-chip shell-chip-primary">Khong gian thu gom</span>}
+        title="Nhiem vu cua toi"
+        description="Theo doi nguoi gui bao cao, khu vuc, loai rac va thoi diem tao de collector den dung diem can thu gom."
       />
 
       <Card className="overflow-hidden">
         <SectionHeader
-          title="Nhiệm vụ được giao"
-          description="Chọn một dòng để mở chi tiết nhiệm vụ và cập nhật trạng thái theo đúng luồng hiện tại."
+          title="Nhiem vu duoc giao"
+          description="Danh sach nay hien thong tin tu bao cao cong dan de ban nhin ro ten nguoi gui, khu vuc va ngay gio phat sinh."
         />
 
         <CardContent className="pt-5 sm:pt-6">
@@ -61,73 +81,95 @@ export const CollectorTasksList: React.FC = () => {
           ) : tasks.length === 0 ? (
             <EmptyState
               icon={PackageCheck}
-              title="Chưa có nhiệm vụ nào"
-              description="Nhiệm vụ sẽ xuất hiện ở đây ngay khi doanh nghiệp phân công cho bạn."
+              title="Chua co nhiem vu nao"
+              description="Nhiem vu se xuat hien o day ngay khi doanh nghiep phan cong cho ban."
             />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Khu vực</TableHead>
-                  <TableHead>Ưu tiên</TableHead>
-                  <TableHead>Ngày hẹn</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead className="text-right">Hành động</TableHead>
+                  <TableHead>Cong dan</TableHead>
+                  <TableHead>Khu vuc va loai rac</TableHead>
+                  <TableHead>Ngay gio bao cao</TableHead>
+                  <TableHead>Trang thai</TableHead>
+                  <TableHead className="text-right">Hanh dong</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tasks.map((task) => (
-                  <TableRow
-                    key={task.taskId}
-                    onClick={() => navigate(`/collector/tasks/${task.taskId}`)}
-                  >
-                    {(() => {
-                      const normalizedStatus = normalizeCollectorTaskStatus(task.status);
+                {tasks.map((task) => {
+                  const normalizedStatus = normalizeCollectorTaskStatus(task.status);
+                  const reporterName = task.report?.reporterName || "Chua ro cong dan";
+                  const areaName = task.areaName || task.report?.areaName || "Chua ro khu vuc";
+                  const wasteTypeName = task.report?.wasteTypeName || "Chua ro loai rac";
+                  const createdAt = formatTaskDateTime(task.report?.createdAt || task.createdAt);
 
-                      return (
-                        <>
-                          <TableCell>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-[var(--text-muted)]" />
-                        <span className="font-semibold text-[var(--text-primary)]">
-                          {task.areaName || "Không rõ"}
-                        </span>
-                      </div>
-                          </TableCell>
-                          <TableCell>
-                      <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
-                        {formatPriorityLabel(task.priority)}
-                      </span>
-                          </TableCell>
-                          <TableCell className="text-[var(--text-secondary)]">
-                      {task.scheduledDate ?? "Chưa lên lịch"}
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge status={normalizedStatus} />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {normalizedStatus === "ASSIGNED" ? (
-                        <span className="inline-flex items-center justify-end gap-1 text-sm font-semibold text-blue-700">
-                          <Navigation className="h-4 w-4" />
-                          Bắt đầu
-                        </span>
-                            ) : normalizedStatus === "ON_THE_WAY" ? (
-                        <span className="inline-flex items-center justify-end gap-1 text-sm font-semibold text-cyan-700">
-                          <MapPin className="h-4 w-4" />
-                          Đang đi
-                        </span>
-                            ) : (
-                        <span className="inline-flex items-center justify-end gap-1 text-sm font-semibold text-emerald-700">
-                          <PackageCheck className="h-4 w-4" />
-                          Xong
-                        </span>
-                            )}
-                          </TableCell>
-                        </>
-                      );
-                    })()}
-                  </TableRow>
-                ))}
+                  return (
+                    <TableRow
+                      key={task.taskId}
+                      onClick={() => navigate(`/collector/tasks/${task.taskId}`)}
+                    >
+                      <TableCell>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <UserRound className="h-4 w-4 text-[var(--text-muted)]" />
+                            <span className="font-semibold text-[var(--text-primary)]">
+                              {reporterName}
+                            </span>
+                          </div>
+                          <p className="text-sm text-[var(--text-secondary)]">
+                            {task.report?.reportId
+                              ? `Ma bao cao: ${task.report.reportId.slice(0, 8)}`
+                              : "Dang dong bo bao cao"}
+                          </p>
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-[var(--text-muted)]" />
+                            <span className="font-semibold text-[var(--text-primary)]">
+                              {areaName}
+                            </span>
+                          </div>
+                          <p className="text-sm text-[var(--text-secondary)]">
+                            {wasteTypeName}
+                          </p>
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="text-[var(--text-secondary)]">
+                        <div className="flex items-center gap-2">
+                          <Clock3 className="h-4 w-4 text-[var(--text-muted)]" />
+                          <span>{createdAt}</span>
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        <StatusBadge status={normalizedStatus} />
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        {normalizedStatus === "ASSIGNED" ? (
+                          <span className="inline-flex items-center justify-end gap-1 text-sm font-semibold text-blue-700">
+                            <Navigation className="h-4 w-4" />
+                            Bat dau
+                          </span>
+                        ) : normalizedStatus === "ON_THE_WAY" ? (
+                          <span className="inline-flex items-center justify-end gap-1 text-sm font-semibold text-cyan-700">
+                            <MapPin className="h-4 w-4" />
+                            Dang di
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center justify-end gap-1 text-sm font-semibold text-emerald-700">
+                            <PackageCheck className="h-4 w-4" />
+                            Xong
+                          </span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}

@@ -9,7 +9,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 
 import {
@@ -54,143 +54,207 @@ type WasteType = {
   isActive?: boolean | null;
 };
 
-type CapabilityForm = {
+type CapabilityBatchPayload = {
   serviceAreaId: string;
   wasteTypeId: string;
+  dailyCapacityKg: number;
+  effectiveFrom?: string;
+  effectiveTo?: string;
+};
+
+type CapabilityForm = {
+  serviceAreaIds: string[];
+  wasteTypeIds: string[];
   dailyCapacityKg: string;
   effectiveFrom: string;
   effectiveTo: string;
 };
 
 const EMPTY_FORM: CapabilityForm = {
-  serviceAreaId: "",
-  wasteTypeId: "",
+  serviceAreaIds: [],
+  wasteTypeIds: [],
   dailyCapacityKg: "",
   effectiveFrom: "",
   effectiveTo: "",
 };
 
+function formatCapacity(value: number) {
+  return `${value.toLocaleString()} kg`;
+}
+
+function TogglePills<T extends { name: string } | { areaId: string; name: string } | { wasteTypeId: string; name: string }>({
+  items,
+  selectedIds,
+  getId,
+  onToggle,
+  activeClassName,
+}: {
+  items: T[];
+  selectedIds: string[];
+  getId: (item: T) => string;
+  onToggle: (id: string) => void;
+  activeClassName: string;
+}) {
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      {items.map((item) => {
+        const id = getId(item);
+        const isSelected = selectedIds.includes(id);
+
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onToggle(id)}
+            className={`rounded-full border px-3 py-2 text-sm font-medium transition ${
+              isSelected
+                ? activeClassName
+                : "border-[var(--stroke-soft)] bg-white text-[var(--text-secondary)]"
+            }`}
+          >
+            {item.name}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function CreateCapabilityModal({
   serviceAreas,
   wasteTypes,
+  existingPairs,
   onClose,
   onCreate,
   isPending,
 }: {
   serviceAreas: ServiceArea[];
   wasteTypes: WasteType[];
+  existingPairs: Set<string>;
   onClose: () => void;
-  onCreate: (payload: {
-    serviceAreaId: string;
-    wasteTypeId: string;
-    dailyCapacityKg: number;
-    effectiveFrom?: string;
-    effectiveTo?: string;
-  }) => void;
+  onCreate: (payloads: CapabilityBatchPayload[]) => void;
   isPending: boolean;
 }) {
   const [form, setForm] = useState<CapabilityForm>(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
 
+  const selectedCombinations = useMemo(
+    () =>
+      form.serviceAreaIds.flatMap((serviceAreaId) =>
+        form.wasteTypeIds.map((wasteTypeId) => ({ serviceAreaId, wasteTypeId })),
+      ),
+    [form.serviceAreaIds, form.wasteTypeIds],
+  );
+
+  const toggleArea = (areaId: string) => {
+    setForm((current) => ({
+      ...current,
+      serviceAreaIds: current.serviceAreaIds.includes(areaId)
+        ? current.serviceAreaIds.filter((value) => value !== areaId)
+        : [...current.serviceAreaIds, areaId],
+    }));
+  };
+
+  const toggleWasteType = (wasteTypeId: string) => {
+    setForm((current) => ({
+      ...current,
+      wasteTypeIds: current.wasteTypeIds.includes(wasteTypeId)
+        ? current.wasteTypeIds.filter((value) => value !== wasteTypeId)
+        : [...current.wasteTypeIds, wasteTypeId],
+    }));
+  };
+
   const submit = () => {
     const capacityValue = Number(form.dailyCapacityKg);
 
-    if (!form.serviceAreaId || !form.wasteTypeId) {
-      setError("Vui lòng chọn cả khu vực phục vụ và loại rác.");
+    if (form.serviceAreaIds.length === 0 || form.wasteTypeIds.length === 0) {
+      setError("Vui long chon it nhat mot khu vuc va mot loai rac.");
       return;
     }
 
     if (!form.dailyCapacityKg.trim() || Number.isNaN(capacityValue) || capacityValue <= 0) {
-      setError("Công suất mỗi ngày phải lớn hơn 0.");
+      setError("Cong suat moi ngay phai lon hon 0.");
       return;
     }
 
     if (form.effectiveFrom && form.effectiveTo && form.effectiveFrom > form.effectiveTo) {
-      setError("Ngày bắt đầu hiệu lực phải nhỏ hơn hoặc bằng ngày kết thúc.");
+      setError("Ngay bat dau hieu luc phai nho hon hoac bang ngay ket thuc.");
+      return;
+    }
+
+    const payloads = selectedCombinations
+      .filter(
+        ({ serviceAreaId, wasteTypeId }) =>
+          !existingPairs.has(`${serviceAreaId}:${wasteTypeId}`),
+      )
+      .map(({ serviceAreaId, wasteTypeId }) => ({
+        serviceAreaId,
+        wasteTypeId,
+        dailyCapacityKg: capacityValue,
+        effectiveFrom: form.effectiveFrom || undefined,
+        effectiveTo: form.effectiveTo || undefined,
+      }));
+
+    if (payloads.length === 0) {
+      setError("Tat ca cap khu vuc va loai rac da ton tai.");
       return;
     }
 
     setError(null);
-    onCreate({
-      serviceAreaId: form.serviceAreaId,
-      wasteTypeId: form.wasteTypeId,
-      dailyCapacityKg: capacityValue,
-      effectiveFrom: form.effectiveFrom || undefined,
-      effectiveTo: form.effectiveTo || undefined,
-    });
+    onCreate(payloads);
   };
 
   return (
     <ModalShell
-      title="Đăng ký phạm vi phục vụ"
-      description="Gắn loại rác và công suất mỗi ngày cho một khu vực mà doanh nghiệp của bạn có thể phục vụ."
+      title="Dang ky pham vi phuc vu"
+      description="Chon nhieu quan huyen va nhieu loai rac. He thong se tao tung cap cau hinh hop le cho doanh nghiep."
       icon={MapPin}
       onClose={onClose}
       widthClassName="max-w-2xl"
       footer={
         <>
           <Button variant="outline" onClick={onClose}>
-            Hủy
+            Huy
           </Button>
           <Button onClick={submit} disabled={isPending}>
-            {isPending ? "Đang lưu..." : "Đăng ký phạm vi phục vụ"}
+            {isPending ? "Dang luu..." : "Tao cau hinh"}
           </Button>
         </>
       }
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="capability-area" className="field-label">
-            Khu vực phục vụ
-          </label>
-          <select
-            id="capability-area"
-            value={form.serviceAreaId}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, serviceAreaId: event.target.value }))
-            }
-            className="shell-select"
-          >
-            <option value="">Chọn khu vực phục vụ</option>
-            {serviceAreas.map((area) => (
-              <option key={area.areaId} value={area.areaId}>
-                {area.name}
-              </option>
-            ))}
-          </select>
+        <div className="sm:col-span-2">
+          <label className="field-label">Khu vuc phuc vu</label>
+          <TogglePills
+            items={serviceAreas}
+            selectedIds={form.serviceAreaIds}
+            getId={(item) => item.areaId}
+            onToggle={toggleArea}
+            activeClassName="border-[var(--primary-500)] bg-[var(--primary-100)] text-[var(--primary-700)]"
+          />
         </div>
 
-        <div>
-          <label htmlFor="capability-waste-type" className="field-label">
-            Loại rác
-          </label>
-          <select
-            id="capability-waste-type"
-            value={form.wasteTypeId}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, wasteTypeId: event.target.value }))
-            }
-            className="shell-select"
-          >
-            <option value="">Chọn loại rác</option>
-            {wasteTypes.map((wasteType) => (
-              <option key={wasteType.wasteTypeId} value={wasteType.wasteTypeId}>
-                {wasteType.name}
-              </option>
-            ))}
-          </select>
+        <div className="sm:col-span-2">
+          <label className="field-label">Loai rac</label>
+          <TogglePills
+            items={wasteTypes}
+            selectedIds={form.wasteTypeIds}
+            getId={(item) => item.wasteTypeId}
+            onToggle={toggleWasteType}
+            activeClassName="border-[var(--accent-500)] bg-[var(--accent-100)] text-[var(--accent-700)]"
+          />
         </div>
 
         <div>
           <label htmlFor="capability-capacity" className="field-label">
-            Công suất mỗi ngày (kg)
+            Cong suat moi ngay (kg)
           </label>
           <Input
             id="capability-capacity"
             type="number"
             min="0.1"
             step="0.1"
-            placeholder="ví dụ 250"
+            placeholder="vi du 250"
             value={form.dailyCapacityKg}
             onChange={(event) =>
               setForm((current) => ({ ...current, dailyCapacityKg: event.target.value }))
@@ -200,7 +264,7 @@ function CreateCapabilityModal({
 
         <div>
           <label htmlFor="capability-effective-from" className="field-label">
-            Hiệu lực từ
+            Hieu luc tu
           </label>
           <Input
             id="capability-effective-from"
@@ -214,7 +278,7 @@ function CreateCapabilityModal({
 
         <div className="sm:col-span-2">
           <label htmlFor="capability-effective-to" className="field-label">
-            Hiệu lực đến
+            Hieu luc den
           </label>
           <Input
             id="capability-effective-to"
@@ -227,6 +291,11 @@ function CreateCapabilityModal({
         </div>
       </div>
 
+      <div className="mt-4 rounded-[20px] border border-[var(--stroke-soft)] bg-[var(--bg-surface-muted)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+        Dang chon {form.serviceAreaIds.length} khu vuc, {form.wasteTypeIds.length} loai rac
+        va se tao {selectedCombinations.length} cau hinh.
+      </div>
+
       {error ? (
         <div className="mt-4 rounded-[20px] border border-[rgba(217,124,87,0.18)] bg-[var(--peach-100)] px-4 py-3 text-sm leading-6 text-[var(--peach-600)]">
           {error}
@@ -234,10 +303,6 @@ function CreateCapabilityModal({
       ) : null}
     </ModalShell>
   );
-}
-
-function formatCapacity(value: number) {
-  return `${value.toLocaleString()} kg`;
 }
 
 export function EnterpriseCapabilitiesPage() {
@@ -260,42 +325,6 @@ export function EnterpriseCapabilitiesPage() {
     queryFn: () => wasteTypesApi.getAll().then((response) => response.data),
   });
 
-  const createCapability = useMutation({
-    mutationFn: (payload: {
-      serviceAreaId: string;
-      wasteTypeId: string;
-      dailyCapacityKg: number;
-      effectiveFrom?: string;
-      effectiveTo?: string;
-    }) => enterpriseCapabilitiesApi.create(payload),
-    onSuccess: () => {
-      toast.success("Đăng ký phạm vi phục vụ thành công.");
-      queryClient.invalidateQueries({ queryKey: ["enterprise-capabilities"] });
-      setShowCreate(false);
-    },
-    onError: (error: unknown) => {
-      const message =
-        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        "Đăng ký phạm vi phục vụ thất bại.";
-      toast.error(message);
-    },
-  });
-
-  const deleteCapability = useMutation({
-    mutationFn: (capabilityId: string) => enterpriseCapabilitiesApi.delete(capabilityId),
-    onSuccess: () => {
-      toast.success("Đã xóa phạm vi phục vụ.");
-      queryClient.invalidateQueries({ queryKey: ["enterprise-capabilities"] });
-      setDeleting(null);
-    },
-    onError: (error: unknown) => {
-      const message =
-        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        "Xóa phạm vi phục vụ thất bại.";
-      toast.error(message);
-    },
-  });
-
   const capabilities: Capability[] = capabilitiesResponse?.data ?? [];
   const serviceAreas: ServiceArea[] = (serviceAreasResponse?.data ?? []).filter(
     (area: ServiceArea) => area.isActive !== false,
@@ -303,6 +332,66 @@ export function EnterpriseCapabilitiesPage() {
   const wasteTypes: WasteType[] = (wasteTypesResponse?.data ?? []).filter(
     (wasteType: WasteType) => wasteType.isActive !== false,
   );
+
+  const existingPairs = useMemo(
+    () =>
+      new Set(
+        capabilities.map(
+          (capability) => `${capability.serviceAreaId}:${capability.wasteTypeId}`,
+        ),
+      ),
+    [capabilities],
+  );
+
+  const createCapability = useMutation({
+    mutationFn: async (payloads: CapabilityBatchPayload[]) => {
+      const results = await Promise.allSettled(
+        payloads.map((payload) => enterpriseCapabilitiesApi.create(payload)),
+      );
+      const failed = results.filter(
+        (result): result is PromiseRejectedResult => result.status === "rejected",
+      );
+
+      if (failed.length === results.length) {
+        throw failed[0].reason;
+      }
+
+      return {
+        createdCount: results.length - failed.length,
+        failedCount: failed.length,
+      };
+    },
+    onSuccess: ({ createdCount, failedCount }) => {
+      toast.success(
+        failedCount > 0
+          ? `Da tao ${createdCount} cau hinh, ${failedCount} cau hinh bi bo qua hoac loi.`
+          : `Da tao ${createdCount} cau hinh phuc vu.`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["enterprise-capabilities"] });
+      setShowCreate(false);
+    },
+    onError: (error: unknown) => {
+      const message =
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        "Dang ky pham vi phuc vu that bai.";
+      toast.error(message);
+    },
+  });
+
+  const deleteCapability = useMutation({
+    mutationFn: (capabilityId: string) => enterpriseCapabilitiesApi.delete(capabilityId),
+    onSuccess: () => {
+      toast.success("Da xoa pham vi phuc vu.");
+      queryClient.invalidateQueries({ queryKey: ["enterprise-capabilities"] });
+      setDeleting(null);
+    },
+    onError: (error: unknown) => {
+      const message =
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        "Xoa pham vi phuc vu that bai.";
+      toast.error(message);
+    },
+  });
 
   const normalizedSearch = deferredSearch.trim().toLowerCase();
   const filteredCapabilities = capabilities.filter((capability) => {
@@ -328,29 +417,30 @@ export function EnterpriseCapabilitiesPage() {
         <CreateCapabilityModal
           serviceAreas={serviceAreas}
           wasteTypes={wasteTypes}
+          existingPairs={existingPairs}
           onClose={() => setShowCreate(false)}
-          onCreate={(payload) => createCapability.mutate(payload)}
+          onCreate={(payloads) => createCapability.mutate(payloads)}
           isPending={createCapability.isPending}
         />
       ) : null}
 
       {deleting ? (
         <ModalShell
-          title="Xóa phạm vi phục vụ"
-          description="Doanh nghiệp sẽ ngừng nhận khớp báo cáo mới cho khu vực và loại rác đã chọn."
+          title="Xoa pham vi phuc vu"
+          description="Doanh nghiep se ngung nhan khop bao cao moi cho cap khu vuc va loai rac nay."
           icon={Trash2}
           onClose={() => setDeleting(null)}
           footer={
             <>
               <Button variant="outline" onClick={() => setDeleting(null)}>
-                Hủy
+                Huy
               </Button>
               <Button
                 variant="destructive"
                 onClick={() => deleteCapability.mutate(deleting.capabilityId)}
                 disabled={deleteCapability.isPending}
               >
-                {deleteCapability.isPending ? "Đang xóa..." : "Xóa phạm vi"}
+                {deleteCapability.isPending ? "Dang xoa..." : "Xoa pham vi"}
               </Button>
             </>
           }
@@ -362,27 +452,27 @@ export function EnterpriseCapabilitiesPage() {
       ) : null}
 
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Không gian doanh nghiệp</span>}
-        title="Đăng ký phạm vi phục vụ"
-        description="Khai báo khu vực và loại rác doanh nghiệp có thể xử lý để việc tiếp nhận báo cáo và tạo nhiệm vụ khớp với khả năng vận hành thực tế."
+        eyebrow={<span className="shell-chip shell-chip-primary">Khong gian doanh nghiep</span>}
+        title="Dang ky pham vi phuc vu"
+        description="Khai bao khu vuc va loai rac doanh nghiep co the xu ly de viec tiep nhan bao cao khop voi nang luc van hanh thuc te."
         actions={
           <>
             <Button variant="outline" onClick={() => refetch()}>
               <RefreshCw className="mr-2 h-4 w-4" />
-              Làm mới
+              Lam moi
             </Button>
             <Button onClick={() => setShowCreate(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Đăng ký phạm vi phục vụ
+              Them cau hinh
             </Button>
           </>
         }
       />
 
       <PageHero
-        eyebrow={<span className="shell-chip shell-chip-accent">Mức sẵn sàng phục vụ</span>}
-        title="Liên kết khu vực, loại rác và công suất thực tế trong cùng một nơi."
-        description="Trang này kích hoạt API capability của doanh nghiệp đã có sẵn ở backend, nên việc đăng ký phạm vi phục vụ giờ đã có luồng frontend đầy đủ thay vì bị thiếu giao diện."
+        eyebrow={<span className="shell-chip shell-chip-accent">Muc san sang phuc vu</span>}
+        title="Lien ket khu vuc, loai rac va cong suat thuc te trong cung mot noi."
+        description="Ban co the chon nhieu quan huyen va nhieu loai rac trong mot lan thao tac. He thong tu tao tung cap cau hinh hop le va bo qua cac cap da ton tai."
         tone="mint"
         aside={
           <div className="space-y-4">
@@ -392,10 +482,10 @@ export function EnterpriseCapabilitiesPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-[var(--text-primary)]">
-                  Dữ liệu sẵn sàng để cấu hình
+                  Du lieu san sang de cau hinh
                 </p>
                 <p className="text-sm leading-6 text-[var(--text-secondary)]">
-                  Có {serviceAreas.length} khu vực phục vụ và {wasteTypes.length} loại rác sẵn sàng để đăng ký.
+                  Co {serviceAreas.length} khu vuc va {wasteTypes.length} loai rac dang san sang de dang ky.
                 </p>
               </div>
             </div>
@@ -406,39 +496,39 @@ export function EnterpriseCapabilitiesPage() {
       <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
         <StatCard
           icon={MapPin}
-          label="Mục đăng ký"
+          label="Muc dang ky"
           value={capabilities.length}
-          description="Các cặp khu vực phục vụ và loại rác đã đăng ký."
+          description="Cac cap khu vuc va loai rac da dang ky."
           tone="mint"
           featured
         />
         <StatCard
           icon={PackageCheck}
-          label="Khu vực đã phủ"
+          label="Khu vuc da phu"
           value={totalCoverageAreas}
-          description="Số khu vực duy nhất đang được gán cho doanh nghiệp này."
+          description="So khu vuc duy nhat dang duoc phu boi doanh nghiep nay."
           tone="sky"
         />
         <StatCard
           icon={Recycle}
-          label="Công suất mỗi ngày"
+          label="Cong suat moi ngay"
           value={formatCapacity(totalDailyCapacity)}
-          description="Tổng công suất đã khai báo trên mọi mục đăng ký."
+          description="Tong cong suat dang khai bao tren moi cau hinh."
           tone="violet"
         />
         <StatCard
           icon={Clock}
-          label="Công suất còn lại"
+          label="Cong suat con lai"
           value={formatCapacity(remainingCapacity)}
-          description="Công suất chưa sử dụng theo mức dùng hiện tại."
+          description="Cong suat chua su dung theo muc dung hien tai."
           tone="sand"
         />
       </div>
 
       <SectionCard className="overflow-hidden">
         <SectionHeader
-          title="Phạm vi đã đăng ký"
-          description="Tìm theo khu vực hoặc loại rác, sau đó xóa những mục mà doanh nghiệp không còn hỗ trợ."
+          title="Pham vi da dang ky"
+          description="Tim theo khu vuc hoac loai rac, sau do xoa nhung muc ma doanh nghiep khong con ho tro."
         />
 
         <div className="space-y-5 p-5 sm:p-6">
@@ -448,7 +538,7 @@ export function EnterpriseCapabilitiesPage() {
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Tìm theo khu vực phục vụ hoặc loại rác"
+                placeholder="Tim theo khu vuc phuc vu hoac loai rac"
                 className="pl-11"
               />
             </div>
@@ -463,17 +553,17 @@ export function EnterpriseCapabilitiesPage() {
           ) : filteredCapabilities.length === 0 ? (
             <EmptyState
               icon={MapPin}
-              title="Chưa có phạm vi nào được đăng ký"
+              title="Chua co pham vi nao duoc dang ky"
               description={
                 capabilities.length === 0
-                  ? "Hãy bắt đầu bằng việc đăng ký khu vực và loại rác đầu tiên mà doanh nghiệp có thể xử lý."
-                  : "Hãy thử từ khóa khác để tìm đúng mục đăng ký bạn cần."
+                  ? "Hay bat dau bang viec dang ky khu vuc va loai rac dau tien ma doanh nghiep co the xu ly."
+                  : "Hay thu tu khoa khac de tim dung muc dang ky ban can."
               }
               action={
                 capabilities.length === 0 ? (
                   <Button onClick={() => setShowCreate(true)}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Đăng ký mục đầu tiên
+                    Dang ky muc dau tien
                   </Button>
                 ) : undefined
               }
@@ -504,8 +594,8 @@ export function EnterpriseCapabilitiesPage() {
 
                         <div className="space-y-2">
                           <div className="flex items-center justify-between gap-3 text-sm text-[var(--text-secondary)]">
-                            <span>Đã dùng {formatCapacity(usedCapacity)}</span>
-                            <span>{utilization}% công suất</span>
+                            <span>Da dung {formatCapacity(usedCapacity)}</span>
+                            <span>{utilization}% cong suat</span>
                           </div>
                           <div className="h-2 overflow-hidden rounded-full bg-[var(--bg-surface-muted)]">
                             <div
@@ -516,12 +606,8 @@ export function EnterpriseCapabilitiesPage() {
                         </div>
 
                         <div className="flex flex-wrap gap-4 text-sm text-[var(--text-secondary)]">
-                          <span>
-                            Hiệu lực từ: {capability.effectiveFrom ?? "Ngay lập tức"}
-                          </span>
-                          <span>
-                            Hiệu lực đến: {capability.effectiveTo ?? "Không giới hạn"}
-                          </span>
+                          <span>Hieu luc tu: {capability.effectiveFrom ?? "Ngay lap tuc"}</span>
+                          <span>Hieu luc den: {capability.effectiveTo ?? "Khong gioi han"}</span>
                         </div>
                       </div>
 
@@ -532,7 +618,7 @@ export function EnterpriseCapabilitiesPage() {
                           onClick={() => setDeleting(capability)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Xóa
+                          Xoa
                         </Button>
                       </div>
                     </div>

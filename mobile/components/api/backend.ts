@@ -74,6 +74,7 @@ interface ReportDto {
 interface TaskDto {
   taskId: string;
   reportId?: string;
+  report?: ReportDto | null;
   enterpriseUserId: string;
   enterpriseName?: string;
   createdByUserId: string;
@@ -585,6 +586,7 @@ function toWasteReport(dto: ReportDto): WasteReport {
 
 function toTaskAssignment(dto: TaskDto): TaskAssignment {
   const assignmentStatus = normalizeAssignmentStatus(dto.assignmentStatus ?? dto.status);
+  const report = dto.report ? toWasteReport(dto.report) : undefined;
 
   const task: Task = {
     taskId: dto.taskId,
@@ -595,14 +597,15 @@ function toTaskAssignment(dto: TaskDto): TaskAssignment {
     collectorUserId: dto.collectorUserId,
     collectorName: dto.collectorName,
     assignmentStatus: dto.assignmentStatus,
-    areaId: dto.areaId,
-    areaName: dto.areaName,
+    areaId: dto.areaId ?? report?.areaId,
+    areaName: dto.areaName ?? report?.areaName,
     status: (dto.status ?? 'ASSIGNED') as Task['status'],
     priority: dto.priority,
     scheduledDate: dto.scheduledDate,
     rejectionReason: dto.rejectionReason,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
+    report,
   };
 
   return {
@@ -617,6 +620,8 @@ function toTaskAssignment(dto: TaskDto): TaskAssignment {
 }
 
 function toTask(dto: TaskDto): Task {
+  const report = dto.report ? toWasteReport(dto.report) : undefined;
+
   return {
     taskId: dto.taskId,
     reportId: dto.reportId,
@@ -626,14 +631,15 @@ function toTask(dto: TaskDto): Task {
     collectorUserId: dto.collectorUserId,
     collectorName: dto.collectorName,
     assignmentStatus: dto.assignmentStatus,
-    areaId: dto.areaId,
-    areaName: dto.areaName,
+    areaId: dto.areaId ?? report?.areaId,
+    areaName: dto.areaName ?? report?.areaName,
     status: (dto.status ?? 'PENDING') as Task['status'],
     priority: dto.priority,
     scheduledDate: dto.scheduledDate,
     rejectionReason: dto.rejectionReason,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
+    report,
   };
 }
 

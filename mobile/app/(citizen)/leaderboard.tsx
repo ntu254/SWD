@@ -146,6 +146,7 @@ export default function LeaderboardScreen() {
         queryClient.invalidateQueries({ queryKey: ['rewards', 'balance'] }),
         queryClient.invalidateQueries({ queryKey: ['rewards', 'leaderboard'] }),
         queryClient.invalidateQueries({ queryKey: ['rewards', 'items'] }),
+        queryClient.invalidateQueries({ queryKey: ['rewards', 'transactions'] }),
       ]);
       Alert.alert('Thành công', `Đổi quà "${item.name}" thành công.`);
     },

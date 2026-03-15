@@ -381,6 +381,13 @@ public class TaskService {
                 && "ON_THE_WAY".equals(assignment.getStatus())) {
             taskStatus = "ON_THE_WAY";
         }
+        ReportDto reportDto = t.getReport() != null ? mapReportToDto(t.getReport()) : null;
+        UUID areaId = t.getArea() != null
+                ? t.getArea().getAreaId()
+                : reportDto != null ? reportDto.getAreaId() : null;
+        String areaName = t.getArea() != null
+                ? t.getArea().getName()
+                : reportDto != null ? reportDto.getAreaName() : null;
 
         return TaskDto.builder()
                 .taskId(t.getTaskId())
@@ -391,14 +398,35 @@ public class TaskService {
                 .collectorUserId(assignment != null ? assignment.getCollector().getUserId() : null)
                 .collectorName(assignment != null ? assignment.getCollector().getDisplayName() : null)
                 .assignmentStatus(assignment != null ? assignment.getStatus() : null)
-                .areaId(t.getArea() != null ? t.getArea().getAreaId() : null)
-                .areaName(t.getArea() != null ? t.getArea().getName() : null)
+                .areaId(areaId)
+                .areaName(areaName)
                 .status(taskStatus)
                 .priority(t.getPriority())
                 .scheduledDate(t.getScheduledDate())
                 .rejectionReason(t.getRejectionReason())
+                .report(reportDto)
                 .createdAt(t.getCreatedAt())
                 .updatedAt(t.getUpdatedAt())
+                .build();
+    }
+
+    private ReportDto mapReportToDto(WasteReport report) {
+        return ReportDto.builder()
+                .reportId(report.getReportId())
+                .reporterUserId(report.getReporter().getUserId())
+                .reporterName(report.getReporter().getDisplayName())
+                .wasteTypeId(report.getWasteType() != null ? report.getWasteType().getWasteTypeId() : null)
+                .wasteTypeName(report.getWasteType() != null ? report.getWasteType().getName() : null)
+                .areaId(report.getArea() != null ? report.getArea().getAreaId() : null)
+                .areaName(report.getArea() != null ? report.getArea().getName() : null)
+                .latitude(report.getLatitude())
+                .longitude(report.getLongitude())
+                .gpsAccuracyMeters(report.getGpsAccuracyMeters())
+                .description(report.getDescription())
+                .reportPhotoUrl(report.getReportPhotoUrl())
+                .status(report.getStatus())
+                .requestedPickupTime(report.getRequestedPickupTime())
+                .createdAt(report.getCreatedAt())
                 .build();
     }
 

@@ -35,6 +35,7 @@ export interface WasteReport {
 export interface Task {
   taskId: string;
   reportId?: string | null;
+  report?: WasteReport | null;
   enterpriseUserId: string;
   enterpriseName: string;
   createdByUserId: string;

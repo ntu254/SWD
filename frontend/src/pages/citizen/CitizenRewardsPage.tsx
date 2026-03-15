@@ -65,7 +65,12 @@ export function CitizenRewardsPage() {
       queryClient.invalidateQueries({ queryKey: ["reward-items"] });
       queryClient.invalidateQueries({ queryKey: ["reward-transactions"] });
     },
-    onError: () => toast.error("Hiện chưa thể đổi phần thưởng này."),
+    onError: (error: unknown) => {
+      const message =
+        (error as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || "Hiện chưa thể đổi phần thưởng này.";
+      toast.error(message);
+    },
     onSettled: () => setRedeemingId(null),
   });
 

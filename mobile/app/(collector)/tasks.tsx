@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import {
   ClipboardList,
   Clock,
@@ -25,7 +25,7 @@ import { fetchCollectorTasks, updateCollectorTaskStatus } from '@/components/api
 import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
 import { useAppStore } from '@/store/useAppStore';
-import type { TaskAssignment, AssignmentStatus } from '@/types';
+import type { AssignmentStatus, TaskAssignment } from '@/types';
 
 const statusConfig: Record<
   AssignmentStatus,
@@ -93,6 +93,24 @@ const statusConfig: Record<
   },
 };
 
+function formatTaskTime(value?: string) {
+  if (!value) {
+    return '--:--';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return '--:--';
+  }
+
+  return parsed.toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default function CollectorTasksScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -140,10 +158,21 @@ export default function CollectorTasksScreen() {
     }
   }, [tasksQuery]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!accessToken) {
+        return undefined;
+      }
+
+      void tasksQuery.refetch();
+      return undefined;
+    }, [accessToken, tasksQuery])
+  );
+
   const openTaskDetail = useCallback(
     (taskId: string) => {
       router.push({
-        pathname: "/task-detail/[taskId]",
+        pathname: '/task-detail/[taskId]',
         params: { taskId },
       });
     },
@@ -171,6 +200,11 @@ export default function CollectorTasksScreen() {
   const renderTaskItem = ({ item }: { item: TaskAssignment }) => {
     const status = statusConfig[item.status] ?? statusConfig.ASSIGNED;
     const StatusIcon = status.icon;
+    const report = item.task?.report;
+    const taskTitle = report?.wasteTypeName || item.task?.areaName || 'Điểm rác cần thu gom';
+    const taskArea = report?.areaName || item.task?.areaName || 'Chưa xác định';
+    const taskReporter = report?.reporterName || 'Chưa rõ công dân';
+    const taskTime = formatTaskTime(report?.createdAt || item.assignedAt);
 
     return (
       <TouchableOpacity
@@ -183,25 +217,20 @@ export default function CollectorTasksScreen() {
             <StatusIcon size={14} color={status.color} />
             <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
           </View>
-          <Text style={styles.taskTime}>
-            {new Date(item.assignedAt || '').toLocaleTimeString('vi-VN', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </Text>
+          <Text style={styles.taskTime}>{taskTime}</Text>
         </View>
 
         <View style={styles.taskBody}>
-          <Text style={styles.wasteType}>{item.task?.areaName || 'Điểm rác cần thu gom'}</Text>
+          <Text style={styles.wasteType}>{taskTitle}</Text>
           <Text style={styles.description} numberOfLines={2}>
             {item.task?.enterpriseName
-              ? `Đơn vị xử lý: ${item.task.enterpriseName}`
-              : 'Mở chi tiết để xem đầy đủ ảnh, vị trí và biểu mẫu hoàn tất.'}
+              ? `Công dân: ${taskReporter} · Đơn vị xử lý: ${item.task.enterpriseName}`
+              : `Công dân: ${taskReporter}`}
           </Text>
 
           <View style={styles.locationRow}>
             <MapPin size={14} color={Colors.neutral[500]} />
-            <Text style={styles.locationText}>{item.task?.areaName || 'Chưa xác định'}</Text>
+            <Text style={styles.locationText}>{taskArea}</Text>
           </View>
         </View>
 
@@ -225,17 +254,14 @@ export default function CollectorTasksScreen() {
             </TouchableOpacity>
           ) : null}
 
-          {(item.status === 'ON_THE_WAY' || item.status === 'IN_PROGRESS') ? (
-            <TouchableOpacity
-              style={styles.primaryBtn}
-              onPress={() => openTaskDetail(item.taskId)}
-            >
+          {item.status === 'ON_THE_WAY' || item.status === 'IN_PROGRESS' ? (
+            <TouchableOpacity style={styles.primaryBtn} onPress={() => openTaskDetail(item.taskId)}>
               <CheckCircle2 size={16} color={Colors.neutral.white} />
               <Text style={styles.primaryBtnText}>Mở biểu mẫu hoàn tất</Text>
             </TouchableOpacity>
           ) : null}
 
-          {(item.status === 'COLLECTED' || item.status === 'COMPLETED') ? (
+          {item.status === 'COLLECTED' || item.status === 'COMPLETED' ? (
             <View style={styles.detailHintRow}>
               <Text style={styles.detailHintText}>Xem lại chi tiết nhiệm vụ</Text>
               <ArrowRight size={16} color={Colors.secondary[600]} />

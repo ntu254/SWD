@@ -117,7 +117,10 @@ function getTimeline(report: WasteReport): TimelineStep[] {
     {
       status: "ACCEPTED",
       label: "Doanh nghiệp đã tiếp nhận",
-      date: currentIndex >= 1 ? "Đã đưa vào hàng chờ tạo nhiệm vụ" : "Đang chờ duyệt",
+      date:
+        currentIndex >= 1
+          ? "Đã đưa vào hàng chờ tạo nhiệm vụ"
+          : "Đang chờ duyệt",
       active: currentIndex >= 1,
       completed: currentIndex > 1,
     },
@@ -192,7 +195,10 @@ export const CitizenReportDetail: React.FC = () => {
           title="Không tìm thấy báo cáo"
           description="Không thể tải báo cáo này hoặc nó không còn nằm trong danh sách hiện tại của bạn."
           action={
-            <Button variant="outline" onClick={() => navigate("/citizen/reports")}>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/citizen/reports")}
+            >
               Quay lại danh sách báo cáo
             </Button>
           }
@@ -207,7 +213,11 @@ export const CitizenReportDetail: React.FC = () => {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Không gian công dân</span>}
+        eyebrow={
+          <span className="shell-chip shell-chip-primary">
+            Không gian công dân
+          </span>
+        }
         title="Theo dõi báo cáo"
         description="Theo dõi toàn bộ vòng đời báo cáo qua giao diện chi tiết rõ hơn về trạng thái, vị trí và minh chứng."
         actions={
@@ -219,7 +229,9 @@ export const CitizenReportDetail: React.FC = () => {
       />
 
       <PageHero
-        eyebrow={<span className="shell-chip shell-chip-accent">Chi tiết báo cáo</span>}
+        eyebrow={
+          <span className="shell-chip shell-chip-accent">Chi tiết báo cáo</span>
+        }
         title={report.wasteTypeName || "Báo cáo rác"}
         description={
           report.description?.trim()
@@ -300,10 +312,12 @@ export const CitizenReportDetail: React.FC = () => {
               </div>
               <div className="rounded-[22px] border border-[var(--stroke-soft)] bg-[var(--bg-surface-muted)] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                  Khá»‘i lÆ°á»£ng Æ°á»›c tÃ­nh
+                  Khối lượng ước tính
                 </p>
                 <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">
-                  {report.estimatedWeightKg ? `${report.estimatedWeightKg} kg` : "ChÆ°a cÃ³"}
+                  {report.estimatedWeightKg
+                    ? `${report.estimatedWeightKg} kg`
+                    : "ChÆ°a cÃ³"}
                 </p>
               </div>
               <div className="rounded-[22px] border border-[var(--stroke-soft)] bg-[var(--bg-surface-muted)] p-4 sm:col-span-2">
