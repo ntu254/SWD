@@ -10,7 +10,7 @@ type BrandMarkProps = {
 
 export function BrandMark({
   compact = false,
-  caption = "Circular operations workspace",
+  caption = "Không gian vận hành tuần hoàn",
   className,
 }: BrandMarkProps) {
   return (

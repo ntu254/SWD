@@ -10,22 +10,22 @@ export function UnauthorizedPage() {
       <div className="shell-panel w-full max-w-3xl overflow-hidden">
         <div className="grid gap-0 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
           <div className="space-y-4 lg:space-y-5 p-8 sm:p-10">
-            <BrandMark caption="Access policy" />
+            <BrandMark caption="Chính sách truy cập" />
             <div className="space-y-3">
-              <span className="shell-chip shell-chip-danger">Unauthorized</span>
+              <span className="shell-chip shell-chip-danger">Không có quyền</span>
               <h1 className="text-display text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] sm:text-5xl">
-                You do not have permission to view this page.
+                Bạn không có quyền xem trang này.
               </h1>
               <p className="max-w-2xl text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
-                The requested route is protected by role permissions. Sign in with
-                an account that has access, or return to the login screen to switch
-                workspaces.
+                Tuyến truy cập này được bảo vệ theo quyền vai trò. Hãy đăng nhập
+                bằng tài khoản phù hợp hoặc quay lại màn hình đăng nhập để đổi
+                không gian làm việc.
               </p>
             </div>
 
             <Button asChild size="lg">
               <Link to="/login">
-                Return to login
+                Quay lại đăng nhập
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -37,12 +37,12 @@ export function UnauthorizedPage() {
                 <ShieldAlert className="h-5 w-5" />
               </div>
               <p className="mt-5 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                Role-restricted route
+                Tuyến bị giới hạn theo vai trò
               </p>
               <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
-                Route paths and access logic remain unchanged. This page now simply
-                communicates the restriction more clearly and gives users a direct
-                way back into the correct workspace.
+                Đường dẫn và logic phân quyền vẫn giữ nguyên. Trang này chỉ giúp
+                hiển thị giới hạn truy cập rõ ràng hơn và đưa người dùng quay lại
+                đúng không gian làm việc nhanh hơn.
               </p>
             </div>
           </div>

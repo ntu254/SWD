@@ -7,7 +7,6 @@ import {
   Mail,
   User,
   Users,
-  Waves,
 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -22,10 +21,10 @@ import { Input } from "../../components/ui/input";
 import { useAuthStore } from "../../store/authStore";
 
 const schema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  firstName: z.string().min(1, "Tên là bắt buộc"),
+  lastName: z.string().min(1, "Họ là bắt buộc"),
+  email: z.string().email("Vui lòng nhập email hợp lệ"),
+  password: z.string().min(8, "Mật khẩu phải có ít nhất 8 ký tự"),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -48,48 +47,42 @@ export function RegisterPage() {
       const res = await authApi.register({ ...data, role: "CITIZEN" });
       const auth = res.data.data;
       setAuth(auth);
-      toast.success("Account created successfully");
+      toast.success("Tạo tài khoản thành công");
       navigate("/citizen");
     } catch (error: unknown) {
       const message =
         (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message || "Registration failed";
+          ?.data?.message || "Đăng ký thất bại";
       toast.error(message);
     }
   };
 
   return (
     <AuthScaffold
-      eyebrow="Join GreenLoop"
-      heroTitle="Bring citizens, collectors and enterprises into one system."
-      heroDescription="Create an account and step into a more intentional product experience with the same reporting, rewards and pickup features already wired to the platform."
+      eyebrow="Tham gia GreenLoop"
+      heroTitle="Kết nối công dân, thu gom và doanh nghiệp trong cùng một hệ thống."
+      heroDescription="Tạo tài khoản để bắt đầu với trải nghiệm sản phẩm rõ ràng hơn, trong khi tính năng báo cáo, phần thưởng và thu gom vẫn hoạt động như hiện tại."
       highlights={[
         {
           icon: Users,
-          title: "Community-first onboarding",
+          title: "Bắt đầu từ cộng đồng",
           description:
-            "Start as a citizen and move through a product that already understands every role.",
+            "Khởi đầu với vai trò công dân trong một sản phẩm đã sẵn sàng cho mọi vai trò.",
         },
         {
           icon: Gift,
-          title: "Reward-driven engagement",
+          title: "Khuyến khích bằng phần thưởng",
           description:
-            "Reporting waste, earning points and checking status now feel smoother and more trustworthy.",
-        },
-        {
-          icon: Waves,
-          title: "Soft visual hierarchy",
-          description:
-            "Pastel surfaces and cleaner typography make the product easier to scan under pressure.",
-        },
+            "Báo cáo rác, tích điểm và theo dõi trạng thái giờ mượt mà và dễ tin cậy hơn.",
+        }
       ]}
-      panelTitle="Create your account"
-      panelDescription="Get started as a citizen account and access the same live platform immediately."
+      panelTitle="Tạo tài khoản của bạn"
+      panelDescription="Bắt đầu với tài khoản công dân và truy cập nền tảng ngay lập tức."
       footer={
         <p className="text-center">
-          Already have an account?{" "}
+          Đã có tài khoản?{" "}
           <Link className="font-semibold text-emerald-700" to="/login">
-            Sign in
+            Đăng nhập
           </Link>
         </p>
       }
@@ -101,14 +94,14 @@ export function RegisterPage() {
               htmlFor="register-first-name"
               className="text-sm font-semibold text-[var(--text-primary)]"
             >
-              First name
+              Tên
             </label>
             <div className="relative">
               <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
               <Input
                 id="register-first-name"
                 {...register("firstName")}
-                placeholder="Jane"
+                placeholder="An"
                 className="pl-11"
               />
             </div>
@@ -122,14 +115,14 @@ export function RegisterPage() {
               htmlFor="register-last-name"
               className="text-sm font-semibold text-[var(--text-primary)]"
             >
-              Last name
+              Họ
             </label>
             <div className="relative">
               <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
               <Input
                 id="register-last-name"
                 {...register("lastName")}
-                placeholder="Doe"
+                placeholder="Nguyễn"
                 className="pl-11"
               />
             </div>
@@ -144,7 +137,7 @@ export function RegisterPage() {
             htmlFor="register-email"
             className="text-sm font-semibold text-[var(--text-primary)]"
           >
-            Email address
+            Địa chỉ email
           </label>
           <div className="relative">
             <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
@@ -152,7 +145,7 @@ export function RegisterPage() {
               id="register-email"
               {...register("email")}
               type="email"
-              placeholder="you@example.com"
+              placeholder="ban@example.com"
               className="pl-11"
             />
           </div>
@@ -166,7 +159,7 @@ export function RegisterPage() {
             htmlFor="register-password"
             className="text-sm font-semibold text-[var(--text-primary)]"
           >
-            Password
+            Mật khẩu
           </label>
           <div className="relative">
             <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
@@ -174,13 +167,13 @@ export function RegisterPage() {
               id="register-password"
               {...register("password")}
               type={showPassword ? "text" : "password"}
-              placeholder="Choose a strong password"
+              placeholder="Chọn mật khẩu mạnh"
               className="pl-11 pr-12"
             />
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
               className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-gray-100 hover:text-[var(--text-primary)]"
             >
               {showPassword ? (
@@ -200,7 +193,7 @@ export function RegisterPage() {
           disabled={isSubmitting}
           className="h-11 w-full text-sm sm:text-base"
         >
-          {isSubmitting ? "Creating account..." : "Create account"}
+          {isSubmitting ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
         </Button>
       </form>
     </AuthScaffold>
