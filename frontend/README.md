@@ -1,73 +1,182 @@
-# React + TypeScript + Vite
+# Frontend README
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Tổng quan
 
-Currently, two official plugins are available:
+`frontend/` là web app quản lý theo vai trò cho toàn bộ hệ thống. Ứng dụng phục vụ:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- đăng nhập, đăng ký, phân quyền
+- dashboard cho `Citizen`, `Collector`, `Enterprise`, `Admin`
+- quản lý báo cáo, nhiệm vụ, collector, thông báo, phần thưởng
+- hiển thị bản đồ, biểu đồ, bảng dữ liệu và các flow quản trị
 
-## React Compiler
+## Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- `React 19`
+- `TypeScript`
+- `Vite 7`
+- `Tailwind CSS 4`
+- `React Router`
+- `TanStack React Query`
+- `Zustand`
+- `Axios`
+- `Leaflet`
+- `Recharts`
 
-## Expanding the ESLint configuration
+## Cấu trúc thư mục chính
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+frontend/
+|-- src/
+|   |-- api/
+|   |-- components/
+|   |-- lib/
+|   |-- pages/
+|   |   |-- admin/
+|   |   |-- auth/
+|   |   |-- citizen/
+|   |   |-- collector/
+|   |   |-- enterprise/
+|   |   `-- shared/
+|   |-- store/
+|   `-- types.ts
+|-- .env
+|-- package.json
+`-- vite.config.ts
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Yêu cầu chạy
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- `Node.js 18+`
+- backend đang chạy tại `http://localhost:8080` hoặc một base URL khác bạn cấu hình
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Cấu hình môi trường
+
+File `frontend/.env`:
+
+```env
+VITE_API_BASE_URL=http://localhost:8080
 ```
+
+Lưu ý:
+
+- không thêm `/api`
+- app sẽ tự append `/api` trong layer axios
+
+Ví dụ khi dùng Slim:
+
+```env
+VITE_API_BASE_URL=https://your-backend.slim.show
+```
+
+## Chạy dự án
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+App mặc định chạy tại `http://localhost:5173`.
+
+## Scripts
+
+```powershell
+npm run dev
+npm run build
+npm run preview
+npm run lint
+```
+
+## Tích hợp API
+
+- `axios` dùng `VITE_API_BASE_URL`
+- request auth tự gắn `Bearer token` từ `localStorage`
+- khi gặp `401`, app thử refresh token rồi retry request
+
+File liên quan:
+
+- `src/api/axios.ts`
+- `vite.config.ts`
+
+## Các nhóm màn hình chính
+
+### Auth
+
+- đăng nhập
+- đăng ký
+- unauthorized page
+
+### Citizen
+
+- dashboard
+- tạo báo cáo
+- chi tiết báo cáo
+- danh sách báo cáo
+- phần thưởng
+- thông báo
+
+### Collector
+
+- dashboard
+- danh sách task
+- chi tiết task
+- bản đồ
+- hiệu suất
+- hồ sơ
+- thông báo
+
+### Enterprise
+
+- dashboard
+- báo cáo chờ duyệt
+- nhiệm vụ
+- chi tiết nhiệm vụ
+- collector
+- analytics
+- reward rules
+- capabilities
+- thông báo
+
+### Admin
+
+- dashboard
+- users
+- enterprises
+- complaints
+- notifications
+- reward items
+- settings
+
+## Build production
+
+```powershell
+cd frontend
+npm run build
+```
+
+Thư mục output: `frontend/dist`
+
+## Lint
+
+```powershell
+npm run lint
+```
+
+## Troubleshooting
+
+### Web không gọi được API
+
+- kiểm tra backend đang chạy
+- kiểm tra `VITE_API_BASE_URL`
+- nếu backend ở domain public khác, kiểm tra CORS bên backend
+
+### Login xong bị đá về `/login`
+
+- kiểm tra access token và refresh token trong `localStorage`
+- kiểm tra backend trả `401` hay lỗi role-based route
+
+### Map không hiển thị
+
+- kiểm tra tile/map network
+- kiểm tra component map có nhận đúng lat/lng từ API
+

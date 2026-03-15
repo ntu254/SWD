@@ -1,631 +1,198 @@
-# SWD - Crowdsourced Waste Collection & Recycling Platform
+# SWD V2 - Waste Collection Platform
 
-> **Nền tảng kết nối người dân, doanh nghiệp tái chế và dịch vụ thu gom rác theo khu vực**
+Nền tảng quản lý báo cáo rác và điều phối thu gom gồm 3 ứng dụng:
 
-Project này sử dụng **Feature-Driven Modular Architecture** cho cả Backend và Frontend.
+- `backend`: Spring Boot API
+- `frontend`: React + Vite web app
+- `mobile`: Expo React Native app
 
----
+Hệ thống phục vụ 4 vai trò chính:
 
-## 📖 Tổng Quan Dự Án
+- `Citizen`: tạo báo cáo rác, theo dõi trạng thái, tích điểm
+- `Collector`: nhận nhiệm vụ, di chuyển, cân rác, hoàn tất task
+- `Enterprise`: duyệt báo cáo, phân công collector, quản lý năng lực phục vụ
+- `Admin`: quản lý người dùng, doanh nghiệp, thông báo, phần thưởng, cấu hình
 
-### 🎯 Chủ Đề
+## Kiến trúc tổng thể
 
-**Crowdsourced Waste Collection & Recycling Platform** - Nền tảng kết nối người dân, doanh nghiệp tái chế và dịch vụ thu gom rác theo khu vực.
-
-### 🌍 Bối Cảnh
-
-Quản lý rác thải đô thị tại Việt Nam đang đối mặt với nhiều thách thức như:
-
-- **Lịch thu gom không ổn định** - Thiếu tính nhất quán trong việc thu gom rác hàng ngày
-- **Tỷ lệ phân loại rác tại nguồn thấp** - Người dân chưa có thói quen phân loại rác đúng cách
-- **Sự phối hợp rời rạc** - Thiếu liên kết giữa người dân, đơn vị thu gom và doanh nghiệp tái chế
-- **Quy định mới từ năm 2025** - Bắt buộc phân loại rác tại nguồn đòi hỏi giải pháp công nghệ
-
-> **Nhu cầu cấp thiết:** Một nền tảng số hỗ trợ kết nối, điều phối và giám sát toàn bộ quy trình thu gom – tái chế theo khu vực một cách hiệu quả và minh bạch.
-
-### ❗ Vấn Đề Cần Giải Quyết
-
-Hiện chưa có một hệ thống số hóa tập trung cho phép:
-
-- ✅ Người dân **báo cáo rác** và **theo dõi thu gom** theo thời gian thực
-- ✅ **Khuyến khích phân loại đúng** thông qua cơ chế điểm thưởng
-- ✅ Doanh nghiệp tái chế và cơ quan quản lý **tiếp cận dữ liệu vận hành** theo thời gian thực
-- ✅ **Điều phối và phân tích dữ liệu** để tối ưu hóa hiệu quả thu gom
-
-**Hậu quả:** Hiệu quả thu gom thấp, chi phí tăng cao và làm giảm cơ hội phát triển kinh tế tuần hoàn.
-
----
-
-## 👥 Các Vai Trò Chính
-
-| Vai trò | Mô tả |
-|---------|-------|
-| **Citizen (Người dân)** | Báo cáo rác, phân loại tại nguồn, nhận điểm thưởng |
-| **Recycling Enterprise (Doanh nghiệp tái chế)** | Tiếp nhận, điều phối và quản lý thu gom rác |
-| **Collector (Nhân viên thu gom)** | Thực hiện thu gom theo yêu cầu được phân công |
-| **Administrator (Quản trị viên)** | Quản lý hệ thống, giám sát hoạt động tổng thể |
-
----
-
-## ⚙️ Yêu Cầu Chức Năng
-
-### 👤 Citizen (Người dân)
-
-#### Báo cáo và Theo dõi
-- **Báo cáo rác/tái chế** cần thu gom với:
-  - 📸 Hình ảnh rác thải
-  - 📍 Vị trí GPS tự động
-  - 📝 Mô tả chi tiết
-- **Theo dõi trạng thái** thu gom của từng báo cáo:
-  - `Pending` → `Accepted` → `Assigned` → `Collected`
-- **Thực hiện phân loại rác tại nguồn** khi tạo báo cáo
-
-#### Điểm thưởng và Khuyến khích
-- **Nhận điểm thưởng** khi:
-  - Báo cáo hợp lệ được xác nhận
-  - Phân loại rác đúng cách
-  - Đánh giá tích cực từ Collector
-- **Xem lịch sử điểm thưởng** và chi tiết giao dịch
-- **Bảng xếp hạng theo khu vực** để tạo động lực cộng đồng
-- **Đổi điểm thưởng** lấy phần thưởng
-
-#### Phản hồi
-- **Gửi phản hồi hoặc khiếu nại** khi việc thu gom không đúng cam kết
-
----
-
-### 🏢 Recycling Enterprise (Doanh nghiệp tái chế)
-
-#### Quản lý Năng lực
-- **Đăng ký và quản lý năng lực** xử lý rác:
-  - 🗑️ Loại rác tiếp nhận
-  - ⚡ Công suất xử lý
-  - 📍 Khu vực phục vụ
-
-#### Quản lý Yêu cầu
-- **Nhận và quyết định** tiếp nhận/từ chối yêu cầu thu gom trong phạm vi hoạt động
-- **Xem danh sách yêu cầu** được gợi ý ưu tiên dựa trên tiêu chí cấu hình *(optional)*
-- **Gán và điều phối** yêu cầu cho Collector thuộc doanh nghiệp
-
-#### Theo dõi và Báo cáo
-- **Theo dõi tiến độ xử lý** và trạng thái thu gom theo thời gian thực
-- **Xem báo cáo** khối lượng rác đã thu gom và tái chế:
-  - 📊 Theo loại rác
-  - 📍 Theo khu vực
-  - 📅 Theo thời gian
-
-#### Cấu hình KPI và Điểm thưởng
-- **Tạo và cấu hình quy tắc** tính điểm thưởng cho Citizen:
-  - Theo loại rác
-  - Theo chất lượng báo cáo
-  - Theo thời gian xử lý
-- **Cấu hình KPI cho Collector:**
-  - Số lượng báo cáo tối đa/tối thiểu trong 1 ngày
-  - Khối lượng tối thiểu phải thu gom (kg)
-  - Cơ chế bonus khi hoàn thành đúng KPI
-- **Quản lý khiếu nại** liên quan đến Collector
-
----
-
-### 🚛 Collector (Nhân viên thu gom)
-
-#### Nhận và Thực hiện Công việc
-- **Nhận yêu cầu thu gom** được phân công từ Recycling Enterprise
-- **Cập nhật trạng thái** theo thời gian thực:
-  - `Assigned` → `On the way` → `Collected`
-- **Xác nhận hoàn tất thu gom** với:
-  - 📸 Hình ảnh xác nhận
-  - ℹ️ Thông tin trạng thái (khối lượng, tình trạng phân loại)
-
-#### Đánh giá và Theo dõi
-- **Đánh giá chất lượng phân loại** của Citizen theo các tiêu chí:
-  - Độ chính xác phân loại
-  - Chất lượng rác tái chế
-- **Xem lịch sử công việc** và số lượng yêu cầu đã hoàn thành
-- **Theo dõi KPI cá nhân** và bonus điểm thưởng để tăng rank
-
----
-
-### 🛡️ Administrator (Quản trị viên)
-
-#### Quản lý Người dùng
-- **Quản lý tài khoản** người dùng và phân quyền (CRUD)
-  - *Phụ trách: Tín, Tú*
-
-#### Giám sát Hệ thống
-- **Dashboard tổng quan** hiển thị:
-  - 📈 Tổng số báo cáo theo trạng thái (Pending, Accepted, Assigned, Collected)
-  - 📊 Thống kê báo cáo theo khu vực và thời gian
-  - 🏢 Hiệu suất xử lý của các Recycling Enterprise
-  - 🚛 Hiệu suất làm việc của Collector
-  - 🎁 Thống kê điểm thưởng và khiếu nại
-
-#### Quản lý Nội dung
-- **Quản lý khiếu nại** liên quan đến hệ thống (CRUD)
-  - Ví dụ: cộng điểm sai, bug hệ thống
-  - *Phụ trách: Tú, Khôi*
-- **Quản lý thông báo** (CRUD)
-  - *Phụ trách: Tú, Khôi*
-- **Quản lý năng lực xử lý** của doanh nghiệp (CRUD)
-  - *Phụ trách: Đạt, Quốc, Bình*
-- **Quản lý phần thưởng** đổi điểm (CRUD)
-  - *Phụ trách: Đạt, Bình, Tín*
-
-#### Cấu hình
-- **Settings** - Cấu hình API, thông số hệ thống, etc.
-
----
-
-## 🤖 Tính Năng Tùy Chọn
-
-### AI Hỗ trợ Phân loại Rác (Decision Support)
-
-- **Input:** Ảnh rác do Citizen upload
-- **Output:** Gợi ý loại rác:
-  - ♻️ Organic (Hữu cơ)
-  - 📦 Recyclable (Tái chế được)
-  - ⚠️ Hazardous (Nguy hại)
-  - 🗑️ Other (Khác)
-- **Xác nhận:** Người dùng xác nhận lại trước khi gửi
-
----
-
-## 🎯 Tính Năng Bổ Sung
-
-### Cơ chế KPI và Bonus
-
-1. **Cấu hình KPI cho Collector:**
-   - Doanh nghiệp có thể thiết lập:
-     - Số lượng báo cáo tối đa/tối thiểu trong 1 ngày
-     - Khối lượng tối thiểu phải thu gom (kg)
-   - Collector hoàn thành đúng KPI trong khoảng thời gian → **Bonus điểm thưởng** → Tăng rank
-
-2. **Cấu hình nhận Request tự động:**
-   - Thiết lập điều kiện tự động nhận báo cáo
-   - Giới hạn số lượng báo cáo mỗi Collector có thể nhận trong 1 ngày
-
-3. **Đánh giá chất lượng phân loại:**
-   - Nếu Citizen hoàn thành đổi rác và phân loại đúng → **Cộng điểm tự động**
-   - Nếu chưa phân loại đúng → Collector đánh giá dựa trên tiêu chí → Cộng điểm theo đánh giá
-
----
-
-## 📁 Cấu Trúc Thư Mục
-
+```text
+.
+|-- backend/    Spring Boot + PostgreSQL + JWT + Cloudinary
+|-- frontend/   React 19 + Vite + Tailwind CSS + React Query
+|-- mobile/     Expo Router + React Native + React Query
+|-- README.md
+|-- SWD392-API.postman_collection.json
 ```
-SWD/
-├── backend/                          # Spring Boot + Java 17
-│   ├── src/main/java/com/example/backendservice/
-│   │   ├── BackendServiceApplication.java
-│   │   ├── config/                   # Cấu hình chung (DB, CORS, etc.)
-│   │   ├── common/
-│   │   │   ├── constants/            # Hằng số chung
-│   │   │   ├── dto/                  # DTO dùng chung (ApiResponse, etc.)
-│   │   │   ├── exception/            # Exception handler, custom exceptions
-│   │   │   └── utils/                # Utility classes
-│   │   ├── security/
-│   │   │   ├── config/               # Security configuration
-│   │   │   ├── jwt/                  # JWT token provider, filter
-│   │   │   └── service/              # UserDetailsService, etc.
-│   │   └── features/
-│   │       ├── auth/                 # Feature: Authentication
-│   │       │   ├── controller/
-│   │       │   ├── service/
-│   │       │   ├── repository/
-│   │       │   ├── dto/
-│   │       │   └── entity/
-│   │       └── user/                 # Feature: User management
-│   │           ├── controller/
-│   │           ├── service/
-│   │           ├── repository/
-│   │           ├── dto/
-│   │           └── entity/
-│   ├── src/main/resources/
-│   │   └── application.properties
-│   └── pom.xml
-│
-└── frontend/                         # React + Vite + TypeScript
-    ├── public/
-    │   └── assets/                   # Static assets (images, fonts, etc.)
-    ├── src/
-    │   ├── features/                 # Feature modules
-    │   │   └── auth/
-    │   │       ├── components/       # Feature-specific components
-    │   │       ├── hooks/            # Feature-specific hooks
-    │   │       ├── pages/            # Feature pages
-    │   │       ├── services/         # Feature API services
-    │   │       ├── types/            # Feature type definitions
-    │   │       └── index.ts          # Barrel export
-    │   ├── shared/                   # Shared resources
-    │   │   ├── components/           # Shared UI components
-    │   │   ├── hooks/                # Shared custom hooks
-    │   │   ├── services/             # Shared API services
-    │   │   └── utils/                # Utility functions
-    │   ├── types/                    # Global type definitions
-    │   ├── App.tsx
-    │   ├── App.css
-    │   ├── main.tsx
-    │   └── index.css
-    ├── .env.example                  # Environment variables template
-    ├── .eslintrc.json                # ESLint configuration
-    ├── .gitignore                    # Git ignore rules
-    ├── .prettierrc                   # Prettier configuration
-    ├── index.html                    # Entry HTML
-    ├── package.json
-    ├── tsconfig.json                 # TypeScript config (app)
-    ├── tsconfig.node.json            # TypeScript config (node/vite)
-    └── vite.config.ts                # Vite configuration
 
-└── mobile/                           # React Native + Expo (FDM + FSD-lite)
-    ├── src/
-    │   ├── app/                      # Expo Router pages
-    │   ├── features/                 # Business logic modules
-    │   ├── entities/                 # Business entities
-    │   ├── navigation/               # Navigation configuration
-    │   └── shared/                   # Shared resources
-    ├── app.json
-    └── tsconfig.json
+## Tech stack
 
-## 🛠️ Tech Stack
+| Thành phần | Công nghệ chính |
+| --- | --- |
+| Backend | Java 21, Spring Boot 3.2, Spring Security, Spring Data JPA, PostgreSQL |
+| Frontend | React 19, TypeScript, Vite 7, Tailwind CSS 4, React Query, Zustand |
+| Mobile | Expo 54, React Native 0.81, Expo Router 6, React Query, Zustand |
+| Hạ tầng ngoài | PostgreSQL/Supabase, Cloudinary, Google Maps |
 
-### Backend
+## Yêu cầu môi trường
 
-| Technology      | Version | Description                    |
-| --------------- | ------- | ------------------------------ |
-| Java            | 17+     | Programming Language           |
-| Spring Boot     | 3.5.0   | Framework                      |
-| Spring Security | -       | Authentication & Authorization |
-| Spring Data JPA | -       | Database ORM                   |
-| Maven           | 3.8+    | Build Tool                     |
+- `Java 21`
+- `Node.js 18+`
+- `npm`
+- `PostgreSQL` hoặc Supabase PostgreSQL
+- `Expo Go` nếu chạy mobile trên điện thoại thật
 
-### Frontend
+## Chạy nhanh toàn bộ dự án
 
-| Technology   | Version | Description          |
-| ------------ | ------- | -------------------- |
-| React        | 18.2.0  | UI Library           |
-| Vite         | 5.0.8   | Build Tool           |
-| TypeScript   | 5.3.3   | Programming Language |
-| React Router | 6.20.0  | Routing              |
-| Axios        | 1.6.2   | HTTP Client          |
-| ESLint       | 8.56.0  | Linting              |
-| Prettier     | 3.1.1   | Code Formatting      |
+### 1. Backend
 
-### Mobile
-
-| Technology   | Version | Description          |
-| ------------ | ------- | -------------------- |
-| React Native | 0.73+   | Mobile Framework     |
-| Expo         | 50+     | Platform             |
-| NativeWind   | 4.0+    | Styling (TailwindCSS)|
-| Zustand      | 4.x     | State Management     |
-| TanStack Query| 5.x    | Data Fetching        |
-| Expo Router  | 3.x     | File-based routing   |
-| TypeScript   | 5.x     | Programming Language |
-
-## 🚀 Cách Bắt Đầu
-
-### Prerequisites
-
-- **Java 17+** (recommend: Eclipse Adoptium)
-- **Maven 3.8+**
-- **Node.js 18+**
-- **npm 9+**
-- **PostgreSQL 14+** (optional - chỉ cần nếu dùng profile `local` hoặc `prod`)
-
-### Backend
-
-```bash
+```powershell
 cd backend
-
-# Chạy với H2 (mặc định - không cần setup database)
-mvn spring-boot:run
-
-# Chạy với PostgreSQL local
-mvn spring-boot:run -Dspring.profiles.active=local
-./mvnw spring-boot:run "-Dspring-boot.run.profiles=dev" (powershell)
+.\mvnw.cmd spring-boot:run
 ```
 
-Server sẽ chạy trên `http://localhost:8080`
+API mặc định chạy tại `http://localhost:8080`.
 
-### Frontend
+### 2. Frontend
 
-```bash
+```powershell
 cd frontend
-
-# Install dependencies
 npm install
-
-# Run development server
 npm run dev
 ```
 
-App sẽ chạy trên `http://localhost:3000`
+Web mặc định chạy tại `http://localhost:5173`.
 
-### Mobile
+### 3. Mobile
 
-```bash
+```powershell
 cd mobile
-
-# Install dependencies
 npm install
-
-# Start development server
-npx expo start
+npm run start
 ```
 
-## 📐 Feature-Driven Modular Architecture
+Nếu chạy trên điện thoại thật, nên dùng:
 
-### Nguyên tắc chính
-
-1. **Encapsulation**: Mỗi feature chứa tất cả code liên quan
-2. **Isolation**: Features độc lập, ít phụ thuộc lẫn nhau
-3. **Reusability**: Code dùng chung đặt trong `shared/` hoặc `common/`
-4. **Scalability**: Dễ dàng thêm/xóa features
-
-### Cấu trúc Feature cho Backend (Spring Boot)
-
-```
-features/[featureName]/
-├── controller/          # REST Controllers
-├── service/             # Business Logic
-├── repository/          # Data Access Layer
-├── entity/              # JPA Entities
-└── dto/                 # Data Transfer Objects
+```powershell
+npm run start:tunnel
 ```
 
-### Cấu trúc Feature cho Frontend (React)
-
-```
-features/[featureName]/
-├── components/          # Feature-specific components
-├── pages/               # Feature pages/views
-├── hooks/               # Feature-specific hooks
-├── services/            # API calls for this feature
-├── types/               # TypeScript types
-└── index.ts             # Barrel export
-```
-
-### Cấu trúc Mobile (FDM + FSD-lite)
-
-```
-src/
-├── app/                 # Layers: Pages & Presentation
-├── features/            # Layers: Business Features
-├── entities/            # Layers: Business Entities
-├── navigation/          # Layers: App Navigation
-└── shared/              # Layers: Shared Segments
-```
-
-## 📜 Scripts
-
-### Backend (Maven)
-
-```bash
-mvn spring-boot:run                                   # Chạy với H2 (mặc định)
-mvn spring-boot:run -Dspring.profiles.active=local    # Chạy với PostgreSQL
-mvn clean install                                     # Build project
-mvn clean install -DskipTests                         # Build bỏ qua tests
-mvn test                                              # Chạy tests
-```
-
-### Frontend (npm)
-
-```bash
-npm run dev       # Development mode (localhost:3000)
-npm run build     # Build for production
-npm run preview   # Preview production build
-npm run lint      # ESLint check
-npm run format    # Format code with Prettier
-```
-
-### Mobile (npm/Expo)
-
-```bash
-npx expo start    # Start Expo Go
-npx expo android  # Run on Android Emulator
-npx expo ios      # Run on iOS Simulator
-```
-
-## ⚙️ Cấu Hình Môi Trường
-
-### Backend Profiles
-
-Backend hỗ trợ nhiều profile khác nhau:
-
-| Profile          | Database     | Mô tả                                |
-| ---------------- | ------------ | ------------------------------------ |
-| `dev` (mặc định) | H2 In-Memory | Không cần setup, dữ liệu mất khi tắt |
-| `local`          | PostgreSQL   | Development với PostgreSQL local     |
-| `prod`           | PostgreSQL   | Production                           |
-
-**Chạy với profile cụ thể:**
-
-```bash
-# Mặc định (H2)
-mvn spring-boot:run
-
-# Với PostgreSQL local
-mvn spring-boot:run -Dspring.profiles.active=local
-```
-
-### Backend Configuration Files
-
-```
-backend/src/main/resources/
-├── application.properties           # Cấu hình chung
-├── application-dev.properties       # H2 (development)
-├── application-local.properties     # PostgreSQL local (copy từ .example)
-└── application-prod.properties      # PostgreSQL production
-```
-
-### Setup PostgreSQL Local
-
-1. Tạo database:
-
-```sql
-CREATE DATABASE swd_db;
-```
-
-2. Copy file cấu hình:
-
-```bash
-cp application-local.properties.example application-local.properties
-```
-
-3. Sửa password trong `application-local.properties`
-
-4. Chạy:
-
-```bash
-mvn spring-boot:run -Dspring.profiles.active=local
-```
-
-### Backend Environment Variables (Production)
-
-```properties
-# Server
-server.port=8080
-
-# Database
-DATABASE_URL=jdbc:postgresql://localhost:5432/swd_db
-DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=your_password
-
-# JWT
-JWT_SECRET=your_jwt_secret_key_here
-JWT_EXPIRATION=86400000
-```
-
-### Frontend (.env)
-
-Tạo file `.env` từ `.env.example`:
-
-```bash
-cp .env.example .env
-```
-
-```env
-VITE_API_URL=http://localhost:8080/api
-VITE_APP_NAME=SWD Application
-```
-
-## 🎯 Path Aliases (Frontend)
-
-Đã cấu hình các path aliases trong `tsconfig.json` và `vite.config.ts`:
-
-| Alias           | Path                      |
-| --------------- | ------------------------- |
-| `@features/*`   | `src/features/*`          |
-| `@shared/*`     | `src/shared/*`            |
-| `@types/*`      | `src/types/*`             |
-| `@hooks/*`      | `src/shared/hooks/*`      |
-| `@utils/*`      | `src/shared/utils/*`      |
-| `@components/*` | `src/shared/components/*` |
-| `@services/*`   | `src/shared/services/*`   |
-
-**Ví dụ sử dụng:**
-
-```typescript
-import { useAuth } from "@features/auth";
-import { Button } from "@components/Button";
-import { formatDate } from "@utils/helpers";
-```
-
-## ➕ Hướng Dẫn Thêm Feature Mới
+## Cấu hình môi trường
 
 ### Backend
 
-1. Tạo folder mới trong `features/[featureName]/`
-2. Tạo các sub-folder: `controller`, `service`, `repository`, `entity`, `dto`
-3. Implement: Entity → Repository → Service → Controller
-4. Cập nhật Security config nếu cần
+Các biến chính nằm trong `backend/.env`:
+
+- `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`
+- `SERVER_PORT`
+- `JWT_SECRET`, `JWT_ACCESS_EXPIRY`, `JWT_REFRESH_EXPIRY`
+- `CORS_ALLOWED_ORIGINS`
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+- `ADMIN_SETUP_SECRET`
+
+Lưu ý:
+
+- `spring.jpa.hibernate.ddl-auto=validate`
+- `spring.flyway.enabled=false`
+
+Nghĩa là schema database phải tồn tại sẵn và khớp entity hiện tại.
 
 ### Frontend
 
-1. Tạo folder mới trong `src/features/[featureName]/`
-2. Tạo các sub-folder: `components`, `pages`, `hooks`, `services`, `types`
-3. Tạo file `index.ts` để barrel export
-4. Import vào routing chính
+File `frontend/.env` dùng:
+
+```env
+VITE_API_BASE_URL=http://localhost:8080
+```
+
+Giá trị này là base URL backend không có `/api`.
 
 ### Mobile
 
-1. Tạo feature mới trong `src/features/[featureName]/`
-2. Tạo entity mới trong `src/entities/[entityName]/` (nếu cần)
-3. Thêm page mới trong `src/app/`
-4. Cập nhật `navigation` nếu cần
+File `mobile/.env` có thể dùng:
 
-**Template cho feature mới:**
-
-```bash
-# Tạo structure cho feature mới
-mkdir -p src/features/[featureName]/{components,pages,hooks,services,types}
-touch src/features/[featureName]/index.ts
+```env
+EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key
+EXPO_PUBLIC_API_BASE_URL=http://localhost:8080/api
 ```
 
-## 📝 Quy Tắc Đặt Tên
+Lưu ý:
 
-### Backend (Java)
+- Mobile cần URL có `/api`
+- Khi chạy trên Android emulator, app có fallback `10.0.2.2`
+- Khi chạy trên điện thoại thật, nên dùng public URL như Slim hoặc tunnel khác
 
-| Type      | Convention       | Example                         |
-| --------- | ---------------- | ------------------------------- |
-| Classes   | PascalCase       | `AuthController`, `UserService` |
-| Methods   | camelCase        | `getUserById`, `createUser`     |
-| Variables | camelCase        | `userName`, `isActive`          |
-| Constants | UPPER_SNAKE_CASE | `JWT_SECRET`, `MAX_RETRY`       |
-| Packages  | lowercase        | `com.example.features.auth`     |
+## Slim + Expo cho điện thoại thật
 
-### Frontend (TypeScript/React)
+Nếu backend chạy local nhưng mobile quét QR trên điện thoại thật:
 
-| Type       | Convention           | Example                            |
-| ---------- | -------------------- | ---------------------------------- |
-| Components | PascalCase           | `LoginForm.tsx`, `UserProfile.tsx` |
-| Files      | camelCase/PascalCase | `authService.ts`, `LoginPage.tsx`  |
-| Hooks      | camelCase + `use`    | `useAuth`, `useUser`               |
-| Functions  | camelCase            | `getUserById`, `formatDate`        |
-| Constants  | UPPER_SNAKE_CASE     | `API_BASE_URL`                     |
+1. Public backend local bằng Slim, ví dụ `https://your-backend.slim.show`
+2. Set trong `mobile/.env`:
 
-## 🗄️ Database Setup
-
-### PostgreSQL
-
-```sql
-CREATE DATABASE swd_db;
-CREATE USER swd_user WITH PASSWORD 'password';
-GRANT ALL PRIVILEGES ON DATABASE swd_db TO swd_user;
+```env
+EXPO_PUBLIC_API_BASE_URL=https://your-backend.slim.show/api
 ```
 
-## 🔧 Troubleshooting
+3. Khởi động Expo bằng:
 
-### Port đã bị sử dụng
-
-- **Backend**: Thay đổi `server.port` trong `application.properties`
-- **Frontend**: Port được cấu hình trong `vite.config.ts` (mặc định: 3000)
-
-### Maven build failed
-
-```bash
-mvn clean install -U  # Force update dependencies
+```powershell
+cd mobile
+npm run start:tunnel
 ```
 
-### npm install failed
+Nếu frontend web cũng cần gọi backend qua Slim:
 
-```bash
-rm -rf node_modules package-lock.json
-npm install
+```env
+VITE_API_BASE_URL=https://your-backend.slim.show
 ```
 
-### CORS issues
+## Tài liệu chi tiết từng app
 
-Đảm bảo đã cấu hình CORS trong `config/CorsConfig.java` hoặc `SecurityConfig.java`
+- [Backend README](./backend/README.md)
+- [Frontend README](./frontend/README.md)
+- [Mobile README](./mobile/README.md)
 
----
+## API và công cụ hỗ trợ
 
-## 👥 Team
+- Postman collection: [SWD392-API.postman_collection.json](./SWD392-API.postman_collection.json)
+- Script test nhanh: `test-api.ps1`, `test-full.ps1`
+- Swagger UI mặc định: `http://localhost:8080/swagger-ui.html`
 
-- **Backend**: Spring Boot + Java
-- **Frontend**: React + TypeScript + Vite
-- **Mobile**: React Native + Expo
+## Các lệnh hữu ích
 
----
+### Backend
 
-**Happy Coding!** 🚀
+```powershell
+cd backend
+.\mvnw.cmd test
+.\mvnw.cmd -DskipTests compile
+```
+
+### Frontend
+
+```powershell
+cd frontend
+npm run lint
+npm run build
+```
+
+### Mobile
+
+```powershell
+cd mobile
+npm run lint
+npx tsc --noEmit
+```
+
+## Gợi ý onboarding nhanh
+
+1. Chạy backend trước
+2. Kiểm tra Swagger hoạt động
+3. Chạy frontend để xác nhận login và dashboard
+4. Chạy mobile bằng Expo
+5. Nếu dùng điện thoại thật, cấu hình `EXPO_PUBLIC_API_BASE_URL` sang public URL
+
+## Lưu ý bảo mật
+
+- Không nên commit secret thật vào repo dùng chung
+- Nên xoay vòng các khóa Cloudinary, JWT, database nếu repo đã lộ thông tin
+
