@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { parseReportDescription } from '@/components/utils/reportMetadata';
 import type {
   AssignmentStatus,
   CitizenRewardRule,
@@ -559,6 +560,7 @@ function toServiceArea(entity: ServiceAreaEntity): ServiceArea {
 
 function toWasteReport(dto: ReportDto): WasteReport {
   const { color } = colorAndIconForWaste(dto.wasteTypeName, dto.wasteTypeId ?? dto.reportId);
+  const parsedDescription = parseReportDescription(dto.description);
 
   return {
     reportId: dto.reportId,
@@ -572,7 +574,8 @@ function toWasteReport(dto: ReportDto): WasteReport {
     latitude: dto.latitude,
     longitude: dto.longitude,
     gpsAccuracyMeters: dto.gpsAccuracyMeters,
-    description: dto.description,
+    description: parsedDescription.cleanDescription || undefined,
+    estimatedWeightKg: parsedDescription.estimatedWeightKg,
     reportPhotoUrl: dto.reportPhotoUrl,
     status: normalizeReportStatus(dto.status),
     requestedPickupTime: dto.requestedPickupTime,
@@ -1046,6 +1049,14 @@ export async function fetchMyReports(token: string, size = 50) {
   return page.content.map(toWasteReport);
 }
 
+export async function fetchReportById(token: string, reportId: string) {
+  const dto = await request<ReportDto>(`/reports/${reportId}`, {
+    token,
+  });
+
+  return toWasteReport(dto);
+}
+
 export async function createWasteReport(
   token: string,
   payload: {
@@ -1133,6 +1144,14 @@ export async function fetchCollectorTasks(token: string, size = 50) {
   });
 
   return page.content.map(toTaskAssignment);
+}
+
+export async function fetchCollectorTaskById(token: string, taskId: string) {
+  const dto = await request<TaskDto>(`/collector/tasks/${taskId}`, {
+    token,
+  });
+
+  return toTaskAssignment(dto);
 }
 
 export async function updateCollectorTaskStatus(

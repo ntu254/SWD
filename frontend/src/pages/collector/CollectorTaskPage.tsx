@@ -26,6 +26,8 @@ import {
   SectionHeader,
   StatCard,
 } from "../../components/ui/page";
+import { formatStatusLabel } from "../../lib/labels";
+import { withReportMetadata } from "../../lib/reportMetadata";
 
 function normalizeTaskStatus(status?: string | null) {
   if (!status) return "ASSIGNED";
@@ -41,7 +43,7 @@ export const CollectorTaskPage: React.FC = () => {
 
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [estimatedWeight, setEstimatedWeight] = useState("");
+  const [measuredWeightKg, setMeasuredWeightKg] = useState("");
   const [collectorNote, setCollectorNote] = useState("");
   const [sortingLevel, setSortingLevel] = useState("GOOD");
 
@@ -59,26 +61,28 @@ export const CollectorTaskPage: React.FC = () => {
     queryFn: () => reportsApi.getById(task!.reportId!).then((response) => response.data),
     enabled: !!task?.reportId,
   });
-  const report: WasteReport | undefined = reportResponse?.data;
+  const report: WasteReport | undefined = reportResponse?.data
+    ? withReportMetadata(reportResponse.data as WasteReport)
+    : undefined;
 
   const updateStatus = useMutation({
     mutationFn: () => tasksApi.updateStatus(taskId!, "ON_THE_WAY"),
     onSuccess: () => {
-      toast.success("Task status updated to ON THE WAY.");
+      toast.success("Đã cập nhật nhiệm vụ sang trạng thái đang di chuyển.");
       queryClient.invalidateQueries({ queryKey: ["collector-task", taskId] });
       queryClient.invalidateQueries({ queryKey: ["collector-tasks"] });
     },
-    onError: () => toast.error("Failed to update task status."),
+    onError: () => toast.error("Cập nhật trạng thái nhiệm vụ thất bại."),
   });
 
   const completeTask = useMutation({
     mutationFn: async () => {
-      const weightValue = Number(estimatedWeight);
+      const weightValue = Number(measuredWeightKg);
       if (!proofFile) {
-        throw new Error("Proof photo is required to complete the task.");
+        throw new Error("Cần có ảnh minh chứng để hoàn thành nhiệm vụ.");
       }
-      if (!estimatedWeight.trim() || Number.isNaN(weightValue) || weightValue <= 0) {
-        throw new Error("Estimated weight must be a number greater than 0.");
+      if (!measuredWeightKg.trim() || Number.isNaN(weightValue) || weightValue <= 0) {
+        throw new Error("Khối lượng cân phải là số lớn hơn 0.");
       }
 
       let photoUrl: string | undefined;
@@ -90,9 +94,9 @@ export const CollectorTaskPage: React.FC = () => {
         // Fallback for local/dev when image host is not configured.
         photoUrl = imagePreview ?? undefined;
         if (!photoUrl) {
-          throw new Error("Failed to upload evidence photo.");
+          throw new Error("Tải ảnh minh chứng thất bại.");
         }
-        toast.warn("Evidence upload service unavailable, using inline proof image.");
+        toast.warn("Dịch vụ tải ảnh minh chứng tạm không khả dụng, đang dùng ảnh nội bộ.");
       }
 
       const wasteItems =
@@ -115,7 +119,7 @@ export const CollectorTaskPage: React.FC = () => {
       });
     },
     onSuccess: () => {
-      toast.success("Task completed and synced to citizen timeline.");
+      toast.success("Đã hoàn thành nhiệm vụ và đồng bộ sang tiến trình của công dân.");
       queryClient.invalidateQueries({ queryKey: ["collector-task", taskId] });
       queryClient.invalidateQueries({ queryKey: ["collector-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["citizen-reports"] });
@@ -126,13 +130,19 @@ export const CollectorTaskPage: React.FC = () => {
         error instanceof Error
           ? error.message
           : (error as { response?: { data?: { message?: string } } })?.response?.data
-                ?.message ?? "Failed to complete task.";
+                ?.message ?? "Hoàn thành nhiệm vụ thất bại.";
       toast.error(message);
     },
   });
 
   const routeStarted = statusIndicator === "ON_THE_WAY";
   const alreadyCollected = statusIndicator === "COMPLETED";
+  const parsedWeightKg = Number(measuredWeightKg);
+  const hasValidWeight =
+    measuredWeightKg.trim().length > 0 &&
+    !Number.isNaN(parsedWeightKg) &&
+    parsedWeightKg > 0;
+  const completionLocked = statusIndicator === "ASSIGNED" || alreadyCollected;
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -160,8 +170,8 @@ export const CollectorTaskPage: React.FC = () => {
     return (
       <EmptyState
         icon={AlertTriangle}
-        title="Task not found"
-        description="This task could not be loaded or is no longer assigned to your account."
+        title="Không tìm thấy nhiệm vụ"
+        description="Không thể tải nhiệm vụ này hoặc nó không còn được giao cho tài khoản của bạn."
       />
     );
   }
@@ -169,28 +179,28 @@ export const CollectorTaskPage: React.FC = () => {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Collector workspace</span>}
-        title="Task execution"
-        description="Manage the current route stop, verify evidence and complete collection."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian thu gom</span>}
+        title="Thực hiện nhiệm vụ"
+        description="Quản lý điểm dừng hiện tại, xác minh minh chứng và hoàn tất việc thu gom."
         actions={
           <Button variant="outline" onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            Quay lại
           </Button>
         }
       />
 
       <PageHero
-        eyebrow={<span className="shell-chip shell-chip-accent">Assigned stop</span>}
-        title={task.areaName || "Collector task"}
-        description={report?.description || "No report description provided."}
+        eyebrow={<span className="shell-chip shell-chip-accent">Điểm dừng được giao</span>}
+        title={task.areaName || "Nhiệm vụ thu gom"}
+        description={report?.description || "Không có mô tả đi kèm báo cáo."}
         tone={alreadyCollected ? "mint" : routeStarted ? "sky" : "sand"}
         aside={
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                  Task ID
+                  Mã nhiệm vụ
                 </p>
                 <p className="mt-2 text-sm font-semibold text-[var(--text-primary)]">
                   {task.taskId}
@@ -205,23 +215,23 @@ export const CollectorTaskPage: React.FC = () => {
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           icon={Warehouse}
-          label="Assigned by"
+          label="Đơn vị giao"
           value={task.enterpriseName}
-          description="Enterprise owner of this task"
+          description="Doanh nghiệp chịu trách nhiệm cho nhiệm vụ này"
           tone="slate"
         />
         <StatCard
           icon={Navigation}
-          label="Scheduled"
-          value={task.scheduledDate || "Today"}
-          description="Current planned visit date"
+          label="Lịch hẹn"
+          value={task.scheduledDate || "Hôm nay"}
+          description="Ngày thực hiện dự kiến hiện tại"
           tone="sky"
         />
         <StatCard
           icon={PackageCheck}
-          label="Status"
-          value={statusIndicator.replace(/_/g, " ")}
-          description="Live collector task state"
+          label="Trạng thái"
+          value={formatStatusLabel(statusIndicator)}
+          description="Trạng thái trực tiếp của nhiệm vụ"
           tone={alreadyCollected ? "mint" : "sand"}
           featured
         />
@@ -231,8 +241,8 @@ export const CollectorTaskPage: React.FC = () => {
         <div className="space-y-4 lg:space-y-5">
           <SectionCard className="overflow-hidden">
             <SectionHeader
-              title="Task overview"
-              description="Key context from current assignment payload."
+              title="Tổng quan nhiệm vụ"
+              description="Ngữ cảnh chính từ dữ liệu phân công hiện tại."
             />
 
             <div className="space-y-5 p-5 sm:p-6">
@@ -243,10 +253,10 @@ export const CollectorTaskPage: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-[var(--text-primary)]">
-                      {report?.wasteTypeName || "Unknown waste type"}
+                      {report?.wasteTypeName || "Không rõ loại rác"}
                     </p>
                     <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
-                      {report?.description || "No description"}
+                      {report?.description || "Không có mô tả"}
                     </p>
                   </div>
                 </div>
@@ -257,15 +267,15 @@ export const CollectorTaskPage: React.FC = () => {
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm font-semibold text-[var(--text-primary)]">
-                        Start your route
+                        Bắt đầu lộ trình
                       </p>
                       <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
-                        Mark this task as on the way before opening the completion form.
+                        Hãy chuyển nhiệm vụ sang trạng thái đang di chuyển trước khi mở biểu mẫu hoàn thành.
                       </p>
                     </div>
                     <Button type="button" onClick={() => updateStatus.mutate()} disabled={updateStatus.isPending}>
                       <Navigation className="mr-2 h-4 w-4" />
-                      {updateStatus.isPending ? "Updating..." : "Start route"}
+                      {updateStatus.isPending ? "Đang cập nhật..." : "Bắt đầu lộ trình"}
                     </Button>
                   </div>
                 </div>
@@ -276,8 +286,8 @@ export const CollectorTaskPage: React.FC = () => {
           {mapCenter ? (
             <SectionCard className="overflow-hidden">
               <SectionHeader
-                title="Location map"
-                description="Pinned report position for this stop."
+                title="Bản đồ vị trí"
+                description="Vị trí báo cáo được ghim cho điểm dừng này."
               />
 
               <div className="space-y-4 p-5 sm:p-6">
@@ -301,8 +311,8 @@ export const CollectorTaskPage: React.FC = () => {
 
         <SectionCard className="overflow-hidden">
           <SectionHeader
-            title="Completion form"
-            description="Submit proof and waste details to close this task."
+            title="Biểu mẫu hoàn tất"
+            description="Gửi minh chứng và thông tin rác để đóng nhiệm vụ này."
           />
 
           <div className="p-5 sm:p-6">
@@ -320,7 +330,7 @@ export const CollectorTaskPage: React.FC = () => {
               >
                 <div>
                   <label htmlFor="collector-proof" className="field-label">
-                    Collection proof photo
+                    Ảnh minh chứng thu gom
                   </label>
                   <div
                     className={`relative flex min-h-[220px] items-center justify-center overflow-hidden rounded-[24px] border-2 border-dashed p-4 transition-colors ${
@@ -346,7 +356,7 @@ export const CollectorTaskPage: React.FC = () => {
                             setProofFile(null);
                           }}
                         >
-                          Replace
+                          Đổi ảnh
                         </Button>
                       </div>
                     ) : (
@@ -359,10 +369,10 @@ export const CollectorTaskPage: React.FC = () => {
                         </div>
                         <div>
                           <p className="text-base font-semibold text-[var(--text-primary)]">
-                            Upload proof image
+                            Tải ảnh minh chứng
                           </p>
                           <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
-                            Add a clear after-collection photo before closing the task.
+                            Thêm ảnh rõ ràng sau khi thu gom trước khi đóng nhiệm vụ.
                           </p>
                         </div>
                       </label>
@@ -378,23 +388,50 @@ export const CollectorTaskPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="estimated-weight" className="field-label">
-                    Collected weight (kg)
+                  <label htmlFor="measured-weight" className="field-label">
+                    Cân tại chỗ (kg)
                   </label>
-                  <Input
-                    id="estimated-weight"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    placeholder="e.g. 15.5"
-                    value={estimatedWeight}
-                    onChange={(event) => setEstimatedWeight(event.target.value)}
-                  />
+                  <div className="rounded-[22px] border border-[rgba(31,93,78,0.14)] bg-[var(--primary-50)] p-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">
+                          Cân lượng rác đã thu gom trước khi hoàn tất
+                        </p>
+                        <p className="text-sm leading-6 text-[var(--text-secondary)]">
+                          Nhiệm vụ chỉ có thể đóng sau khi đã nhập khối lượng cân thực tế.
+                        </p>
+                      </div>
+                      <div className="rounded-[18px] bg-white/82 px-4 py-3 text-right">
+                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                          Khối lượng ghi nhận
+                        </p>
+                        <p className="mt-1 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+                          {hasValidWeight ? `${parsedWeightKg.toFixed(1)} kg` : "--"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <Input
+                        id="measured-weight"
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        required
+                        placeholder="ví dụ 15.5"
+                        value={measuredWeightKg}
+                        onChange={(event) => setMeasuredWeightKg(event.target.value)}
+                      />
+                      <p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">
+                        Nhập đúng khối lượng cân thực tế theo kilogram, không phải ước lượng.
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div>
                   <label htmlFor="sorting-level" className="field-label">
-                    Sorting quality
+                    Chất lượng phân loại
                   </label>
                   <select
                     id="sorting-level"
@@ -402,21 +439,21 @@ export const CollectorTaskPage: React.FC = () => {
                     onChange={(event) => setSortingLevel(event.target.value)}
                     className="shell-select"
                   >
-                    <option value="GOOD">Good</option>
-                    <option value="FAIR">Fair</option>
-                    <option value="POOR">Poor</option>
+                    <option value="GOOD">Tốt</option>
+                    <option value="FAIR">Khá</option>
+                    <option value="POOR">Kém</option>
                   </select>
                 </div>
 
                 <div>
                   <label htmlFor="collector-note" className="field-label">
-                    Collector note
+                    Ghi chú của nhân viên
                   </label>
                   <textarea
                     id="collector-note"
                     rows={4}
                     className="shell-textarea"
-                    placeholder="Add site notes, contamination risks or access issues."
+                    placeholder="Thêm ghi chú hiện trường, rủi ro lẫn tạp chất hoặc vấn đề tiếp cận."
                     value={collectorNote}
                     onChange={(event) => setCollectorNote(event.target.value)}
                   />
@@ -425,7 +462,11 @@ export const CollectorTaskPage: React.FC = () => {
 
               {statusIndicator === "ASSIGNED" ? (
                 <div className="rounded-[20px] border border-[rgba(186,135,60,0.18)] bg-[var(--warning-50)] px-4 py-3 text-sm leading-6 text-[var(--text-secondary)]">
-                  Start the route first to unlock the completion form.
+                  Hãy bắt đầu lộ trình trước để mở khóa biểu mẫu hoàn tất.
+                </div>
+              ) : !proofFile || !hasValidWeight ? (
+                <div className="rounded-[20px] border border-[rgba(78,123,217,0.16)] bg-[var(--accent-100)] px-4 py-3 text-sm leading-6 text-[var(--text-secondary)]">
+                  Cần thêm ảnh minh chứng và khối lượng cân để có thể hoàn tất.
                 </div>
               ) : null}
 
@@ -433,14 +474,19 @@ export const CollectorTaskPage: React.FC = () => {
                 type="submit"
                 size="lg"
                 className="w-full"
-                disabled={statusIndicator === "ASSIGNED" || alreadyCollected || completeTask.isPending}
+                disabled={
+                  completionLocked ||
+                  !proofFile ||
+                  !hasValidWeight ||
+                  completeTask.isPending
+                }
               >
                 <PackageCheck className="mr-2 h-4.5 w-4.5" />
                 {completeTask.isPending
-                  ? "Submitting..."
+                  ? "Đang gửi..."
                   : alreadyCollected
-                    ? "Task completed"
-                    : "Mark as completed"}
+                    ? "Đã hoàn thành nhiệm vụ"
+                    : "Đánh dấu hoàn thành"}
               </Button>
             </form>
           </div>

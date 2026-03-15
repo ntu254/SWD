@@ -25,6 +25,7 @@ export interface WasteReport {
   longitude: number;
   gpsAccuracyMeters?: number | null;
   description?: string | null;
+  estimatedWeightKg?: number | null;
   reportPhotoUrl?: string | null;
   status: 'PENDING' | 'ACCEPTED' | 'ASSIGNED' | 'ON_THE_WAY' | 'COLLECTED' | 'REJECTED' | 'CANCELLED';
   requestedPickupTime?: string | null;

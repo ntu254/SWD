@@ -10,31 +10,87 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ClipboardList, Clock, MapPin, Package, CheckCircle2, Navigation } from 'lucide-react-native';
+import {
+  ClipboardList,
+  Clock,
+  MapPin,
+  Package,
+  CheckCircle2,
+  Navigation,
+  ArrowRight,
+} from 'lucide-react-native';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { fetchCollectorTasks, updateCollectorTaskStatus } from '@/components/api/backend';
 import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
 import { useAppStore } from '@/store/useAppStore';
 import type { TaskAssignment, AssignmentStatus } from '@/types';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  completeCollectorTask,
-  fetchCollectorTasks,
-  uploadCollectorEvidence,
-  updateCollectorTaskStatus,
-} from '@/components/api/backend';
-import * as ImagePicker from 'expo-image-picker';
 
-const statusConfig: Record<AssignmentStatus, { label: string; color: string; bgColor: string; icon: React.ElementType }> = {
-  ASSIGNED: { label: 'Được gán', color: Colors.accent[600], bgColor: Colors.accent[50], icon: ClipboardList },
-  ACCEPTED: { label: 'Đã nhận', color: Colors.secondary[600], bgColor: Colors.secondary[50], icon: CheckCircle2 },
-  ON_THE_WAY: { label: 'Đang đi', color: Colors.primary[600], bgColor: Colors.primary[50], icon: Navigation },
-  IN_PROGRESS: { label: 'Đang xử lý', color: Colors.primary[600], bgColor: Colors.primary[50], icon: Navigation },
-  COLLECTED: { label: 'Đã thu gom', color: Colors.status.success, bgColor: '#E8F5E9', icon: Package },
-  COMPLETED: { label: 'Hoàn thành', color: Colors.status.success, bgColor: '#E8F5E9', icon: CheckCircle2 },
-  FAILED: { label: 'Thất bại', color: Colors.status.error, bgColor: '#FFEBEE', icon: Clock },
-  CANCELLED: { label: 'Đã hủy', color: Colors.neutral[500], bgColor: Colors.neutral[100], icon: Clock },
-  REJECTED: { label: 'Từ chối', color: Colors.status.error, bgColor: '#FFEBEE', icon: Clock },
-  UNASSIGNED: { label: 'Chưa gán', color: Colors.neutral[500], bgColor: Colors.neutral[100], icon: ClipboardList },
+const statusConfig: Record<
+  AssignmentStatus,
+  { label: string; color: string; bgColor: string; icon: React.ElementType }
+> = {
+  ASSIGNED: {
+    label: 'Được gán',
+    color: Colors.accent[600],
+    bgColor: Colors.accent[50],
+    icon: ClipboardList,
+  },
+  ACCEPTED: {
+    label: 'Đã nhận',
+    color: Colors.secondary[600],
+    bgColor: Colors.secondary[50],
+    icon: CheckCircle2,
+  },
+  ON_THE_WAY: {
+    label: 'Đang đi',
+    color: Colors.primary[600],
+    bgColor: Colors.primary[50],
+    icon: Navigation,
+  },
+  IN_PROGRESS: {
+    label: 'Đang xử lý',
+    color: Colors.primary[600],
+    bgColor: Colors.primary[50],
+    icon: Navigation,
+  },
+  COLLECTED: {
+    label: 'Đã thu gom',
+    color: Colors.status.success,
+    bgColor: '#E8F5E9',
+    icon: Package,
+  },
+  COMPLETED: {
+    label: 'Hoàn thành',
+    color: Colors.status.success,
+    bgColor: '#E8F5E9',
+    icon: CheckCircle2,
+  },
+  FAILED: {
+    label: 'Thất bại',
+    color: Colors.status.error,
+    bgColor: '#FFEBEE',
+    icon: Clock,
+  },
+  CANCELLED: {
+    label: 'Đã hủy',
+    color: Colors.neutral[500],
+    bgColor: Colors.neutral[100],
+    icon: Clock,
+  },
+  REJECTED: {
+    label: 'Từ chối',
+    color: Colors.status.error,
+    bgColor: '#FFEBEE',
+    icon: Clock,
+  },
+  UNASSIGNED: {
+    label: 'Chưa gán',
+    color: Colors.neutral[500],
+    bgColor: Colors.neutral[100],
+    icon: ClipboardList,
+  },
 };
 
 export default function CollectorTasksScreen() {
@@ -43,7 +99,6 @@ export default function CollectorTasksScreen() {
   const { accessToken } = useAppStore();
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'COMPLETED'>('ACTIVE');
-  const [processingTaskId, setProcessingTaskId] = useState<string | null>(null);
 
   const tasksQuery = useQuery({
     queryKey: ['collector', 'tasks'],
@@ -59,41 +114,18 @@ export default function CollectorTasksScreen() {
     },
   });
 
-  const completeTaskMutation = useMutation({
-    mutationFn: async ({ taskId, photoUri }: { taskId: string; photoUri?: string }) => {
-      const photoUrls: string[] = [];
-      if (photoUri) {
-        const uploadedUrl = await uploadCollectorEvidence(accessToken ?? '', photoUri);
-        photoUrls.push(uploadedUrl);
-      }
-
-      return completeCollectorTask(accessToken ?? '', taskId, {
-        visitStatus: 'SUCCESS',
-        note: photoUri
-          ? 'Collected with photo evidence from collector mobile'
-          : 'Collected without photo evidence from collector mobile',
-        photoUrls,
-      });
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['collector', 'tasks'] });
-      Alert.alert('Thành công', 'Đã hoàn thành nhiệm vụ.');
-      setProcessingTaskId(null);
-    },
-    onError: () => {
-      setProcessingTaskId(null);
-    },
-  });
-
   const assignments = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
 
   const activeAssignments = useMemo(
-    () => assignments.filter((a) => ['ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'IN_PROGRESS'].includes(a.status)),
+    () =>
+      assignments.filter((item) =>
+        ['ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'IN_PROGRESS'].includes(item.status)
+      ),
     [assignments]
   );
 
   const completedAssignments = useMemo(
-    () => assignments.filter((a) => ['COLLECTED', 'COMPLETED'].includes(a.status)),
+    () => assignments.filter((item) => ['COLLECTED', 'COMPLETED'].includes(item.status)),
     [assignments]
   );
 
@@ -108,9 +140,15 @@ export default function CollectorTasksScreen() {
     }
   }, [tasksQuery]);
 
-  const handleTaskPress = (assignment: TaskAssignment) => {
-    console.log('Task pressed:', assignment.taskId);
-  };
+  const openTaskDetail = useCallback(
+    (taskId: string) => {
+      router.push({
+        pathname: "/task-detail/[taskId]",
+        params: { taskId },
+      });
+    },
+    [router]
+  );
 
   const handleAccept = async (taskId: string) => {
     try {
@@ -130,65 +168,16 @@ export default function CollectorTasksScreen() {
     }
   };
 
-  const completeTask = async (taskId: string, photoUri?: string) => {
-    try {
-      setProcessingTaskId(taskId);
-      await completeTaskMutation.mutateAsync({ taskId, photoUri });
-    } catch (error) {
-      setProcessingTaskId(null);
-      const message = error instanceof Error ? error.message : 'Không thể hoàn thành nhiệm vụ';
-      Alert.alert('Cập nhật thất bại', message);
-    }
-  };
-
-  const pickEvidenceAndComplete = async (taskId: string) => {
-    try {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert('Thiếu quyền camera', 'Vui lòng cho phép camera để chụp ảnh minh chứng.');
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        quality: 0.8,
-      });
-
-      if (result.canceled) {
-        return;
-      }
-
-      await completeTask(taskId, result.assets[0].uri);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Không thể chụp ảnh minh chứng';
-      Alert.alert('Lỗi camera', message);
-    }
-  };
-
-  const handleComplete = (taskId: string) => {
-    Alert.alert('Xác nhận thu gom', 'Bạn muốn hoàn tất với ảnh minh chứng không?', [
-      { text: 'Hủy', style: 'cancel' },
-      {
-        text: 'Không ảnh',
-        onPress: () => {
-          void completeTask(taskId);
-        },
-      },
-      {
-        text: 'Chụp ảnh',
-        onPress: () => {
-          void pickEvidenceAndComplete(taskId);
-        },
-      },
-    ]);
-  };
-
   const renderTaskItem = ({ item }: { item: TaskAssignment }) => {
     const status = statusConfig[item.status] ?? statusConfig.ASSIGNED;
     const StatusIcon = status.icon;
 
     return (
-      <TouchableOpacity style={styles.taskCard} onPress={() => handleTaskPress(item)} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={styles.taskCard}
+        onPress={() => openTaskDetail(item.taskId)}
+        activeOpacity={0.86}
+      >
         <View style={styles.taskHeader}>
           <View style={[styles.statusBadge, { backgroundColor: status.bgColor }]}>
             <StatusIcon size={14} color={status.color} />
@@ -203,11 +192,11 @@ export default function CollectorTasksScreen() {
         </View>
 
         <View style={styles.taskBody}>
-          <Text style={styles.wasteType}>{item.task?.status ?? 'Nhiệm vụ thu gom'}</Text>
+          <Text style={styles.wasteType}>{item.task?.areaName || 'Điểm rác cần thu gom'}</Text>
           <Text style={styles.description} numberOfLines={2}>
             {item.task?.enterpriseName
               ? `Đơn vị xử lý: ${item.task.enterpriseName}`
-              : 'Không có mô tả chi tiết'}
+              : 'Mở chi tiết để xem đầy đủ ảnh, vị trí và biểu mẫu hoàn tất.'}
           </Text>
 
           <View style={styles.locationRow}>
@@ -217,34 +206,41 @@ export default function CollectorTasksScreen() {
         </View>
 
         <View style={styles.taskFooter}>
-          {item.status === 'ASSIGNED' && (
+          {item.status === 'ASSIGNED' ? (
             <TouchableOpacity
               style={[styles.actionBtn, styles.acceptBtn]}
               onPress={() => void handleAccept(item.taskId)}
             >
               <Text style={styles.acceptBtnText}>Nhận nhiệm vụ</Text>
             </TouchableOpacity>
-          )}
+          ) : null}
 
-          {item.status === 'ACCEPTED' && (
-            <TouchableOpacity style={styles.primaryBtn} onPress={() => void handleStartMoving(item.taskId)}>
+          {item.status === 'ACCEPTED' ? (
+            <TouchableOpacity
+              style={styles.primaryBtn}
+              onPress={() => void handleStartMoving(item.taskId)}
+            >
               <Navigation size={16} color={Colors.neutral.white} />
               <Text style={styles.primaryBtnText}>Bắt đầu di chuyển</Text>
             </TouchableOpacity>
-          )}
+          ) : null}
 
-          {(item.status === 'ON_THE_WAY' || item.status === 'IN_PROGRESS') && (
+          {(item.status === 'ON_THE_WAY' || item.status === 'IN_PROGRESS') ? (
             <TouchableOpacity
               style={styles.primaryBtn}
-              onPress={() => handleComplete(item.taskId)}
-              disabled={completeTaskMutation.isPending}
+              onPress={() => openTaskDetail(item.taskId)}
             >
               <CheckCircle2 size={16} color={Colors.neutral.white} />
-              <Text style={styles.primaryBtnText}>
-                {processingTaskId === item.taskId ? '?ang x? l?...' : 'Xác nhận thu gom'}
-              </Text>
+              <Text style={styles.primaryBtnText}>Mở biểu mẫu hoàn tất</Text>
             </TouchableOpacity>
-          )}
+          ) : null}
+
+          {(item.status === 'COLLECTED' || item.status === 'COMPLETED') ? (
+            <View style={styles.detailHintRow}>
+              <Text style={styles.detailHintText}>Xem lại chi tiết nhiệm vụ</Text>
+              <ArrowRight size={16} color={Colors.secondary[600]} />
+            </View>
+          ) : null}
         </View>
       </TouchableOpacity>
     );
@@ -446,6 +442,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: Colors.neutral.white,
+  },
+  detailHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 10,
+    paddingVertical: 4,
+  },
+  detailHintText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.secondary[600],
   },
   emptyState: {
     alignItems: 'center',

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { useAppStore } from '@/store/useAppStore';
 import { ReportCard } from '@/components/Citizen/ReportCard';
@@ -28,6 +29,7 @@ const summaryCards = [
 ] as const;
 
 export default function HistoryScreen() {
+  const router = useRouter();
   const { user, accessToken } = useAppStore();
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
   const [refreshing, setRefreshing] = useState(false);
@@ -64,9 +66,15 @@ export default function HistoryScreen() {
     }
   }, [reportsQuery]);
 
-  const handleReportPress = useCallback((report: WasteReport) => {
-    console.log('Report pressed:', report.reportId);
-  }, []);
+  const handleReportPress = useCallback(
+    (report: WasteReport) => {
+      router.push({
+        pathname: "/reports/[reportId]",
+        params: { reportId: report.reportId },
+      });
+    },
+    [router]
+  );
 
   const renderItem = useCallback(
     ({ item }: { item: WasteReport }) => <ReportCard report={item} onPress={handleReportPress} />,

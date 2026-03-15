@@ -50,6 +50,13 @@ export default function CollectorTabLayout() {
           tabBarIcon: ({ color }) => <User size={24} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="task-detail/[taskId]"
+        options={{
+          href: null,
+          title: 'Chi tiáº¿t nhiá»‡m vá»¥',
+        }}
+      />
     </Tabs>
   );
 }

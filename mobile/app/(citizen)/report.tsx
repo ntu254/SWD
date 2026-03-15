@@ -22,7 +22,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
+import { ReportAssistantBubble } from '@/components/Citizen/ReportAssistantBubble';
 import { WasteTypeSelector } from '@/components/Citizen/WasteTypeSelector';
+import { buildReportDescription } from '@/components/utils/reportMetadata';
 import { useAppStore } from '@/store/useAppStore';
 import type { WasteType } from '@/types';
 import {
@@ -54,6 +56,7 @@ export default function ReportWasteScreen() {
 
   const [selectedWasteType, setSelectedWasteType] = useState<WasteType | null>(null);
   const [description, setDescription] = useState('');
+  const [estimatedWeightKg, setEstimatedWeightKg] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<{ wasteType: WasteType; confidence: number } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -192,8 +195,22 @@ export default function ReportWasteScreen() {
   );
 
   const handleSubmit = useCallback(async () => {
+    const parsedEstimatedWeight = estimatedWeightKg.trim()
+      ? Number(estimatedWeightKg)
+      : null;
     if (!selectedWasteType || !image) {
       Alert.alert('Thiếu thông tin', 'Vui lòng chọn ảnh và loại rác trước khi gửi báo cáo.');
+      return;
+    }
+
+    if (
+      estimatedWeightKg.trim() &&
+      (!Number.isFinite(parsedEstimatedWeight) || (parsedEstimatedWeight ?? 0) <= 0)
+    ) {
+      Alert.alert(
+        'Sá»‘ kÃ½ chÆ°a há»£p lá»‡',
+        'Náº¿u báº¡n muá»‘n nháº­p sá»‘ kÃ½ Æ°á»›c tÃ­nh, vui lÃ²ng dÃ¹ng má»™t sá»‘ lá»›n hÆ¡n 0.'
+      );
       return;
     }
 
@@ -220,7 +237,7 @@ export default function ReportWasteScreen() {
       await createWasteReport(accessToken, {
         latitude: location.lat,
         longitude: location.lng,
-        description,
+        description: buildReportDescription(description, parsedEstimatedWeight),
         wasteTypeId: selectedWasteType.wasteTypeId,
         areaId: selectedArea?.areaId,
         reportPhotoUrl: uploadedPhotoUrl,
@@ -244,6 +261,7 @@ export default function ReportWasteScreen() {
   }, [
     accessToken,
     description,
+    estimatedWeightKg,
     image,
     location.lat,
     location.lng,
@@ -402,7 +420,47 @@ export default function ReportWasteScreen() {
               textAlignVertical="top"
             />
           </View>
+
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionStep}>Gá»£i Ã½ thÃªm</Text>
+              <Text style={styles.sectionTitle}>Æ¯á»›c lÆ°á»£ng khá»‘i lÆ°á»£ng</Text>
+            </View>
+
+            <View style={styles.weightSummaryCard}>
+              <View>
+                <Text style={styles.weightSummaryLabel}>Sá»‘ kÃ½ Æ°á»›c tÃ­nh</Text>
+                <Text style={styles.weightSummaryHint}>
+                  Nháº­p gáº§n Ä‘Ãºng nháº¥t cÃ³ thá»ƒ Ä‘á»ƒ doanh nghiá»‡p Æ°á»›c lÆ°á»£ng náº¯ng lá»±c thu gom.
+                </Text>
+              </View>
+              <Text style={styles.weightSummaryValue}>
+                {estimatedWeightKg.trim() ? `${estimatedWeightKg.trim()} kg` : '--'}
+              </Text>
+            </View>
+
+            <TextInput
+              style={styles.weightInput}
+              keyboardType="decimal-pad"
+              placeholder="VÃ­ dá»¥: 12.5"
+              placeholderTextColor={Colors.neutral[400]}
+              value={estimatedWeightKg}
+              onChangeText={setEstimatedWeightKg}
+            />
+
+            <Text style={styles.weightHelperText}>
+              Má»¥c nÃ y khÃ´ng báº¯t buá»™c, nhÆ°ng giÃºp hÃ ng chá» Ä‘iá»u phá»‘i cÃ¢n Ä‘á»‘i hÆ¡n.
+            </Text>
+          </View>
         </ScrollView>
+
+        <ReportAssistantBubble
+          hasImage={!!image}
+          hasLocation={!!locationLabel.trim()}
+          wasteTypeName={selectedWasteType?.name}
+          areaName={selectedArea?.name}
+          estimatedWeightKg={estimatedWeightKg}
+        />
 
         <View style={styles.footer}>
           <TouchableOpacity
@@ -459,7 +517,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: 24,
+    paddingBottom: 140,
     gap: 14,
   },
   heroCard: {
@@ -627,6 +685,54 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: Colors.primary[700],
+  },
+  weightSummaryCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#DFF0E2',
+    backgroundColor: '#F7FCF8',
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  weightSummaryLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: Colors.primary[700],
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  weightSummaryHint: {
+    marginTop: 6,
+    maxWidth: 190,
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.neutral[600],
+  },
+  weightSummaryValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: Colors.neutral[800],
+  },
+  weightInput: {
+    minHeight: 52,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    backgroundColor: Colors.neutral.white,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 12,
+    fontSize: 15,
+    color: Colors.neutral[800],
+  } as TextStyle,
+  weightHelperText: {
+    marginTop: 8,
+    fontSize: 12,
+    lineHeight: 18,
+    color: Colors.neutral[500],
   },
   descriptionInput: {
     minHeight: 110,

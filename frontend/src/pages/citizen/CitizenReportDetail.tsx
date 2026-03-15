@@ -24,6 +24,8 @@ import {
   SectionHeader,
   StatCard,
 } from "../../components/ui/page";
+import { formatStatusLabel } from "../../lib/labels";
+import { withReportMetadata } from "../../lib/reportMetadata";
 import type { WasteReport } from "../../types";
 
 type TimelineStep = {
@@ -67,15 +69,15 @@ function getTimeline(report: WasteReport): TimelineStep[] {
     return [
       {
         status: "PENDING",
-        label: "Report created",
+        label: "Đã tạo báo cáo",
         date: new Date(report.createdAt).toLocaleString(),
         active: true,
         completed: true,
       },
       {
         status: "REJECTED",
-        label: "Report rejected",
-        date: "Reviewed by the assigned enterprise",
+        label: "Báo cáo bị từ chối",
+        date: "Đã được doanh nghiệp phụ trách xem xét",
         active: true,
         completed: false,
         isError: true,
@@ -86,15 +88,15 @@ function getTimeline(report: WasteReport): TimelineStep[] {
     return [
       {
         status: "PENDING",
-        label: "Report created",
+        label: "Đã tạo báo cáo",
         date: new Date(report.createdAt).toLocaleString(),
         active: true,
         completed: true,
       },
       {
         status: "CANCELLED",
-        label: "Report cancelled",
-        date: "Cancelled by citizen before assignment",
+        label: "Báo cáo đã hủy",
+        date: "Được công dân hủy trước khi phân công",
         active: true,
         completed: false,
         isError: true,
@@ -107,36 +109,36 @@ function getTimeline(report: WasteReport): TimelineStep[] {
   return [
     {
       status: "PENDING",
-      label: "Report created",
+      label: "Đã tạo báo cáo",
       date: new Date(report.createdAt).toLocaleString(),
       active: currentIndex >= 0,
       completed: currentIndex > 0,
     },
     {
       status: "ACCEPTED",
-      label: "Enterprise accepted",
-      date: currentIndex >= 1 ? "Queued for task creation" : "Pending review",
+      label: "Doanh nghiệp đã tiếp nhận",
+      date: currentIndex >= 1 ? "Đã đưa vào hàng chờ tạo nhiệm vụ" : "Đang chờ duyệt",
       active: currentIndex >= 1,
       completed: currentIndex > 1,
     },
     {
       status: "ASSIGNED",
-      label: "Collector assigned",
-      date: currentIndex >= 2 ? "Route prepared" : "Waiting for assignment",
+      label: "Đã phân công nhân viên thu gom",
+      date: currentIndex >= 2 ? "Đã chuẩn bị lộ trình" : "Đang chờ phân công",
       active: currentIndex >= 2,
       completed: currentIndex > 2,
     },
     {
       status: "ON_THE_WAY",
-      label: "Collector en route",
-      date: currentIndex >= 3 ? "Pickup in progress" : "Not started yet",
+      label: "Nhân viên đang di chuyển",
+      date: currentIndex >= 3 ? "Đang thực hiện thu gom" : "Chưa bắt đầu",
       active: currentIndex >= 3,
       completed: currentIndex > 3,
     },
     {
       status: "COLLECTED",
-      label: "Waste collected",
-      date: currentIndex >= 4 ? "Visit completed" : "Awaiting collection",
+      label: "Đã thu gom rác",
+      date: currentIndex >= 4 ? "Đã hoàn tất lượt ghé" : "Đang chờ thu gom",
       active: currentIndex >= 4,
       completed: currentIndex >= 4,
     },
@@ -166,7 +168,9 @@ export const CitizenReportDetail: React.FC = () => {
     enabled: !!id,
   });
 
-  const report: WasteReport | undefined = reportData?.data;
+  const report: WasteReport | undefined = reportData?.data
+    ? withReportMetadata(reportData.data as WasteReport)
+    : undefined;
 
   if (isLoading) {
     return (
@@ -185,11 +189,11 @@ export const CitizenReportDetail: React.FC = () => {
       <div className="py-10">
         <EmptyState
           icon={XCircle}
-          title="Report not found"
-          description="The report could not be loaded or no longer exists in your current view."
+          title="Không tìm thấy báo cáo"
+          description="Không thể tải báo cáo này hoặc nó không còn nằm trong danh sách hiện tại của bạn."
           action={
             <Button variant="outline" onClick={() => navigate("/citizen/reports")}>
-              Back to reports
+              Quay lại danh sách báo cáo
             </Button>
           }
           tone="peach"
@@ -203,24 +207,24 @@ export const CitizenReportDetail: React.FC = () => {
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Citizen workspace</span>}
-        title="Report tracking"
-        description="Follow the same report lifecycle through a cleaner detail view with clearer status context, location and evidence."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian công dân</span>}
+        title="Theo dõi báo cáo"
+        description="Theo dõi toàn bộ vòng đời báo cáo qua giao diện chi tiết rõ hơn về trạng thái, vị trí và minh chứng."
         actions={
           <Button variant="outline" onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            Quay lại
           </Button>
         }
       />
 
       <PageHero
-        eyebrow={<span className="shell-chip shell-chip-accent">Report detail</span>}
-        title={report.wasteTypeName || "Waste report"}
+        eyebrow={<span className="shell-chip shell-chip-accent">Chi tiết báo cáo</span>}
+        title={report.wasteTypeName || "Báo cáo rác"}
         description={
           report.description?.trim()
             ? report.description
-            : "No additional description was submitted with this report."
+            : "Không có mô tả bổ sung cho báo cáo này."
         }
         tone={getHeroTone(report.status)}
         aside={
@@ -228,7 +232,7 @@ export const CitizenReportDetail: React.FC = () => {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                  Report ID
+                  Mã báo cáo
                 </p>
                 <p className="mt-2 text-sm font-semibold text-[var(--text-primary)]">
                   {report.reportId}
@@ -237,8 +241,8 @@ export const CitizenReportDetail: React.FC = () => {
               <StatusBadge status={report.status} />
             </div>
             <div className="rounded-[20px] border border-[var(--stroke-soft)] bg-white/76 p-4 text-sm leading-6 text-[var(--text-secondary)]">
-              Created on {new Date(report.createdAt).toLocaleString()}
-              {report.areaName ? ` in ${report.areaName}.` : "."}
+              Tạo lúc {new Date(report.createdAt).toLocaleString()}
+              {report.areaName ? ` tại ${report.areaName}.` : "."}
             </div>
           </div>
         }
@@ -247,23 +251,23 @@ export const CitizenReportDetail: React.FC = () => {
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           icon={Clock}
-          label="Created"
+          label="Ngày tạo"
           value={new Date(report.createdAt).toLocaleDateString()}
-          description="Submission date"
+          description="Thời điểm gửi"
           tone="slate"
         />
         <StatCard
           icon={MapPin}
-          label="Area"
-          value={report.areaName || "Not specified"}
-          description="Current service area"
+          label="Khu vực"
+          value={report.areaName || "Chưa xác định"}
+          description="Khu vực phục vụ hiện tại"
           tone="sky"
         />
         <StatCard
           icon={CheckCircle2}
-          label="Current status"
-          value={report.status.replace(/_/g, " ")}
-          description="Latest report stage"
+          label="Trạng thái hiện tại"
+          value={formatStatusLabel(report.status)}
+          description="Giai đoạn mới nhất của báo cáo"
           tone={report.status === "REJECTED" ? "peach" : "mint"}
           featured
         />
@@ -273,33 +277,41 @@ export const CitizenReportDetail: React.FC = () => {
         <div className="space-y-4 lg:space-y-5">
           <SectionCard className="overflow-hidden">
             <SectionHeader
-              title="Report information"
-              description="Core details captured when the issue was submitted."
+              title="Thông tin báo cáo"
+              description="Những dữ liệu chính được ghi nhận khi báo cáo được gửi."
             />
 
             <div className="grid gap-5 p-5 sm:grid-cols-2 sm:p-6">
               <div className="rounded-[22px] border border-[var(--stroke-soft)] bg-[var(--bg-surface-muted)] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                  Waste category
+                  Loại rác
                 </p>
                 <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">
-                  {report.wasteTypeName || "Unknown"}
+                  {report.wasteTypeName || "Không rõ"}
                 </p>
               </div>
               <div className="rounded-[22px] border border-[var(--stroke-soft)] bg-[var(--bg-surface-muted)] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                  Coordinates
+                  Tọa độ
                 </p>
                 <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">
                   {report.latitude.toFixed(5)}, {report.longitude.toFixed(5)}
                 </p>
               </div>
+              <div className="rounded-[22px] border border-[var(--stroke-soft)] bg-[var(--bg-surface-muted)] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                  Khá»‘i lÆ°á»£ng Æ°á»›c tÃ­nh
+                </p>
+                <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">
+                  {report.estimatedWeightKg ? `${report.estimatedWeightKg} kg` : "ChÆ°a cÃ³"}
+                </p>
+              </div>
               <div className="rounded-[22px] border border-[var(--stroke-soft)] bg-[var(--bg-surface-muted)] p-4 sm:col-span-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                  Description
+                  Mô tả
                 </p>
                 <p className="mt-2 text-sm leading-7 text-[var(--text-secondary)]">
-                  {report.description?.trim() || "No description provided."}
+                  {report.description?.trim() || "Không có mô tả."}
                 </p>
               </div>
             </div>
@@ -307,8 +319,8 @@ export const CitizenReportDetail: React.FC = () => {
 
           <SectionCard className="overflow-hidden">
             <SectionHeader
-              title="Evidence photo"
-              description="The original image attached to the report."
+              title="Ảnh minh chứng"
+              description="Ảnh gốc được đính kèm cùng báo cáo."
             />
 
             <div className="p-5 sm:p-6">
@@ -316,15 +328,15 @@ export const CitizenReportDetail: React.FC = () => {
                 <div className="overflow-hidden rounded-[26px] border border-[var(--stroke-soft)] bg-[var(--bg-surface-muted)]">
                   <img
                     src={report.reportPhotoUrl}
-                    alt="Waste evidence"
+                    alt="Ảnh minh chứng rác"
                     className="max-h-[420px] w-full object-cover"
                   />
                 </div>
               ) : (
                 <EmptyState
                   icon={ImageIcon}
-                  title="No image attached"
-                  description="This report was submitted without a supporting photo."
+                  title="Không có ảnh đính kèm"
+                  description="Báo cáo này được gửi mà không có ảnh minh chứng."
                   tone="slate"
                 />
               )}
@@ -333,8 +345,8 @@ export const CitizenReportDetail: React.FC = () => {
 
           <SectionCard className="overflow-hidden">
             <SectionHeader
-              title="Location"
-              description="Pinned map position used for routing and pickup."
+              title="Vị trí"
+              description="Vị trí ghim trên bản đồ được dùng để điều phối và thu gom."
             />
 
             <div className="space-y-4 p-5 sm:p-6">
@@ -352,7 +364,7 @@ export const CitizenReportDetail: React.FC = () => {
                 interactive={false}
               />
               <p className="text-sm leading-6 text-[var(--text-secondary)]">
-                This location remains unchanged from the original report payload.
+                Vị trí này được giữ nguyên từ dữ liệu báo cáo ban đầu.
               </p>
             </div>
           </SectionCard>
@@ -360,8 +372,8 @@ export const CitizenReportDetail: React.FC = () => {
 
         <SectionCard className="overflow-hidden">
           <SectionHeader
-            title="Tracking timeline"
-            description="See how the report moved through the current collection pipeline."
+            title="Tiến trình xử lý"
+            description="Theo dõi cách báo cáo đi qua từng bước trong quy trình thu gom hiện tại."
           />
 
           <div className="space-y-5 p-5 sm:p-6">
@@ -397,7 +409,7 @@ export const CitizenReportDetail: React.FC = () => {
                           </p>
                         </div>
                         <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                          {step.status.replace(/_/g, " ")}
+                          {formatStatusLabel(step.status)}
                         </span>
                       </div>
                     </div>

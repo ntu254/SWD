@@ -42,6 +42,7 @@ export interface WasteReport {
   longitude?: number;
   gpsAccuracyMeters?: number;
   description?: string;
+  estimatedWeightKg?: number | null;
   reportPhotoUrl?: string;
   status: ReportStatus;
   requestedPickupTime?: string;

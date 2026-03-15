@@ -20,6 +20,7 @@ import {
   PageHeader,
   SectionCard,
 } from "../../components/ui/page";
+import { withReportMetadataList } from "../../lib/reportMetadata";
 
 interface Report {
   reportId: string;
@@ -58,10 +59,10 @@ function ReportDetailDrawer({
         <div className="flex items-start justify-between gap-4 px-5 py-5 sm:px-6">
           <div className="space-y-1">
             <p className="text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">
-              Pending report
+              Báo cáo chờ duyệt
             </p>
             <h2 className="text-xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-              {report.wasteTypeName ?? "Waste report"}
+              {report.wasteTypeName ?? "Báo cáo rác"}
             </h2>
           </div>
           <button
@@ -86,29 +87,29 @@ function ReportDetailDrawer({
             {[
               {
                 icon: MapPin,
-                label: "Service area",
+                label: "Khu vực phục vụ",
                 value: report.areaName,
               },
               {
                 icon: AlertTriangle,
-                label: "Waste type",
+                label: "Loại rác",
                 value: report.wasteTypeName,
               },
               {
                 icon: Clock,
-                label: "Requested pickup",
+                label: "Thời gian lấy rác",
                 value: report.requestedPickupTime
                   ? new Date(report.requestedPickupTime).toLocaleString()
                   : undefined,
               },
               {
                 icon: Clock,
-                label: "Submitted",
+                label: "Thời điểm gửi",
                 value: new Date(report.createdAt).toLocaleString(),
               },
               {
                 icon: FileText,
-                label: "Reported by",
+                label: "Người báo cáo",
                 value: report.reporterName,
               },
             ]
@@ -138,7 +139,7 @@ function ReportDetailDrawer({
           {report.description ? (
             <div className="rounded-[20px] border border-[var(--stroke-soft)] bg-white/84 p-4">
               <p className="text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                Description
+                Mô tả
               </p>
               <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
                 {report.description}
@@ -154,7 +155,7 @@ function ReportDetailDrawer({
               className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700"
             >
               <MapPin className="h-4 w-4" />
-              Open location in Google Maps
+              Mở vị trí trên Google Maps
             </a>
           ) : null}
         </div>
@@ -162,11 +163,11 @@ function ReportDetailDrawer({
         <div className="shell-divider mt-auto flex flex-wrap gap-3 px-5 py-4 sm:px-6">
           <Button variant="destructive" className="flex-1" onClick={onReject}>
             <Trash2 className="mr-2 h-4 w-4" />
-            Reject
+            Từ chối
           </Button>
           <Button className="flex-1" onClick={onAccept} disabled={acceptPending}>
             <CheckCircle className="mr-2 h-4 w-4" />
-            {acceptPending ? "Accepting..." : "Accept"}
+            {acceptPending ? "Đang chấp nhận..." : "Chấp nhận"}
           </Button>
         </div>
       </div>
@@ -178,7 +179,7 @@ export function EnterpriseReportsPage() {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Report | null>(null);
   const [rejecting, setRejecting] = useState<Report | null>(null);
-  const [rejectReason, setRejectReason] = useState("Cannot service this area");
+  const [rejectReason, setRejectReason] = useState("Doanh nghiệp không phục vụ khu vực này");
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["enterprise-pending-reports"],
@@ -189,7 +190,7 @@ export function EnterpriseReportsPage() {
   const accept = useMutation({
     mutationFn: (reportId: string) => tasksApi.acceptReport(reportId),
     onSuccess: () => {
-      toast.success("Report accepted and task created");
+      toast.success("Đã chấp nhận báo cáo và tạo nhiệm vụ.");
       queryClient.invalidateQueries({ queryKey: ["enterprise-pending-reports"] });
       queryClient.invalidateQueries({ queryKey: ["enterprise-tasks-list"] });
       setSelected(null);
@@ -197,7 +198,7 @@ export function EnterpriseReportsPage() {
     onError: (error: unknown) => {
       const message =
         (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message ?? "Failed to accept report";
+          ?.data?.message ?? "Chấp nhận báo cáo thất bại.";
       toast.error(message);
       queryClient.invalidateQueries({ queryKey: ["enterprise-pending-reports"] });
     },
@@ -207,7 +208,7 @@ export function EnterpriseReportsPage() {
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       tasksApi.rejectReport(id, reason),
     onSuccess: () => {
-      toast.success("Report rejected");
+      toast.success("Đã từ chối báo cáo.");
       queryClient.invalidateQueries({ queryKey: ["enterprise-pending-reports"] });
       setRejecting(null);
       setSelected(null);
@@ -215,26 +216,26 @@ export function EnterpriseReportsPage() {
     onError: (error: unknown) => {
       const message =
         (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message ?? "Failed to reject report";
+          ?.data?.message ?? "Từ chối báo cáo thất bại.";
       toast.error(message);
       queryClient.invalidateQueries({ queryKey: ["enterprise-pending-reports"] });
     },
   });
 
-  const reports: Report[] = data?.data?.content ?? [];
+  const reports: Report[] = withReportMetadataList(data?.data?.content ?? []);
 
   return (
     <>
       {rejecting ? (
         <ModalShell
-          title="Reject report"
-          description="Provide a reason so the citizen understands why the report was rejected."
+          title="Từ chối báo cáo"
+          description="Nhập lý do để công dân hiểu vì sao báo cáo bị từ chối."
           icon={Trash2}
           onClose={() => setRejecting(null)}
           footer={
             <>
               <Button variant="outline" onClick={() => setRejecting(null)}>
-                Cancel
+                Hủy
               </Button>
               <Button
                 variant="destructive"
@@ -246,7 +247,7 @@ export function EnterpriseReportsPage() {
                   })
                 }
               >
-                {reject.isPending ? "Rejecting..." : "Confirm reject"}
+                {reject.isPending ? "Đang từ chối..." : "Xác nhận từ chối"}
               </Button>
             </>
           }
@@ -256,7 +257,7 @@ export function EnterpriseReportsPage() {
             onChange={(event) => setRejectReason(event.target.value)}
             rows={4}
             className="shell-textarea"
-            placeholder="Reason for rejection"
+            placeholder="Lý do từ chối"
           />
         </ModalShell>
       ) : null}
@@ -267,7 +268,7 @@ export function EnterpriseReportsPage() {
           onClose={() => setSelected(null)}
           onAccept={() => accept.mutate(selected.reportId)}
           onReject={() => {
-            setRejectReason("Cannot service this area");
+            setRejectReason("Doanh nghiệp không phục vụ khu vực này");
             setRejecting(selected);
           }}
           acceptPending={accept.isPending}
@@ -276,17 +277,17 @@ export function EnterpriseReportsPage() {
 
       <div className="space-y-4 lg:space-y-5">
         <PageHeader
-          eyebrow={<span className="shell-chip shell-chip-primary">Enterprise workspace</span>}
-          title="Pending reports"
-          description="Review, accept or reject incoming waste requests in your assigned service areas using the same backend actions as before."
+          eyebrow={<span className="shell-chip shell-chip-primary">Không gian doanh nghiệp</span>}
+          title="Báo cáo chờ duyệt"
+          description="Xem, chấp nhận hoặc từ chối các yêu cầu rác đến trong khu vực được giao bằng chính các hành động backend hiện có."
           actions={
             <>
               <span className="shell-chip shell-chip-accent">
-                {reports.length} pending
+                {reports.length} đang chờ
               </span>
               <Button variant="outline" onClick={() => refetch()}>
                 <RefreshCw className="mr-2 h-4 w-4" />
-                Refresh
+                Làm mới
               </Button>
             </>
           }
@@ -302,8 +303,8 @@ export function EnterpriseReportsPage() {
           ) : reports.length === 0 ? (
             <EmptyState
               icon={CheckCircle}
-              title="All caught up"
-              description="There are no pending reports right now. New requests will appear here automatically."
+              title="Đã xử lý hết"
+              description="Hiện không có báo cáo nào chờ duyệt. Yêu cầu mới sẽ tự động xuất hiện ở đây."
             />
           ) : (
             <div className="grid gap-3">
@@ -337,7 +338,7 @@ export function EnterpriseReportsPage() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 space-y-1">
                         <p className="truncate text-base font-semibold text-[var(--text-primary)]">
-                          {report.wasteTypeName ?? "Waste report"}
+                          {report.wasteTypeName ?? "Báo cáo rác"}
                         </p>
                         {report.areaName ? (
                           <p className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
@@ -347,7 +348,7 @@ export function EnterpriseReportsPage() {
                         ) : null}
                       </div>
                       <span className="inline-flex self-start rounded-full bg-amber-100/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-amber-800">
-                        Pending
+                        Chờ duyệt
                       </span>
                     </div>
 
@@ -369,11 +370,11 @@ export function EnterpriseReportsPage() {
                           variant="outline"
                           onClick={(event) => {
                             event.stopPropagation();
-                            setRejectReason("Cannot service this area");
+                            setRejectReason("Doanh nghiệp không phục vụ khu vực này");
                             setRejecting(report);
                           }}
                         >
-                          Reject
+                          Từ chối
                         </Button>
                         <Button
                           size="sm"
@@ -383,7 +384,7 @@ export function EnterpriseReportsPage() {
                           }}
                           disabled={accept.isPending}
                         >
-                          Accept
+                          Chấp nhận
                         </Button>
                       </div>
                     </div>

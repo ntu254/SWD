@@ -1,13 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowRight,
-  Loader2,
-  MapPin,
-  UploadCloud,
-} from "lucide-react";
+import { ArrowRight, Loader2, MapPin, UploadCloud } from "lucide-react";
 import React, { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { z } from "zod";
@@ -15,18 +10,17 @@ import { z } from "zod";
 import { reportsApi, serviceAreasApi, wasteTypesApi } from "../../api";
 import { MapComponent } from "../../components/maps/MapComponent";
 import { Button } from "../../components/ui/button";
-import {
-  PageHeader,
-  SectionCard,
-  SectionHeader,
-} from "../../components/ui/page";
+import { ReportAssistantBubble } from "../../components/ui/report-assistant-bubble";
+import { PageHeader, SectionCard, SectionHeader } from "../../components/ui/page";
+import { buildReportDescription } from "../../lib/reportMetadata";
 
 const defaultCenter: [number, number] = [21.0285, 105.8542];
 
 const reportSchema = z.object({
   description: z.string().optional(),
-  wasteTypeId: z.string().uuid("Please select a waste category"),
-  areaId: z.string().uuid("Please select an area"),
+  estimatedWeightKg: z.number().positive("Khối lượng phải lớn hơn 0").max(10000).optional(),
+  wasteTypeId: z.string().uuid("Vui lòng chọn loại rác"),
+  areaId: z.string().uuid("Vui lòng chọn khu vực"),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
 });
@@ -47,12 +41,11 @@ export const CitizenReportPage: React.FC = () => {
   const navigate = useNavigate();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(
-    null,
-  );
+  const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
   const [isCapturingLocation, setIsCapturingLocation] = useState(false);
 
   const {
+    control,
     register,
     handleSubmit,
     setValue,
@@ -61,11 +54,19 @@ export const CitizenReportPage: React.FC = () => {
     resolver: zodResolver(reportSchema),
     defaultValues: {
       description: "",
+      estimatedWeightKg: undefined,
     },
   });
 
   const latitudeRegistration = register("latitude", { valueAsNumber: true });
   const longitudeRegistration = register("longitude", { valueAsNumber: true });
+  const estimatedWeightRegistration = register("estimatedWeightKg", {
+    setValueAs: (value) => (value === "" ? undefined : Number(value)),
+  });
+
+  const watchedWasteTypeId = useWatch({ control, name: "wasteTypeId" });
+  const watchedAreaId = useWatch({ control, name: "areaId" });
+  const watchedEstimatedWeightKg = useWatch({ control, name: "estimatedWeightKg" });
 
   const { data: wasteTypes } = useQuery({
     queryKey: ["waste-types"],
@@ -74,20 +75,30 @@ export const CitizenReportPage: React.FC = () => {
 
   const { data: areas } = useQuery({
     queryKey: ["service-areas"],
-    queryFn: () =>
-      serviceAreasApi.getAll().then((response) => response.data.data),
+    queryFn: () => serviceAreasApi.getAll().then((response) => response.data.data),
   });
+
+  const wasteTypeOptions: WasteTypeOption[] = wasteTypes ?? [];
+  const areaOptions: ServiceAreaOption[] = areas ?? [];
+
+  const selectedWasteTypeName = wasteTypeOptions.find(
+    (option) => option.wasteTypeId === watchedWasteTypeId,
+  )?.name;
+  const selectedAreaName = areaOptions.find(
+    (option) => option.areaId === watchedAreaId,
+  )?.name;
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
     setImageFile(file);
 
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
       toast.info(
-        "AI analysis suggests recyclable waste. Please confirm the category manually.",
+        "AI gợi ý đây là rác có thể tái chế. Vui lòng xác nhận lại loại rác thủ công.",
         {
           position: "bottom-right",
           autoClose: 3000,
@@ -107,7 +118,7 @@ export const CitizenReportPage: React.FC = () => {
     setIsCapturingLocation(true);
 
     if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser.");
+      toast.error("Trình duyệt của bạn không hỗ trợ định vị.");
       setIsCapturingLocation(false);
       return;
     }
@@ -115,11 +126,11 @@ export const CitizenReportPage: React.FC = () => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         handleMapClick(position.coords.latitude, position.coords.longitude);
-        toast.success("Location updated successfully.");
+        toast.success("Đã cập nhật vị trí thành công.");
         setIsCapturingLocation(false);
       },
       () => {
-        toast.error("Unable to retrieve your location.");
+        toast.error("Không thể lấy vị trí hiện tại.");
         setIsCapturingLocation(false);
       },
     );
@@ -127,7 +138,7 @@ export const CitizenReportPage: React.FC = () => {
 
   const onSubmit = async (data: ReportFormValues) => {
     if (!selectedLocation) {
-      toast.error("Please pin the report location on the map.");
+      toast.error("Vui lòng ghim vị trí báo cáo trên bản đồ.");
       return;
     }
 
@@ -139,16 +150,17 @@ export const CitizenReportPage: React.FC = () => {
             .uploadPhoto(imageFile)
             .then((response) => response.data?.data as string | undefined);
         } catch {
-          // Fallback for local/dev when image host is not configured.
           reportPhotoUrl = imagePreview ?? undefined;
           if (reportPhotoUrl) {
-            toast.warn("Photo upload service unavailable, using inline report image.");
+            toast.warn(
+              "Dịch vụ tải ảnh tạm không khả dụng, đang dùng ảnh nội bộ cho báo cáo.",
+            );
           }
         }
       }
 
       await reportsApi.create({
-        description: data.description || "",
+        description: buildReportDescription(data.description || "", data.estimatedWeightKg),
         wasteTypeId: data.wasteTypeId,
         areaId: data.areaId,
         latitude: data.latitude,
@@ -157,73 +169,26 @@ export const CitizenReportPage: React.FC = () => {
       });
 
       toast.success(
-        "Waste reported successfully. You will earn points once it is collected.",
+        "Báo cáo rác thành công. Bạn sẽ nhận điểm khi rác được thu gom.",
       );
       navigate("/citizen/dashboard");
     } catch {
-      toast.error("Failed to submit report. Please try again.");
+      toast.error("Gửi báo cáo thất bại. Vui lòng thử lại.");
     }
   };
-
-  const wasteTypeOptions: WasteTypeOption[] = wasteTypes ?? [];
-  const areaOptions: ServiceAreaOption[] = areas ?? [];
 
   return (
     <div className="space-y-4 lg:space-y-5">
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Citizen workspace</span>}
-        title="Report a waste issue"
-        description="Submit the same reporting payload through a clearer, map-first flow with better context, validation and field guidance."
+        eyebrow={<span className="shell-chip shell-chip-primary">Không gian công dân</span>}
+        title="Báo cáo điểm rác"
+        description="Gửi báo cáo với quy trình ưu tiên bản đồ, rõ ràng hơn về ngữ cảnh và có thêm gợi ý để doanh nghiệp điều phối nhanh hơn."
         actions={
           <Button variant="outline" onClick={() => navigate("/citizen/reports")}>
-            View my reports
+            Xem báo cáo của tôi
           </Button>
         }
       />
-
-      {/* <PageHero
-        eyebrow={<span className="shell-chip shell-chip-accent">3-step submission</span>}
-        title="Capture the evidence, confirm the area, then place the pin."
-        description="Collectors respond faster when the photo, waste type and location are all clear. Nothing changes in the backend flow. This page simply makes the reporting sequence easier to complete."
-        tone="mint"
-        aside={
-          <div className="space-y-4">
-            <div className="rounded-[20px] border border-[var(--stroke-soft)] bg-white/78 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                Submission snapshot
-              </p>
-              <div className="mt-3 space-y-2 text-sm text-[var(--text-secondary)]">
-                <p>
-                  Category:{" "}
-                  <span className="font-semibold text-[var(--text-primary)]">
-                    {wasteTypeOptions.find((item) => item.wasteTypeId === selectedWasteType)
-                      ?.name ?? "Not selected"}
-                  </span>
-                </p>
-                <p>
-                  Area:{" "}
-                  <span className="font-semibold text-[var(--text-primary)]">
-                    {areaOptions.find((item) => item.areaId === selectedArea)?.name ??
-                      "Not selected"}
-                  </span>
-                </p>
-                <p>
-                  Location:{" "}
-                  <span className="font-semibold text-[var(--text-primary)]">
-                    {selectedLocation
-                      ? `${selectedLocation[0].toFixed(4)}, ${selectedLocation[1].toFixed(4)}`
-                      : "Pin on map"}
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-[20px] border border-[rgba(31,93,78,0.1)] bg-[var(--primary-50)] p-4 text-sm leading-6 text-[var(--text-secondary)]">
-              Use a close photo and place the marker on the exact pickup spot to help the assigned team route correctly.
-            </div>
-          </div>
-        }
-      /> */}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 lg:space-y-5">
         <input type="hidden" {...latitudeRegistration} />
@@ -233,8 +198,8 @@ export const CitizenReportPage: React.FC = () => {
           <div className="space-y-4 lg:space-y-5">
             <SectionCard className="overflow-hidden">
               <SectionHeader
-                title="Evidence photo"
-                description="Upload a clear image to help the collector confirm what is on site."
+                title="Ảnh hiện trạng"
+                description="Tải lên ảnh rõ nét để nhân viên thu gom xác nhận tình trạng tại chỗ."
               />
 
               <div className="p-5 sm:p-6">
@@ -262,7 +227,7 @@ export const CitizenReportPage: React.FC = () => {
                           setImageFile(null);
                         }}
                       >
-                        Replace photo
+                        Đổi ảnh
                       </Button>
                     </div>
                   ) : (
@@ -275,11 +240,10 @@ export const CitizenReportPage: React.FC = () => {
                       </div>
                       <div className="space-y-2">
                         <p className="text-lg font-semibold text-[var(--text-primary)]">
-                          Add a waste photo
+                          Thêm ảnh rác
                         </p>
                         <p className="max-w-sm text-sm leading-6 text-[var(--text-secondary)]">
-                          Upload JPG, PNG or GIF evidence. A clear image improves
-                          collector handoff and category validation.
+                          Tải lên ảnh JPG, PNG hoặc GIF. Ảnh rõ ràng giúp bàn giao cho nhân viên thu gom và xác nhận loại rác chính xác hơn.
                         </p>
                       </div>
                     </label>
@@ -298,21 +262,21 @@ export const CitizenReportPage: React.FC = () => {
 
             <SectionCard className="overflow-hidden">
               <SectionHeader
-                title="Report details"
-                description="Choose the waste type and service area before submitting."
+                title="Chi tiết báo cáo"
+                description="Chọn loại rác, khu vực phụ trách và thêm ngữ cảnh để báo cáo đủ thông tin ngay từ đầu."
               />
 
               <div className="grid gap-5 p-5 sm:p-6">
                 <div>
                   <label htmlFor="waste-type" className="field-label">
-                    Waste category
+                    Loại rác
                   </label>
                   <select
                     id="waste-type"
                     {...register("wasteTypeId")}
                     className="shell-select"
                   >
-                    <option value="">Select a category</option>
+                    <option value="">Chọn loại rác</option>
                     {wasteTypeOptions.map((option) => (
                       <option key={option.wasteTypeId} value={option.wasteTypeId}>
                         {option.name}
@@ -325,21 +289,21 @@ export const CitizenReportPage: React.FC = () => {
                     </p>
                   ) : (
                     <p className="field-helper">
-                      Pick the category that best matches the material visible in the photo.
+                      Chọn loại phù hợp nhất với vật liệu hiển thị trong ảnh.
                     </p>
                   )}
                 </div>
 
                 <div>
                   <label htmlFor="service-area" className="field-label">
-                    Service area
+                    Khu vực phục vụ
                   </label>
                   <select
                     id="service-area"
                     {...register("areaId")}
                     className="shell-select"
                   >
-                    <option value="">Select an area</option>
+                    <option value="">Chọn khu vực</option>
                     {areaOptions.map((option) => (
                       <option key={option.areaId} value={option.areaId}>
                         {option.name}
@@ -352,24 +316,66 @@ export const CitizenReportPage: React.FC = () => {
                     </p>
                   ) : (
                     <p className="field-helper">
-                      This keeps the report aligned with the correct local enterprise coverage.
+                      Việc này giúp báo cáo được chuyển đúng doanh nghiệp phụ trách khu vực đó.
                     </p>
                   )}
                 </div>
 
+                <div className="rounded-[24px] border border-[rgba(31,93,78,0.12)] bg-[var(--primary-50)] p-4">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                    <div className="space-y-1">
+                      <label htmlFor="estimated-weight" className="field-label">
+                        Khối lượng ước tính (kg)
+                      </label>
+                      <p className="text-sm leading-6 text-[var(--text-secondary)]">
+                        Không bắt buộc, nhưng giúp doanh nghiệp đánh giá độ ưu tiên và năng lực xử lý tốt hơn.
+                      </p>
+                    </div>
+                    <div className="rounded-[18px] bg-white/82 px-4 py-3 text-right">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                        Ước tính hiện tại
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+                        {watchedEstimatedWeightKg ? `${watchedEstimatedWeightKg} kg` : "--"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <input
+                      id="estimated-weight"
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      {...estimatedWeightRegistration}
+                      className="shell-input"
+                      placeholder="Ví dụ 12.5"
+                    />
+                    {errors.estimatedWeightKg ? (
+                      <p role="alert" className="field-error">
+                        {errors.estimatedWeightKg.message}
+                      </p>
+                    ) : (
+                      <p className="field-helper">
+                        Số ký này sẽ được đính kèm cùng báo cáo để đội thu gom có thêm ngữ cảnh.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
                 <div>
                   <label htmlFor="report-description" className="field-label">
-                    Description
+                    Mô tả
                   </label>
                   <textarea
                     id="report-description"
                     {...register("description")}
                     rows={4}
-                    placeholder="Add any context that helps the collector find or handle the waste."
+                    placeholder="Thêm thông tin giúp nhân viên thu gom dễ tìm hoặc xử lý điểm rác."
                     className="shell-textarea"
                   />
                   <p className="field-helper">
-                    Mention landmarks, volume, odor, blocked paths or safety issues if relevant.
+                    Có thể ghi thêm mốc nhận diện, mùi, lối đi bị chắn hoặc rủi ro an toàn nếu có.
                   </p>
                 </div>
               </div>
@@ -379,8 +385,8 @@ export const CitizenReportPage: React.FC = () => {
           <div className="space-y-4 lg:space-y-5">
             <SectionCard className="overflow-hidden">
               <SectionHeader
-                title="Location pin"
-                description="Click the map to mark the exact pickup point."
+                title="Ghim vị trí"
+                description="Nhấn vào bản đồ để đánh dấu chính xác vị trí cần thu gom."
                 action={
                   <Button
                     type="button"
@@ -393,7 +399,7 @@ export const CitizenReportPage: React.FC = () => {
                     ) : (
                       <MapPin className="mr-2 h-4 w-4" />
                     )}
-                    Use my location
+                    Dùng vị trí của tôi
                   </Button>
                 }
               />
@@ -419,20 +425,20 @@ export const CitizenReportPage: React.FC = () => {
 
                 <div className="rounded-[22px] border border-[var(--stroke-soft)] bg-[var(--bg-surface-muted)] px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                    Selected coordinates
+                    Tọa độ đã chọn
                   </p>
                   <p className="mt-2 text-sm font-medium text-[var(--text-primary)]">
                     {selectedLocation
                       ? `${selectedLocation[0].toFixed(6)}, ${selectedLocation[1].toFixed(6)}`
-                      : "No pin selected yet"}
+                      : "Chưa chọn vị trí nào"}
                   </p>
                   {errors.latitude || errors.longitude ? (
                     <p role="alert" className="field-error">
-                      Please select a location on the map before submitting.
+                      Vui lòng chọn vị trí trên bản đồ trước khi gửi.
                     </p>
                   ) : (
                     <p className="field-helper">
-                      Zoom in and place the marker as close as possible to the waste pile.
+                      Hãy phóng to và đặt ghim sát nhất với vị trí đống rác.
                     </p>
                   )}
                 </div>
@@ -441,15 +447,16 @@ export const CitizenReportPage: React.FC = () => {
 
             <SectionCard className="overflow-hidden">
               <SectionHeader
-                title="Before you submit"
-                description="A quick checklist for cleaner routing and less back-and-forth."
+                title="Trước khi gửi"
+                description="Checklist nhanh để việc điều phối chính xác và ít phải trao đổi lại hơn."
               />
 
               <div className="grid gap-3 p-5 sm:p-6">
                 {[
-                  "Photo shows the waste clearly.",
-                  "Category matches the visible material.",
-                  "Pin is placed on the exact pickup spot.",
+                  "Ảnh hiển thị rõ điểm rác.",
+                  "Loại rác khớp với vật liệu nhìn thấy.",
+                  "Ghim đã đặt đúng vị trí cần thu gom.",
+                  "Nếu có thể, hãy thêm số ký ước tính để doanh nghiệp chuẩn bị tốt hơn.",
                 ].map((item) => (
                   <div
                     key={item}
@@ -458,9 +465,7 @@ export const CitizenReportPage: React.FC = () => {
                     <div className="shell-icon-chip h-10 w-10 shrink-0">
                       <ArrowRight className="h-4 w-4" />
                     </div>
-                    <p className="text-sm leading-6 text-[var(--text-secondary)]">
-                      {item}
-                    </p>
+                    <p className="text-sm leading-6 text-[var(--text-secondary)]">{item}</p>
                   </div>
                 ))}
               </div>
@@ -470,7 +475,7 @@ export const CitizenReportPage: React.FC = () => {
 
         <div className="shell-toolbar justify-between">
           <p className="text-sm leading-6 text-[var(--text-secondary)]">
-            Reports keep the same backend schema, route path and reward logic.
+            Báo cáo vẫn dùng cùng schema backend, đường dẫn và logic tích điểm như hiện tại.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Button
@@ -478,21 +483,29 @@ export const CitizenReportPage: React.FC = () => {
               variant="outline"
               onClick={() => navigate("/citizen/dashboard")}
             >
-              Cancel
+              Hủy
             </Button>
             <Button type="submit" size="lg" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4.5 w-4.5 animate-spin" />
-                  Submitting...
+                  Đang gửi...
                 </>
               ) : (
-                "Submit waste report"
+                "Gửi báo cáo rác"
               )}
             </Button>
           </div>
         </div>
       </form>
+
+      <ReportAssistantBubble
+        hasImage={!!imagePreview}
+        hasLocation={!!selectedLocation}
+        wasteTypeName={selectedWasteTypeName}
+        areaName={selectedAreaName}
+        estimatedWeightKg={watchedEstimatedWeightKg ?? null}
+      />
     </div>
   );
 };

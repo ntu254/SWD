@@ -62,9 +62,15 @@ export default function CitizenHomeScreen() {
     }
   }, [balanceQuery, leaderboardQuery, reportsQuery]);
 
-  const handleReportPress = (report: WasteReport) => {
-    console.log('Report pressed:', report.reportId);
-  };
+  const handleReportPress = React.useCallback(
+    (report: WasteReport) => {
+      router.push({
+        pathname: "/reports/[reportId]",
+        params: { reportId: report.reportId },
+      });
+    },
+    [router]
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
