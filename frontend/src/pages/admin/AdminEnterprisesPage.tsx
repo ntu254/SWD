@@ -7,7 +7,6 @@ import { adminApi } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { formatStatusLabel } from "../../lib/labels";
 import {
   EmptyState,
   ModalShell,
@@ -24,15 +23,16 @@ import {
   TableHeader,
   TableRow,
 } from "../../components/ui/table";
+import { formatStatusLabel } from "../../lib/labels";
 
 type Enterprise = {
   userId: string;
-  displayName: string;
-  email: string;
-  accountStatus: string;
+  displayName?: string | null;
+  email?: string | null;
+  accountStatus?: string | null;
 };
 
-function getStatusVariant(status: string) {
+function getStatusVariant(status?: string | null) {
   switch (status) {
     case "ACTIVE":
       return "collected" as const;
@@ -53,7 +53,8 @@ export function AdminEnterprisesPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-enterprises"],
-    queryFn: () => adminApi.getEnterprises(0, 100).then((response) => response.data),
+    queryFn: () =>
+      adminApi.getEnterprises(0, 100).then((response) => response.data),
   });
 
   const updateStatus = useMutation({
@@ -78,11 +79,11 @@ export function AdminEnterprisesPage() {
 
   const enterprises: Enterprise[] = data?.data?.content ?? [];
   const normalizedSearch = deferredSearch.trim().toLowerCase();
-  const filteredEnterprises = enterprises.filter(
-    (enterprise) =>
-      enterprise.displayName.toLowerCase().includes(normalizedSearch) ||
-      enterprise.email.toLowerCase().includes(normalizedSearch),
-  );
+  const filteredEnterprises = enterprises.filter((enterprise) => {
+    const name = (enterprise.displayName ?? "").toLowerCase();
+    const email = (enterprise.email ?? "").toLowerCase();
+    return name.includes(normalizedSearch) || email.includes(normalizedSearch);
+  });
   const activeCount = enterprises.filter(
     (enterprise) => enterprise.accountStatus === "ACTIVE",
   ).length;
@@ -105,7 +106,9 @@ export function AdminEnterprisesPage() {
                 onClick={() => deleteEnterprise.mutate(deleteConfirm.userId)}
                 disabled={deleteEnterprise.isPending}
               >
-                {deleteEnterprise.isPending ? "Đang xóa..." : "Xóa doanh nghiệp"}
+                {deleteEnterprise.isPending
+                  ? "Đang xóa..."
+                  : "Xóa doanh nghiệp"}
               </Button>
             </>
           }
@@ -117,7 +120,11 @@ export function AdminEnterprisesPage() {
       ) : null}
 
       <PageHeader
-        eyebrow={<span className="shell-chip shell-chip-primary">Không gian quản trị</span>}
+        eyebrow={
+          <span className="shell-chip shell-chip-primary">
+            Không gian quản trị
+          </span>
+        }
         title="Tài khoản doanh nghiệp"
         description="Theo dõi quyền truy cập của tổ chức, bật tắt trạng thái tài khoản và quản lý doanh nghiệp trên toàn nền tảng."
       />
@@ -219,16 +226,21 @@ export function AdminEnterprisesPage() {
                     <TableCell>
                       <div>
                         <p className="text-sm font-semibold text-[var(--text-primary)]">
-                          {enterprise.displayName}
+                          {enterprise.displayName ||
+                            "Doanh nghiệp chưa cập nhật tên"}
                         </p>
                         <p className="text-sm text-[var(--text-secondary)]">
                           Mã {enterprise.userId}
                         </p>
                       </div>
                     </TableCell>
-                    <TableCell>{enterprise.email}</TableCell>
                     <TableCell>
-                      <Badge variant={getStatusVariant(enterprise.accountStatus)}>
+                      {enterprise.email || "Không có email"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={getStatusVariant(enterprise.accountStatus)}
+                      >
                         {formatStatusLabel(enterprise.accountStatus)}
                       </Badge>
                     </TableCell>
@@ -247,7 +259,9 @@ export function AdminEnterprisesPage() {
                             })
                           }
                         >
-                          {enterprise.accountStatus === "ACTIVE" ? "Vô hiệu hóa" : "Kích hoạt"}
+                          {enterprise.accountStatus === "ACTIVE"
+                            ? "Vô hiệu hóa"
+                            : "Kích hoạt"}
                         </Button>
                         <Button
                           size="icon"
