@@ -39,6 +39,7 @@ const navByRole: Record<string, NavItem[]> = {
     { to: "/citizen/dashboard", icon: LayoutDashboard, label: "Tổng quan" },
     { to: "/citizen/report", icon: AlertTriangle, label: "Báo cáo rác" },
     { to: "/citizen/reports", icon: FileText, label: "Báo cáo của tôi" },
+    { to: "/citizen/complaints", icon: MessageSquare, label: "Phản hồi" },
     { to: "/citizen/notifications", icon: Bell, label: "Thông báo" },
     { to: "/citizen/rewards", icon: Award, label: "Phần thưởng" },
   ],

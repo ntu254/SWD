@@ -16,13 +16,16 @@ export const ROLE_LABELS: Record<string, string> = {
 export const STATUS_LABELS: Record<string, string> = {
   ALL: "Tất cả",
   PENDING: "Chờ xử lý",
+  Pending: "Đang chờ",
   ACCEPTED: "Đã tiếp nhận",
   ASSIGNED: "Đã phân công",
   IN_PROGRESS: "Đang di chuyển",
+  In_Progress: "Đang xử lý",
   ON_THE_WAY: "Đang di chuyển",
   COMPLETED: "Hoàn thành",
   COLLECTED: "Đã thu gom",
   REJECTED: "Từ chối",
+  Rejected: "Từ chối",
   CANCELLED: "Đã hủy",
   PENDING_ENTERPRISE_APPROVAL: "Chờ doanh nghiệp duyệt",
   ACTIVE: "Đang hoạt động",
@@ -32,6 +35,7 @@ export const STATUS_LABELS: Record<string, string> = {
   PENDING_DELETE: "Chờ xóa",
   OPEN: "Đang mở",
   RESOLVED: "Đã xử lý",
+  Resolved: "Đã xử lý",
 };
 
 export const PRIORITY_LABELS: Record<string, string> = {

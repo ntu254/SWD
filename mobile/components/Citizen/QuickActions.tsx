@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Camera, MapPin, History, Gift } from 'lucide-react-native';
+import { Camera, MapPin, History, Gift, MessageSquareWarning } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import Animated, { FadeInRight } from 'react-native-reanimated';
 
@@ -17,6 +17,7 @@ interface QuickActionsProps {
   onMap: () => void;
   onHistory: () => void;
   onRewards: () => void;
+  onComplaints?: () => void;
 }
 
 export const QuickActions: React.FC<QuickActionsProps> = ({
@@ -24,6 +25,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
   onMap,
   onHistory,
   onRewards,
+  onComplaints,
 }) => {
   const actions: QuickAction[] = [
     {
@@ -53,6 +55,13 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
       color: '#E91E63',
       bgColor: '#FCE4EC',
       onPress: onRewards,
+    },
+    {
+      icon: MessageSquareWarning,
+      label: 'Khiếu nại',
+      color: '#F59E0B',
+      bgColor: '#FEF3C7',
+      onPress: onComplaints ?? (() => {}),
     },
   ];
 
@@ -99,27 +108,28 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: 'row',
-    flexWrap: 'nowrap',
+    flexWrap: 'wrap',
   },
   actionWrapper: {
-    width: '25%',
+    width: '20%',
   },
   actionButton: {
     alignItems: 'center',
     width: '100%',
   },
   iconContainer: {
-    width: 56,
-    height: 56,
+    width: 52,
+    height: 52,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
   },
   actionLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     color: Colors.neutral[700],
     textAlign: 'center',
   },
 });
+

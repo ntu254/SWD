@@ -48,6 +48,10 @@ const CitizenRewardsPage = lazyPage(
   () => import("./pages/citizen/CitizenRewardsPage"),
   "CitizenRewardsPage",
 );
+const CitizenComplaintsPage = lazyPage(
+  () => import("./pages/citizen/CitizenComplaintsPage"),
+  "CitizenComplaintsPage",
+);
 const NotificationsInboxPage = lazyPage(
   () => import("./pages/shared/NotificationsInboxPage"),
   "NotificationsInboxPage",
@@ -208,6 +212,10 @@ function App() {
               <Route
                 path="/citizen/rewards"
                 element={withSuspense(<CitizenRewardsPage />)}
+              />
+              <Route
+                path="/citizen/complaints"
+                element={withSuspense(<CitizenComplaintsPage />)}
               />
               <Route
                 path="/citizen/notifications"

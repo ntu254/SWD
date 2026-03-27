@@ -27,7 +27,7 @@ public class RewardItem {
     @Column(name = "description", columnDefinition = "text")
     private String description;
 
-    @Column(name = "image_url")
+    @Column(name = "image_url", columnDefinition = "text")
     private String imageUrl;
 
     @Column(name = "points_cost", nullable = false)

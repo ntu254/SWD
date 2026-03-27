@@ -137,6 +137,7 @@ export default function CitizenHomeScreen() {
           onMap={() => router.push('/(citizen)/history')}
           onHistory={() => router.push('/(citizen)/history')}
           onRewards={() => router.push('/(citizen)/leaderboard')}
+          onComplaints={() => router.push('/(citizen)/complaints')}
         />
 
         <NearbyReportsMap

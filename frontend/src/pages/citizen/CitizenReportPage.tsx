@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { reportsApi, serviceAreasApi, wasteTypesApi } from "../../api";
 import { MapComponent } from "../../components/maps/MapComponent";
+import { AiWasteSuggestion } from "../../components/ui/ai-waste-suggestion";
 import { Button } from "../../components/ui/button";
 import { ReportAssistantBubble } from "../../components/ui/report-assistant-bubble";
 import { PageHeader, SectionCard, SectionHeader } from "../../components/ui/page";
@@ -52,6 +53,7 @@ export const CitizenReportPage: React.FC = () => {
     register,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<ReportFormValues>({
     resolver: zodResolver(reportSchema),
@@ -113,10 +115,37 @@ export const CitizenReportPage: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleMapClick = (lat: number, lng: number) => {
+  const handleMapClick = async (lat: number, lng: number) => {
     setSelectedLocation([lat, lng]);
     setValue("latitude", lat, { shouldValidate: true, shouldDirty: true });
     setValue("longitude", lng, { shouldValidate: true, shouldDirty: true });
+
+    try {
+      // Auto-fetch address from coordinates using Nominatim Reverse Geocoding API
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18`,
+        { headers: { "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8" } } // Request Vietnamese address
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const address = data.display_name;
+        
+        if (address) {
+          const currentDesc = getValues("description") || "";
+          
+          // Only auto-fill if the description is empty or already looks like an auto-filled address
+          if (!currentDesc.trim() || currentDesc.startsWith("Vị trí: ")) {
+            setValue("description", `Vị trí: ${address}`, { 
+              shouldValidate: true, 
+              shouldDirty: true 
+            });
+            toast.success("Đã tự động điền địa chỉ vào phần mô tả.");
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Geocoding failed:", error);
+    }
   };
 
   const captureCurrentLocation = () => {
@@ -264,6 +293,19 @@ export const CitizenReportPage: React.FC = () => {
                 </div>
               </div>
             </SectionCard>
+
+            <AiWasteSuggestion
+              imagePreview={imagePreview}
+              wasteTypes={wasteTypeOptions}
+              onSelectWasteType={(wasteTypeId) => {
+                setValue("wasteTypeId", wasteTypeId, {
+                  shouldDirty: true,
+                  shouldTouch: true,
+                  shouldValidate: true,
+                });
+                clearErrors("wasteTypeId");
+              }}
+            />
 
             <SectionCard className="overflow-hidden">
               <SectionHeader

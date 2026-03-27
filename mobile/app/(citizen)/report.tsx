@@ -23,6 +23,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Colors } from '@/constants/colors';
 import { Shadows } from '@/constants/shadows';
 import { ReportAssistantBubble } from '@/components/Citizen/ReportAssistantBubble';
+import { AiWasteSuggestionBanner } from '@/components/Citizen/AiWasteSuggestionBanner';
 import { WasteTypeSelector } from '@/components/Citizen/WasteTypeSelector';
 import { buildReportDescription } from '@/components/utils/reportMetadata';
 import { useAppStore } from '@/store/useAppStore';
@@ -349,14 +350,16 @@ export default function ReportWasteScreen() {
               </View>
             )}
 
-            {aiResult && (
-              <View style={[styles.aiResult, { borderColor: aiResult.wasteType.color }]}>
-                <Sparkles size={18} color={aiResult.wasteType.color} />
-                <Text style={styles.aiResultText}>
-                  AI đề xuất: {aiResult.wasteType.name} ({Math.round(aiResult.confidence * 100)}%)
-                </Text>
-              </View>
-            )}
+            <AiWasteSuggestionBanner
+              isAnalyzing={false}
+              suggestion={aiResult}
+              onApply={() => {
+                if (aiResult) {
+                  setSelectedWasteType(aiResult.wasteType);
+                }
+              }}
+              onDismiss={() => setAiResult(null)}
+            />
           </View>
 
           <View style={styles.sectionCard}>
