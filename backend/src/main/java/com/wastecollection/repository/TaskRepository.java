@@ -20,4 +20,6 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.status NOT IN ('COMPLETED','CANCELLED','REJECTED','FAILED')")
     long countActive();
+
+    java.util.List<Task> findByReport_ReportId(UUID reportId);
 }

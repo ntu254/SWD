@@ -71,4 +71,12 @@ public class ComplaintController {
         ComplaintDto dto = complaintService.resolveComplaint(complaintId, securityUtils.getCurrentUserId(), request);
         return ResponseEntity.ok(ApiResponse.success("Complaint resolved", dto));
     }
+
+    @GetMapping("/{complaintId}/evidence")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENTERPRISE')")
+    @Operation(summary = "Get collection evidence (photos, notes) related to this complaint")
+    public ResponseEntity<ApiResponse<CollectionEvidenceDto>> getEvidence(@PathVariable UUID complaintId) {
+        CollectionEvidenceDto dto = complaintService.getComplaintEvidence(complaintId);
+        return ResponseEntity.ok(ApiResponse.success(dto));
+    }
 }

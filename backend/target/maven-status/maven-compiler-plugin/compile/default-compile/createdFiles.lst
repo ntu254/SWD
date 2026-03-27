@@ -97,6 +97,7 @@ com\wastecollection\dto\reward\RedeemItemRequest.class
 com\wastecollection\common\ApiResponse.class
 com\wastecollection\dto\task\CreateTaskRequest.class
 com\wastecollection\dto\reward\LeaderboardEntryDto.class
+com\wastecollection\controller\AiSuggestionController.class
 com\wastecollection\dto\complaint\ResolveComplaintRequest.class
 com\wastecollection\repository\TaskRepository.class
 com\wastecollection\entity\Collector.class
@@ -113,6 +114,7 @@ com\wastecollection\service\UserService.class
 com\wastecollection\dto\auth\AuthResponse$AuthResponseBuilder.class
 com\wastecollection\entity\CollectorKpiDaily.class
 com\wastecollection\repository\CitizenRewardRuleRepository.class
+com\wastecollection\service\AiSuggestionService.class
 com\wastecollection\dto\complaint\CreateComplaintRequest.class
 com\wastecollection\repository\ComplaintResolutionRepository.class
 com\wastecollection\dto\reward\RewardTransactionDto.class

@@ -5,6 +5,7 @@ D:\github\swd2632026\backend\src\main\java\com\wastecollection\repository\Collec
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\dto\auth\LoginRequest.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\controller\WasteReportController.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\dto\task\AssignTaskRequest.java
+D:\github\swd2632026\backend\src\main\java\com\wastecollection\dto\complaint\CollectionEvidenceDto.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\entity\SystemSetting.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\repository\CitizenRewardRuleRepository.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\controller\EnterpriseKpiController.java
@@ -70,6 +71,7 @@ D:\github\swd2632026\backend\src\main\java\com\wastecollection\dto\auth\RefreshT
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\controller\EnterpriseRewardRuleController.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\dto\task\TaskDto.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\config\SecurityConfig.java
+D:\github\swd2632026\backend\src\main\java\com\wastecollection\controller\AiSuggestionController.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\dto\auth\AuthResponse.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\entity\CitizenRewardRule.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\controller\ServiceAreaController.java
@@ -83,6 +85,7 @@ D:\github\swd2632026\backend\src\main\java\com\wastecollection\dto\notification\
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\dto\enterprise\RewardRuleRequest.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\controller\AdminRewardController.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\controller\AdminController.java
+D:\github\swd2632026\backend\src\main\java\com\wastecollection\service\AiSuggestionService.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\dto\reward\RedeemItemRequest.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\entity\VisitWasteItem.java
 D:\github\swd2632026\backend\src\main\java\com\wastecollection\repository\VisitWasteItemRepository.java

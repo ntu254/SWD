@@ -23,6 +23,8 @@ public class ComplaintService {
     private final UserRepository userRepository;
     private final WasteReportRepository reportRepository;
     private final CollectionVisitRepository visitRepository;
+    private final TaskRepository taskRepository;
+    private final EvidencePhotoRepository evidencePhotoRepository;
 
     @Transactional
     public ComplaintDto createComplaint(UUID submitterId, CreateComplaintRequest request) {
@@ -59,6 +61,40 @@ public class ComplaintService {
                 .orElseThrow(() -> new ResourceNotFoundException("Complaint", "id", complaintId));
         // The submitter or an admin/enterprise can view the complaint
         return mapToDto(complaint);
+    }
+
+    @Transactional(readOnly = true)
+    public CollectionEvidenceDto getComplaintEvidence(UUID complaintId) {
+        Complaint c = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint", "id", complaintId));
+
+        CollectionVisit targetVisit = c.getVisit();
+
+        if (targetVisit == null && c.getReport() != null) {
+            java.util.List<Task> tasks = taskRepository.findByReport_ReportId(c.getReport().getReportId());
+            if (!tasks.isEmpty()) {
+                Task targetTask = tasks.get(0);
+                java.util.List<CollectionVisit> visits = visitRepository.findByTask_TaskId(targetTask.getTaskId());
+                if (!visits.isEmpty()) {
+                    targetVisit = visits.get(visits.size() - 1);
+                }
+            }
+        }
+
+        if (targetVisit == null) {
+            return null;
+        }
+
+        java.util.List<String> photos = evidencePhotoRepository.findByVisit_VisitId(targetVisit.getVisitId())
+                .stream().map(EvidencePhoto::getPhotoUrl).toList();
+
+        return CollectionEvidenceDto.builder()
+                .visitStatus(targetVisit.getVisitStatus())
+                .collectorNote(targetVisit.getCollectorNote())
+                .visitedAt(targetVisit.getVisitedAt())
+                .collectorName(targetVisit.getCollector() != null ? targetVisit.getCollector().getDisplayName() : null)
+                .evidencePhotos(photos)
+                .build();
     }
 
     @Transactional(readOnly = true)
